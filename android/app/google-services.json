@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "335231985992",
+    "project_id": "edums-app",
+    "storage_bucket": "edums-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:335231985992:android:0dc7586353da4e00cbab7d",
+        "android_client_info": {
+          "package_name": "com.devnet.edums"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA07inF1W8iLZSr7geIPfKNvNT_rjNqSRQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
