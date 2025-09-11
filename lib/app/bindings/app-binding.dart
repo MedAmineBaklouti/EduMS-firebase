@@ -2,8 +2,9 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/auth_service.dart';
-import '../../core/services/datavase_service.dart';
+import '../../core/services/database_service.dart';
 import '../../modules/admin_dashboard/controllers/admin_controller.dart';
+import '../../modules/admin_dashboard/controllers/admin_control_controller.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
 import '../../modules/parents_dashboard/controllers/parent_controller.dart';
 import '../../modules/teachers_dashboard/controllers/teacher_controller.dart';
@@ -36,6 +37,7 @@ class AppBindings extends Bindings {
 
     // Role-specific controllers can be lazy loaded
     Get.lazyPut(() => AdminController(), fenix: true);
+    Get.lazyPut(() => AdminControlController(), fenix: true);
     Get.lazyPut(() => TeacherController(), fenix: true);
     Get.lazyPut(() => ParentController(), fenix: true);
   }
