@@ -1,0 +1,89 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
+
+import '../../data/models/child_model.dart';
+import '../../data/models/parent_model.dart';
+import '../../data/models/school_class_model.dart';
+import '../../data/models/subject_model.dart';
+import '../../data/models/teacher_model.dart';
+
+class DatabaseService extends GetxService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final RxBool isInitialized = false.obs;
+
+  Future<DatabaseService> init() async {
+    // Configure any Firestore settings if needed
+    // await _firestore.settings = const Settings(...);
+
+    isInitialized.value = true;
+    return this;
+  }
+
+  // Firestore instance getter for direct access when needed
+  FirebaseFirestore get firestore => _firestore;
+
+  /// Parent CRUD operations
+  Future<void> addParent(ParentModel parent) async {
+    await _firestore.collection('parents').add(parent.toMap());
+  }
+
+  Future<void> updateParent(ParentModel parent) async {
+    await _firestore.collection('parents').doc(parent.id).update(parent.toMap());
+  }
+
+  Future<void> deleteParent(String id) async {
+    await _firestore.collection('parents').doc(id).delete();
+  }
+
+  /// Teacher CRUD operations
+  Future<void> addTeacher(TeacherModel teacher) async {
+    await _firestore.collection('teachers').add(teacher.toMap());
+  }
+
+  Future<void> updateTeacher(TeacherModel teacher) async {
+    await _firestore.collection('teachers').doc(teacher.id).update(teacher.toMap());
+  }
+
+  Future<void> deleteTeacher(String id) async {
+    await _firestore.collection('teachers').doc(id).delete();
+  }
+
+  /// Subject CRUD operations
+  Future<void> addSubject(SubjectModel subject) async {
+    await _firestore.collection('subjects').add(subject.toMap());
+  }
+
+  Future<void> updateSubject(SubjectModel subject) async {
+    await _firestore.collection('subjects').doc(subject.id).update(subject.toMap());
+  }
+
+  Future<void> deleteSubject(String id) async {
+    await _firestore.collection('subjects').doc(id).delete();
+  }
+
+  /// School class CRUD operations
+  Future<void> addSchoolClass(SchoolClassModel schoolClass) async {
+    await _firestore.collection('classes').add(schoolClass.toMap());
+  }
+
+  Future<void> updateSchoolClass(SchoolClassModel schoolClass) async {
+    await _firestore.collection('classes').doc(schoolClass.id).update(schoolClass.toMap());
+  }
+
+  Future<void> deleteSchoolClass(String id) async {
+    await _firestore.collection('classes').doc(id).delete();
+  }
+
+  /// Child CRUD operations
+  Future<void> addChild(ChildModel child) async {
+    await _firestore.collection('children').add(child.toMap());
+  }
+
+  Future<void> updateChild(ChildModel child) async {
+    await _firestore.collection('children').doc(child.id).update(child.toMap());
+  }
+
+  Future<void> deleteChild(String id) async {
+    await _firestore.collection('children').doc(id).delete();
+  }
+}
