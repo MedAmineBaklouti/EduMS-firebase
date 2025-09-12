@@ -24,7 +24,7 @@ class DatabaseService extends GetxService {
 
   /// Parent CRUD operations
   Future<void> addParent(ParentModel parent) async {
-    await _firestore.collection('parents').add(parent.toMap());
+    await _firestore.collection('parents').doc(parent.id).set(parent.toMap());
   }
 
   Future<void> updateParent(ParentModel parent) async {
@@ -37,7 +37,7 @@ class DatabaseService extends GetxService {
 
   /// Teacher CRUD operations
   Future<void> addTeacher(TeacherModel teacher) async {
-    await _firestore.collection('teachers').add(teacher.toMap());
+    await _firestore.collection('teachers').doc(teacher.id).set(teacher.toMap());
   }
 
   Future<void> updateTeacher(TeacherModel teacher) async {
