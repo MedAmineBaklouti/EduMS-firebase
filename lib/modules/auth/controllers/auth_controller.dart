@@ -70,7 +70,7 @@ class AuthController extends GetxController {
               throw 'Unauthorized role: $role';
           }
 
-          await prefs.setString('userRole', role);
+          await prefs.setString('userRole', role!);
           isLoading(false); // <-- Reset loading AFTER navigation
         });
       } catch (e) {
