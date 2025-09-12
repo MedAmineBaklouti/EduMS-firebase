@@ -50,6 +50,21 @@ class AuthService extends GetxService {
     }
   }
 
+  Future<UserCredential> registerUser(
+      {required String email,
+      required String password,
+      required String role}) async {
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    await _firestore
+        .collection('userRoles')
+        .doc(credential.user!.uid)
+        .set({'role': role});
+    return credential;
+  }
+
   Future<void> logout() async {
     await _auth.signOut();
     await prefs.setBool('isLoggedIn', false);

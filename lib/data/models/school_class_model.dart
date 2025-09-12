@@ -4,11 +4,13 @@ class SchoolClassModel {
   final String id;
   final String name;
   final String teacherId;
+  final List<String> childIds;
 
   SchoolClassModel({
     required this.id,
     required this.name,
     required this.teacherId,
+    this.childIds = const [],
   });
 
   factory SchoolClassModel.fromDoc(DocumentSnapshot doc) {
@@ -17,6 +19,7 @@ class SchoolClassModel {
       id: doc.id,
       name: data['name'] ?? '',
       teacherId: data['teacherId'] ?? '',
+      childIds: List<String>.from(data['childIds'] ?? []),
     );
   }
 
@@ -24,6 +27,7 @@ class SchoolClassModel {
     return {
       'name': name,
       'teacherId': teacherId,
+      'childIds': childIds,
     };
   }
 }

@@ -154,6 +154,7 @@ class AdminControlView extends StatelessWidget {
     final nameCtrl = TextEditingController(text: parent?.name);
     final emailCtrl = TextEditingController(text: parent?.email);
     final phoneCtrl = TextEditingController(text: parent?.phone);
+    final passwordCtrl = TextEditingController();
     Get.dialog(AlertDialog(
       title: Text(parent == null ? 'Add Parent' : 'Edit Parent'),
       content: Column(
@@ -162,6 +163,11 @@ class AdminControlView extends StatelessWidget {
           TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
           TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
           TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone')),
+          if (parent == null)
+            TextField(
+                controller: passwordCtrl,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true),
         ],
       ),
       actions: [
@@ -175,7 +181,7 @@ class AdminControlView extends StatelessWidget {
                 phone: phoneCtrl.text,
               );
               if (parent == null) {
-                c.addParent(model);
+                c.addParent(model, passwordCtrl.text);
               } else {
                 c.updateParent(model);
               }
@@ -189,106 +195,168 @@ class AdminControlView extends StatelessWidget {
   void _showTeacherDialog({TeacherModel? teacher}) {
     final nameCtrl = TextEditingController(text: teacher?.name);
     final emailCtrl = TextEditingController(text: teacher?.email);
-    final subjectCtrl = TextEditingController(text: teacher?.subjectId);
-    Get.dialog(AlertDialog(
-      title: Text(teacher == null ? 'Add Teacher' : 'Edit Teacher'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-          TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
-          TextField(controller: subjectCtrl, decoration: const InputDecoration(labelText: 'Subject ID')),
+    final passwordCtrl = TextEditingController();
+    String? selectedSubject = teacher?.subjectId;
+    Get.dialog(StatefulBuilder(builder: (context, setState) {
+      return AlertDialog(
+        title: Text(teacher == null ? 'Add Teacher' : 'Edit Teacher'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
+            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
+            if (teacher == null)
+              TextField(
+                  controller: passwordCtrl,
+                  decoration: const InputDecoration(labelText: 'Password'),
+                  obscureText: true),
+            DropdownButtonFormField<String>(
+              value: selectedSubject,
+              items: c.subjects
+                  .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                  .toList(),
+              onChanged: (val) => setState(() => selectedSubject = val),
+              decoration: const InputDecoration(labelText: 'Subject'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('Cancel')),
+          TextButton(
+              onPressed: () {
+                final model = TeacherModel(
+                  id: teacher?.id ?? '',
+                  name: nameCtrl.text,
+                  email: emailCtrl.text,
+                  subjectId: selectedSubject ?? '',
+                );
+                if (teacher == null) {
+                  c.addTeacher(model, passwordCtrl.text);
+                } else {
+                  c.updateTeacher(model);
+                }
+                Get.back();
+              },
+              child: const Text('Save')),
         ],
-      ),
-      actions: [
-        TextButton(onPressed: Get.back, child: const Text('Cancel')),
-        TextButton(
-            onPressed: () {
-              final model = TeacherModel(
-                id: teacher?.id ?? '',
-                name: nameCtrl.text,
-                email: emailCtrl.text,
-                subjectId: subjectCtrl.text,
-              );
-              if (teacher == null) {
-                c.addTeacher(model);
-              } else {
-                c.updateTeacher(model);
-              }
-              Get.back();
-            },
-            child: const Text('Save')),
-      ],
-    ));
+      );
+    }));
   }
 
   void _showClassDialog({SchoolClassModel? schoolClass}) {
     final nameCtrl = TextEditingController(text: schoolClass?.name);
-    final teacherCtrl = TextEditingController(text: schoolClass?.teacherId);
-    Get.dialog(AlertDialog(
-      title: Text(schoolClass == null ? 'Add Class' : 'Edit Class'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-          TextField(controller: teacherCtrl, decoration: const InputDecoration(labelText: 'Teacher ID')),
+    String? selectedTeacher = schoolClass?.teacherId;
+    final selectedChildren = <String>[...schoolClass?.childIds ?? []];
+    Get.dialog(StatefulBuilder(builder: (context, setState) {
+      return AlertDialog(
+        title: Text(schoolClass == null ? 'Add Class' : 'Edit Class'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Name')),
+              DropdownButtonFormField<String>(
+                value: selectedTeacher,
+                items: c.teachers
+                    .map((t) => DropdownMenuItem(value: t.id, child: Text(t.name)))
+                    .toList(),
+                onChanged: (val) => setState(() => selectedTeacher = val),
+                decoration: const InputDecoration(labelText: 'Teacher'),
+              ),
+              const SizedBox(height: 8),
+              ...c.children.map((ch) => CheckboxListTile(
+                    title: Text(ch.name),
+                    value: selectedChildren.contains(ch.id),
+                    onChanged: (val) => setState(() {
+                      if (val == true) {
+                        if (!selectedChildren.contains(ch.id)) {
+                          selectedChildren.add(ch.id);
+                        }
+                      } else {
+                        selectedChildren.remove(ch.id);
+                      }
+                    }),
+                  )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('Cancel')),
+          TextButton(
+              onPressed: () {
+                final model = SchoolClassModel(
+                  id: schoolClass?.id ?? '',
+                  name: nameCtrl.text,
+                  teacherId: selectedTeacher ?? '',
+                  childIds: selectedChildren,
+                );
+                if (schoolClass == null) {
+                  c.addClass(model);
+                } else {
+                  c.updateClass(model);
+                }
+                Get.back();
+              },
+              child: const Text('Save')),
         ],
-      ),
-      actions: [
-        TextButton(onPressed: Get.back, child: const Text('Cancel')),
-        TextButton(
-            onPressed: () {
-              final model = SchoolClassModel(
-                id: schoolClass?.id ?? '',
-                name: nameCtrl.text,
-                teacherId: teacherCtrl.text,
-              );
-              if (schoolClass == null) {
-                c.addClass(model);
-              } else {
-                c.updateClass(model);
-              }
-              Get.back();
-            },
-            child: const Text('Save')),
-      ],
-    ));
+      );
+    }));
   }
 
   void _showChildDialog({ChildModel? child}) {
     final nameCtrl = TextEditingController(text: child?.name);
-    final parentCtrl = TextEditingController(text: child?.parentId);
-    final classCtrl = TextEditingController(text: child?.classId);
-    Get.dialog(AlertDialog(
-      title: Text(child == null ? 'Add Child' : 'Edit Child'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-          TextField(controller: parentCtrl, decoration: const InputDecoration(labelText: 'Parent ID')),
-          TextField(controller: classCtrl, decoration: const InputDecoration(labelText: 'Class ID')),
+    String? selectedParent = child?.parentId;
+    String? selectedClass = child?.classId;
+    Get.dialog(StatefulBuilder(builder: (context, setState) {
+      return AlertDialog(
+        title: Text(child == null ? 'Add Child' : 'Edit Child'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Name')),
+            DropdownButtonFormField<String>(
+              value: selectedParent,
+              items: c.parents
+                  .map((p) => DropdownMenuItem(value: p.id, child: Text(p.name)))
+                  .toList(),
+              onChanged: (val) => setState(() => selectedParent = val),
+              decoration: const InputDecoration(labelText: 'Parent'),
+            ),
+            DropdownButtonFormField<String>(
+              value: selectedClass,
+              items: c.classes
+                  .map((cl) => DropdownMenuItem(value: cl.id, child: Text(cl.name)))
+                  .toList(),
+              onChanged: (val) => setState(() => selectedClass = val),
+              decoration: const InputDecoration(labelText: 'Class'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: Get.back, child: const Text('Cancel')),
+          TextButton(
+              onPressed: () {
+                final model = ChildModel(
+                  id: child?.id ?? '',
+                  name: nameCtrl.text,
+                  parentId: selectedParent ?? '',
+                  classId: selectedClass ?? '',
+                );
+                if (child == null) {
+                  c.addChild(model);
+                } else {
+                  c.updateChild(model);
+                }
+                Get.back();
+              },
+              child: const Text('Save')),
         ],
-      ),
-      actions: [
-        TextButton(onPressed: Get.back, child: const Text('Cancel')),
-        TextButton(
-            onPressed: () {
-              final model = ChildModel(
-                id: child?.id ?? '',
-                name: nameCtrl.text,
-                parentId: parentCtrl.text,
-                classId: classCtrl.text,
-              );
-              if (child == null) {
-                c.addChild(model);
-              } else {
-                c.updateChild(model);
-              }
-              Get.back();
-            },
-            child: const Text('Save')),
-      ],
-    ));
+      );
+    }));
   }
 
   void _showSubjectDialog({SubjectModel? subject}) {
