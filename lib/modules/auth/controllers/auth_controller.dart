@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/routes/app_pages.dart';
@@ -41,8 +42,16 @@ class AuthController extends GetxController {
 
         await user.getIdToken(true);
         final token = await user.getIdTokenResult(true);
-        final role = token.claims?['role'];
+        String? role = token.claims?['role'];
         debugPrint('User role: $role');
+
+        if (role == null) {
+          final doc = await FirebaseFirestore.instance
+              .collection('userRoles')
+              .doc(user.uid)
+              .get();
+          role = doc.data()?['role'];
+        }
 
         if (role == null) throw 'No role assigned to this user';
 

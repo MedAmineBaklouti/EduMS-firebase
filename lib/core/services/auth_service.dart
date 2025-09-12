@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,9 +33,16 @@ class AuthService extends GetxService {
       );
 
       await credential.user?.getIdToken(true);
-
       final idTokenResult = await credential.user?.getIdTokenResult(true);
-      final role = idTokenResult?.claims?['role'];
+      String? role = idTokenResult?.claims?['role'];
+
+      if (role == null) {
+        final doc = await _firestore
+            .collection('userRoles')
+            .doc(credential.user!.uid)
+            .get();
+        role = doc.data()?['role'];
+      }
 
       if (role == null) {
         await _auth.signOut();
@@ -50,19 +58,30 @@ class AuthService extends GetxService {
     }
   }
 
-  Future<UserCredential> registerUser(
+  Future<String> registerUser(
       {required String email,
       required String password,
       required String role}) async {
-    final credential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
+    final firebaseApp = await Firebase.initializeApp(
+      name: 'registerUser',
+      options: Firebase.app().options,
     );
-    await _firestore
-        .collection('userRoles')
-        .doc(credential.user!.uid)
-        .set({'role': role});
-    return credential;
+    try {
+      final secondaryAuth = FirebaseAuth.instanceFor(app: firebaseApp);
+      final cred = await secondaryAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final uid = cred.user!.uid;
+      await _firestore
+          .collection('userRoles')
+          .doc(uid)
+          .set({'role': role});
+      await secondaryAuth.signOut();
+      return uid;
+    } finally {
+      await firebaseApp.delete();
+    }
   }
 
   Future<void> logout() async {

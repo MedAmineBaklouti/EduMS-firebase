@@ -246,7 +246,7 @@ class AdminControlView extends StatelessWidget {
   void _showClassDialog({SchoolClassModel? schoolClass}) {
     final nameCtrl = TextEditingController(text: schoolClass?.name);
     String? selectedTeacher = schoolClass?.teacherId;
-    final selectedChildren = <String>[...schoolClass?.childIds ?? []];
+    final selectedChildren = <String>[...?schoolClass?.childIds];
     Get.dialog(StatefulBuilder(builder: (context, setState) {
       return AlertDialog(
         title: Text(schoolClass == null ? 'Add Class' : 'Edit Class'),
@@ -295,7 +295,8 @@ class AdminControlView extends StatelessWidget {
                 if (schoolClass == null) {
                   c.addClass(model);
                 } else {
-                  c.updateClass(model);
+                  c.updateClass(model,
+                      previousChildIds: schoolClass.childIds);
                 }
                 Get.back();
               },
