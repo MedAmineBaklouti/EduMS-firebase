@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../app/routes/app_pages.dart';
 
 class SplashView extends StatefulWidget {
@@ -33,7 +34,15 @@ class _SplashViewState extends State<SplashView> {
     try {
       await user.getIdToken(true);
       final token = await user.getIdTokenResult(true);
-      final role = token.claims?['role'];
+      String? role = token.claims?['role'];
+
+      if (role == null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('userRoles')
+            .doc(user.uid)
+            .get();
+        role = doc.data()?['role'];
+      }
 
       switch (role) {
         case 'admin':

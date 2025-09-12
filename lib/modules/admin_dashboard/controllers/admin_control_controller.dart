@@ -65,10 +65,10 @@ class AdminControlController extends GetxController {
   }
 
   Future<void> addParent(ParentModel parent, String password) async {
-    final cred = await _auth.registerUser(
+    final uid = await _auth.registerUser(
         email: parent.email, password: password, role: 'parent');
     final model = ParentModel(
-      id: cred.user!.uid,
+      id: uid,
       name: parent.name,
       email: parent.email,
       phone: parent.phone,
@@ -88,10 +88,10 @@ class AdminControlController extends GetxController {
   }
 
   Future<void> addTeacher(TeacherModel teacher, String password) async {
-    final cred = await _auth.registerUser(
+    final uid = await _auth.registerUser(
         email: teacher.email, password: password, role: 'teacher');
     final model = TeacherModel(
-      id: cred.user!.uid,
+      id: uid,
       name: teacher.name,
       email: teacher.email,
       subjectId: teacher.subjectId,
@@ -111,12 +111,31 @@ class AdminControlController extends GetxController {
   }
 
   Future<void> addClass(SchoolClassModel schoolClass) async {
-    await _db.addSchoolClass(schoolClass);
+    final id = await _db.addSchoolClass(schoolClass);
+    if (schoolClass.childIds.isNotEmpty) {
+      await _db.setChildrenClass(schoolClass.childIds, id);
+    }
     await _loadAll();
   }
 
-  Future<void> updateClass(SchoolClassModel schoolClass) async {
+  Future<void> updateClass(SchoolClassModel schoolClass,
+      {required List<String> previousChildIds}) async {
     await _db.updateSchoolClass(schoolClass);
+
+    final added = schoolClass.childIds
+        .where((id) => !previousChildIds.contains(id))
+        .toList();
+    final removed = previousChildIds
+        .where((id) => !schoolClass.childIds.contains(id))
+        .toList();
+
+    if (added.isNotEmpty) {
+      await _db.setChildrenClass(added, schoolClass.id);
+    }
+    if (removed.isNotEmpty) {
+      await _db.setChildrenClass(removed, '');
+    }
+
     await _loadAll();
   }
 

@@ -62,8 +62,9 @@ class DatabaseService extends GetxService {
   }
 
   /// School class CRUD operations
-  Future<void> addSchoolClass(SchoolClassModel schoolClass) async {
-    await _firestore.collection('classes').add(schoolClass.toMap());
+  Future<String> addSchoolClass(SchoolClassModel schoolClass) async {
+    final doc = await _firestore.collection('classes').add(schoolClass.toMap());
+    return doc.id;
   }
 
   Future<void> updateSchoolClass(SchoolClassModel schoolClass) async {
@@ -72,6 +73,14 @@ class DatabaseService extends GetxService {
 
   Future<void> deleteSchoolClass(String id) async {
     await _firestore.collection('classes').doc(id).delete();
+  }
+
+  Future<void> setChildrenClass(List<String> childIds, String classId) async {
+    final batch = _firestore.batch();
+    for (final id in childIds) {
+      batch.update(_firestore.collection('children').doc(id), {'classId': classId});
+    }
+    await batch.commit();
   }
 
   /// Child CRUD operations
