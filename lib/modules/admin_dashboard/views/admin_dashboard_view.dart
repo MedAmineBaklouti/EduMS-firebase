@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/widgets/dashboard_card.dart';
 import '../../../core/widgets/role_dashboard.dart';
 import '../controllers/admin_controller.dart';
+import '../../../app/routes/app_pages.dart';
 
 class AdminDashboard extends StatelessWidget {
   final AdminController _controller = Get.find();
@@ -19,7 +20,7 @@ class AdminDashboard extends StatelessWidget {
           title: 'Announcements',
           subtitle: 'School notices',
           color: Colors.purple,
-          onTap: () => Get.toNamed('/admin/announcements'),
+          onTap: () => Get.toNamed(AppPages.ADMIN_ANNOUNCEMENTS),
         ),
         DashboardCard(
           icon: Icons.message,
@@ -63,6 +64,13 @@ class AdminDashboard extends StatelessWidget {
           subtitle: 'Transportation',
           color: Colors.indigo,
           onTap: () => Get.toNamed('/admin/pickup'),
+        ),
+        DashboardCard(
+          icon: Icons.settings,
+          title: 'Control',
+          subtitle: 'Manage data',
+          color: Colors.grey,
+          onTap: () => Get.toNamed(AppPages.ADMIN_CONTROL),
         ),
       ],
     );

@@ -34,7 +34,13 @@ class AuthService extends GetxService {
       await credential.user?.getIdToken(true);
 
       final idTokenResult = await credential.user?.getIdTokenResult(true);
-      final role = idTokenResult?.claims?['role'];
+      String? role = idTokenResult?.claims?['role'];
+
+      if (role == null) {
+        final doc =
+            await _firestore.collection('users').doc(credential.user!.uid).get();
+        role = doc.data()?['role'];
+      }
 
       if (role == null) {
         await _auth.signOut();
@@ -48,6 +54,19 @@ class AuthService extends GetxService {
     } on FirebaseAuthException catch (e) {
       throw e.message ?? 'Login failed';
     }
+  }
+
+  Future<String> createUser(
+      String email, String password, String role) async {
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    await _firestore
+        .collection('users')
+        .doc(credential.user!.uid)
+        .set({'role': role});
+    return credential.user!.uid;
   }
 
   Future<void> logout() async {
