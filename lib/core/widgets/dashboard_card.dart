@@ -39,31 +39,34 @@ class DashboardCard extends StatelessWidget {
                 ),
                 child: Icon(icon, size: 30, color: color),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
+                child: Center(
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                     textAlign: TextAlign.center,
-                    maxLines: 1,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
+                child: Center(
                   child: Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
                     textAlign: TextAlign.center,
-                    maxLines: 1,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),

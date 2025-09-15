@@ -68,7 +68,7 @@ class AdminDashboard extends StatelessWidget {
         DashboardCard(
           icon: Icons.settings,
           title: 'Control',
-          subtitle: 'Manage data',
+          subtitle: 'Manage data & children',
           color: Colors.grey,
           onTap: () => Get.toNamed(AppPages.ADMIN_CONTROL),
         ),
