@@ -91,7 +91,23 @@ class AdminControlView extends StatelessWidget {
             children: c.classes
                 .map((cl) => ListTile(
                       title: Text(cl.name),
-                      subtitle: Text('Teacher: ${cl.teacherId}'),
+                      subtitle: Text(cl.teacherSubjects.entries
+                          .map((e) {
+                            final subjectName = c.subjects
+                                .firstWhere(
+                                    (s) => s.id == e.key,
+                                    orElse: () =>
+                                        SubjectModel(id: '', name: ''))
+                                .name;
+                            final teacherName = c.teachers
+                                .firstWhere(
+                                    (t) => t.id == e.value,
+                                    orElse: () => TeacherModel(
+                                        id: '', name: '', email: '', subjectId: ''))
+                                .name;
+                            return '$subjectName: $teacherName';
+                          })
+                          .join(', ')),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed: () => c.deleteClass(cl.id),
@@ -245,9 +261,28 @@ class AdminControlView extends StatelessWidget {
 
   void _showClassDialog({SchoolClassModel? schoolClass}) {
     final nameCtrl = TextEditingController(text: schoolClass?.name);
-    String? selectedTeacher = schoolClass?.teacherId;
     final selectedChildren = <String>[...?schoolClass?.childIds];
+    final assignments = [
+      for (final e in schoolClass?.teacherSubjects.entries ?? {})
+        {'subjectId': e.key, 'teacherId': e.value}
+    ];
+
     Get.dialog(StatefulBuilder(builder: (context, setState) {
+      void addAssignment() {
+        final availableSubjects = c.subjects
+            .where(
+                (s) => !assignments.any((a) => a['subjectId'] == s.id))
+            .toList();
+        if (availableSubjects.isEmpty) return;
+        final subjectId = availableSubjects.first.id;
+        final teachersForSubject = c.teachers
+            .where((t) => t.subjectId == subjectId)
+            .toList();
+        final teacherId =
+            teachersForSubject.isNotEmpty ? teachersForSubject.first.id : '';
+        assignments.add({'subjectId': subjectId, 'teacherId': teacherId});
+      }
+
       return AlertDialog(
         title: Text(schoolClass == null ? 'Add Class' : 'Edit Class'),
         content: SingleChildScrollView(
@@ -257,13 +292,75 @@ class AdminControlView extends StatelessWidget {
               TextField(
                   controller: nameCtrl,
                   decoration: const InputDecoration(labelText: 'Name')),
-              DropdownButtonFormField<String>(
-                value: selectedTeacher,
-                items: c.teachers
-                    .map((t) => DropdownMenuItem(value: t.id, child: Text(t.name)))
-                    .toList(),
-                onChanged: (val) => setState(() => selectedTeacher = val),
-                decoration: const InputDecoration(labelText: 'Teacher'),
+              Column(
+                children: [
+                  ...assignments.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final assignment = entry.value;
+                    final subjectItems = c.subjects
+                        .where((s) =>
+                            s.id == assignment['subjectId'] ||
+                            !assignments
+                                .any((a) => a['subjectId'] == s.id))
+                        .map((s) =>
+                            DropdownMenuItem(value: s.id, child: Text(s.name)))
+                        .toList();
+                    final teacherItems = c.teachers
+                        .where((t) => t.subjectId == assignment['subjectId'])
+                        .map((t) =>
+                            DropdownMenuItem(value: t.id, child: Text(t.name)))
+                        .toList();
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: assignment['subjectId'],
+                            items: subjectItems,
+                            onChanged: (val) {
+                              setState(() {
+                                assignment['subjectId'] = val ?? '';
+                                final teachers = c.teachers
+                                    .where((t) =>
+                                        t.subjectId == assignment['subjectId'])
+                                    .toList();
+                                assignment['teacherId'] = teachers.isNotEmpty
+                                    ? teachers.first.id
+                                    : '';
+                              });
+                            },
+                            decoration:
+                                const InputDecoration(labelText: 'Subject'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: assignment['teacherId'].isEmpty
+                                ? null
+                                : assignment['teacherId'],
+                            items: teacherItems,
+                            onChanged: (val) =>
+                                setState(() =>
+                                    assignment['teacherId'] = val ?? ''),
+                            decoration:
+                                const InputDecoration(labelText: 'Teacher'),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle),
+                          onPressed: () => setState(() {
+                            assignments.removeAt(i);
+                          }),
+                        )
+                      ],
+                    );
+                  }),
+                  TextButton.icon(
+                    onPressed: () => setState(() => addAssignment()),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Teacher'),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               ...c.children.map((ch) => CheckboxListTile(
@@ -286,10 +383,16 @@ class AdminControlView extends StatelessWidget {
           TextButton(onPressed: Get.back, child: const Text('Cancel')),
           TextButton(
               onPressed: () {
+                final teacherSubjects = {
+                  for (final a in assignments)
+                    if ((a['subjectId'] ?? '').isNotEmpty &&
+                        (a['teacherId'] ?? '').isNotEmpty)
+                      a['subjectId']!: a['teacherId']!,
+                };
                 final model = SchoolClassModel(
                   id: schoolClass?.id ?? '',
                   name: nameCtrl.text,
-                  teacherId: selectedTeacher ?? '',
+                  teacherSubjects: teacherSubjects,
                   childIds: selectedChildren,
                 );
                 if (schoolClass == null) {
