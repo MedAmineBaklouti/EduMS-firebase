@@ -2,6 +2,7 @@
 import 'package:get/get_navigation/src/routes/get_route.dart';
 
 import '../../modules/splash/splash_view.dart';
+import '../../modules/announcement/views/announcement_list_view.dart';
 import '../../modules/auth/views/login_view.dart';
 import '../../modules/admin_dashboard/views/admin_dashboard_view.dart';
 import '../../modules/teachers_dashboard/views/teacher_dashboard_view.dart';
@@ -15,6 +16,9 @@ abstract class AppPages {
   static const ADMIN_CONTROL = '/admin/control';
   static const TEACHER_HOME = '/teacher';
   static const PARENT_HOME  = '/parent';
+  static const ADMIN_ANNOUNCEMENTS = '/admin/announcements';
+  static const TEACHER_ANNOUNCEMENTS = '/teacher/announcements';
+  static const PARENT_ANNOUNCEMENTS = '/parent/announcements';
 
   static final routes = [
     GetPage(name: SPLASH,      page: () => SplashView()),
@@ -23,5 +27,8 @@ abstract class AppPages {
     GetPage(name: ADMIN_CONTROL, page: () => AdminControlView()),
     GetPage(name: TEACHER_HOME,page: () => TeacherDashboard()),
     GetPage(name: PARENT_HOME, page: () => ParentDashboard()),
+    GetPage(name: ADMIN_ANNOUNCEMENTS, page: () => AnnouncementListView(isAdmin: true)),
+    GetPage(name: TEACHER_ANNOUNCEMENTS, page: () => AnnouncementListView(audience: 'teachers')),
+    GetPage(name: PARENT_ANNOUNCEMENTS, page: () => AnnouncementListView(audience: 'parents')),
   ];
 }
