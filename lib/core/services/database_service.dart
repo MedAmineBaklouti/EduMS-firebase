@@ -5,6 +5,7 @@ import '../../data/models/child_model.dart';
 import '../../data/models/parent_model.dart';
 import '../../data/models/school_class_model.dart';
 import '../../data/models/subject_model.dart';
+import '../../data/models/announcement_model.dart';
 import '../../data/models/teacher_model.dart';
 
 class DatabaseService extends GetxService {
@@ -94,5 +95,31 @@ class DatabaseService extends GetxService {
 
   Future<void> deleteChild(String id) async {
     await _firestore.collection('children').doc(id).delete();
+  }
+
+  /// Announcement CRUD operations
+  Future<String> addAnnouncement(AnnouncementModel announcement) async {
+    final doc = await _firestore.collection('announcements').add(announcement.toMap());
+    return doc.id;
+  }
+
+  Future<void> updateAnnouncement(AnnouncementModel announcement) async {
+    await _firestore.collection('announcements').doc(announcement.id).update(announcement.toMap());
+  }
+
+  Future<void> deleteAnnouncement(String id) async {
+    await _firestore.collection('announcements').doc(id).delete();
+  }
+
+  Stream<List<AnnouncementModel>> streamAnnouncements({String? audience}) {
+    Query query = _firestore.collection('announcements');
+    if (audience != null) {
+      query = query.where('audience', arrayContains: audience);
+    }
+    return query
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => AnnouncementModel.fromDoc(doc)).toList());
   }
 }
