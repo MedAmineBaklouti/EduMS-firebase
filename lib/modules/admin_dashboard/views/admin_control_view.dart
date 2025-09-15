@@ -262,8 +262,9 @@ class AdminControlView extends StatelessWidget {
   void _showClassDialog({SchoolClassModel? schoolClass}) {
     final nameCtrl = TextEditingController(text: schoolClass?.name);
     final selectedChildren = <String>[...?schoolClass?.childIds];
-    final assignments = [
-      for (final e in schoolClass?.teacherSubjects.entries ?? {})
+    final assignments = <Map<String, String>>[
+      for (final e
+          in schoolClass?.teacherSubjects.entries ?? <MapEntry<String, String>>[])
         {'subjectId': e.key, 'teacherId': e.value}
     ];
 
@@ -383,7 +384,7 @@ class AdminControlView extends StatelessWidget {
           TextButton(onPressed: Get.back, child: const Text('Cancel')),
           TextButton(
               onPressed: () {
-                final teacherSubjects = {
+                final teacherSubjects = <String, String>{
                   for (final a in assignments)
                     if ((a['subjectId'] ?? '').isNotEmpty &&
                         (a['teacherId'] ?? '').isNotEmpty)
