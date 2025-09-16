@@ -173,18 +173,33 @@ class AdminControlView extends StatelessWidget {
     final passwordCtrl = TextEditingController();
     Get.dialog(AlertDialog(
       title: Text(parent == null ? 'Add Parent' : 'Edit Parent'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-          TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
-          TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone')),
-          if (parent == null)
-            TextField(
-                controller: passwordCtrl,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true),
-        ],
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Name')),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: emailCtrl,
+                  decoration: const InputDecoration(labelText: 'Email')),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: phoneCtrl,
+                  decoration: const InputDecoration(labelText: 'Phone')),
+              if (parent == null) ...[
+                const SizedBox(height: 12),
+                TextField(
+                    controller: passwordCtrl,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                    obscureText: true),
+              ],
+            ],
+          ),
+        ),
       ),
       actions: [
         TextButton(onPressed: Get.back, child: const Text('Cancel')),
@@ -216,25 +231,40 @@ class AdminControlView extends StatelessWidget {
     Get.dialog(StatefulBuilder(builder: (context, setState) {
       return AlertDialog(
         title: Text(teacher == null ? 'Add Teacher' : 'Edit Teacher'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
-            if (teacher == null)
-              TextField(
-                  controller: passwordCtrl,
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  obscureText: true),
-            DropdownButtonFormField<String>(
-              value: selectedSubject,
-              items: c.subjects
-                  .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
-                  .toList(),
-              onChanged: (val) => setState(() => selectedSubject = val),
-              decoration: const InputDecoration(labelText: 'Subject'),
+        content: SingleChildScrollView(
+          child: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Name')),
+                const SizedBox(height: 12),
+                TextField(
+                    controller: emailCtrl,
+                    decoration: const InputDecoration(labelText: 'Email')),
+                if (teacher == null) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                      controller: passwordCtrl,
+                      decoration: const InputDecoration(labelText: 'Password'),
+                      obscureText: true),
+                ],
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedSubject,
+                  items: c.subjects
+                      .map((s) =>
+                          DropdownMenuItem(value: s.id, child: Text(s.name)))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedSubject = val),
+                  decoration: const InputDecoration(labelText: 'Subject'),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancel')),
@@ -269,6 +299,8 @@ class AdminControlView extends StatelessWidget {
     ];
 
     Get.dialog(StatefulBuilder(builder: (context, setState) {
+      final theme = Theme.of(context);
+
       void addAssignment() {
         final availableSubjects = c.subjects
             .where(
@@ -281,41 +313,59 @@ class AdminControlView extends StatelessWidget {
             .toList();
         final teacherId =
             teachersForSubject.isNotEmpty ? teachersForSubject.first.id : '';
-        assignments.add({'subjectId': subjectId, 'teacherId': teacherId});
+        setState(() {
+          assignments.add({'subjectId': subjectId, 'teacherId': teacherId});
+        });
       }
 
       return AlertDialog(
         title: Text(schoolClass == null ? 'Add Class' : 'Edit Class'),
         content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Name')),
-              Column(
-                children: [
-                  ...assignments.asMap().entries.map((entry) {
-                    final i = entry.key;
-                    final assignment = entry.value;
-                    final subjectItems = c.subjects
-                        .where((s) =>
-                            s.id == assignment['subjectId'] ||
-                            !assignments
-                                .any((a) => a['subjectId'] == s.id))
-                        .map((s) =>
-                            DropdownMenuItem(value: s.id, child: Text(s.name)))
-                        .toList();
-                    final teacherItems = c.teachers
-                        .where((t) => t.subjectId == assignment['subjectId'])
-                        .map((t) =>
-                            DropdownMenuItem(value: t.id, child: Text(t.name)))
-                        .toList();
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: assignment['subjectId'],
+          child: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Name')),
+                const SizedBox(height: 16),
+                if (assignments.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      'No teacher assignments yet. Tap "Add Teacher" to create one.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ...assignments.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final assignment = entry.value;
+                  final subjectItems = c.subjects
+                      .where((s) =>
+                          s.id == assignment['subjectId'] ||
+                          !assignments.any((a) => a['subjectId'] == s.id))
+                      .map((s) =>
+                          DropdownMenuItem(value: s.id, child: Text(s.name)))
+                      .toList();
+                  final teacherItems = c.teachers
+                      .where((t) => t.subjectId == assignment['subjectId'])
+                      .map((t) =>
+                          DropdownMenuItem(value: t.id, child: Text(t.name)))
+                      .toList();
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            value: assignment['subjectId'].isEmpty
+                                ? null
+                                : assignment['subjectId'],
                             items: subjectItems,
                             onChanged: (val) {
                               setState(() {
@@ -332,52 +382,82 @@ class AdminControlView extends StatelessWidget {
                             decoration:
                                 const InputDecoration(labelText: 'Subject'),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            isExpanded: true,
                             value: assignment['teacherId'].isEmpty
                                 ? null
                                 : assignment['teacherId'],
                             items: teacherItems,
-                            onChanged: (val) =>
-                                setState(() =>
-                                    assignment['teacherId'] = val ?? ''),
+                            onChanged: (val) => setState(
+                                () => assignment['teacherId'] = val ?? ''),
                             decoration:
                                 const InputDecoration(labelText: 'Teacher'),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle),
-                          onPressed: () => setState(() {
-                            assignments.removeAt(i);
-                          }),
-                        )
-                      ],
-                    );
-                  }),
-                  TextButton.icon(
-                    onPressed: () => setState(() => addAssignment()),
+                          if (teacherItems.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                'No teachers available for the selected subject yet.',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () => setState(() {
+                                assignments.removeAt(i);
+                              }),
+                              icon: const Icon(Icons.remove_circle_outline),
+                              label: const Text('Remove'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: addAssignment,
                     icon: const Icon(Icons.add),
                     label: const Text('Add Teacher'),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ...c.children.map((ch) => CheckboxListTile(
-                    title: Text(ch.name),
-                    value: selectedChildren.contains(ch.id),
-                    onChanged: (val) => setState(() {
-                      if (val == true) {
-                        if (!selectedChildren.contains(ch.id)) {
-                          selectedChildren.add(ch.id);
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Add a child',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                if (c.children.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      'No children available to add right now.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ...c.children.map((ch) => CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text(ch.name),
+                      value: selectedChildren.contains(ch.id),
+                      onChanged: (val) => setState(() {
+                        if (val == true) {
+                          if (!selectedChildren.contains(ch.id)) {
+                            selectedChildren.add(ch.id);
+                          }
+                        } else {
+                          selectedChildren.remove(ch.id);
                         }
-                      } else {
-                        selectedChildren.remove(ch.id);
-                      }
-                    }),
-                  )),
-            ],
+                      }),
+                    )),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -417,29 +497,40 @@ class AdminControlView extends StatelessWidget {
     Get.dialog(StatefulBuilder(builder: (context, setState) {
       return AlertDialog(
         title: Text(child == null ? 'Add Child' : 'Edit Child'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name')),
-            DropdownButtonFormField<String>(
-              value: selectedParent,
-              items: c.parents
-                  .map((p) => DropdownMenuItem(value: p.id, child: Text(p.name)))
-                  .toList(),
-              onChanged: (val) => setState(() => selectedParent = val),
-              decoration: const InputDecoration(labelText: 'Parent'),
+        content: SingleChildScrollView(
+          child: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Name')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedParent,
+                  items: c.parents
+                      .map((p) =>
+                          DropdownMenuItem(value: p.id, child: Text(p.name)))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedParent = val),
+                  decoration: const InputDecoration(labelText: 'Parent'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedClass,
+                  items: c.classes
+                      .map((cl) =>
+                          DropdownMenuItem(value: cl.id, child: Text(cl.name)))
+                      .toList(),
+                  onChanged: (val) => setState(() => selectedClass = val),
+                  decoration: const InputDecoration(labelText: 'Class'),
+                ),
+              ],
             ),
-            DropdownButtonFormField<String>(
-              value: selectedClass,
-              items: c.classes
-                  .map((cl) => DropdownMenuItem(value: cl.id, child: Text(cl.name)))
-                  .toList(),
-              onChanged: (val) => setState(() => selectedClass = val),
-              decoration: const InputDecoration(labelText: 'Class'),
-            ),
-          ],
+          ),
         ),
         actions: [
           TextButton(onPressed: Get.back, child: const Text('Cancel')),
@@ -468,9 +559,14 @@ class AdminControlView extends StatelessWidget {
     final nameCtrl = TextEditingController(text: subject?.name);
     Get.dialog(AlertDialog(
       title: Text(subject == null ? 'Add Subject' : 'Edit Subject'),
-      content: TextField(
-        controller: nameCtrl,
-        decoration: const InputDecoration(labelText: 'Name'),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 360,
+          child: TextField(
+            controller: nameCtrl,
+            decoration: const InputDecoration(labelText: 'Name'),
+          ),
+        ),
       ),
       actions: [
         TextButton(onPressed: Get.back, child: const Text('Cancel')),
