@@ -363,7 +363,7 @@ class AdminControlView extends StatelessWidget {
                         children: [
                           DropdownButtonFormField<String>(
                             isExpanded: true,
-                            value: assignment['subjectId'].isEmpty
+                            value: assignment['subjectId']!.isEmpty
                                 ? null
                                 : assignment['subjectId'],
                             items: subjectItems,
@@ -385,7 +385,7 @@ class AdminControlView extends StatelessWidget {
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
                             isExpanded: true,
-                            value: assignment['teacherId'].isEmpty
+                            value: assignment['teacherId']!.isEmpty
                                 ? null
                                 : assignment['teacherId'],
                             items: teacherItems,
