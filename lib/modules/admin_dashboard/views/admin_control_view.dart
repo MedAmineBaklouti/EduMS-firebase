@@ -127,15 +127,39 @@ class AdminControlView extends StatelessWidget {
     return Scaffold(
       body: Obx(() => ListView(
             children: c.children
-                .map((ch) => ListTile(
-                      title: Text(ch.name),
-                      subtitle: Text('Parent: ${ch.parentId} | Class: ${ch.classId}'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => c.deleteChild(ch.id),
-                      ),
-                      onTap: () => _showChildDialog(child: ch),
-                    ))
+                .map((ch) {
+                  final parentName = ch.parentId.isEmpty
+                      ? 'Unassigned'
+                      : c.parents
+                          .firstWhere(
+                            (p) => p.id == ch.parentId,
+                            orElse: () => ParentModel(
+                              id: '',
+                              name: 'Unknown parent',
+                              email: '',
+                              phone: '',
+                            ),
+                          )
+                          .name;
+                  final className = ch.classId.isEmpty
+                      ? 'Unassigned'
+                      : c.classes
+                          .firstWhere(
+                            (cl) => cl.id == ch.classId,
+                            orElse: () =>
+                                SchoolClassModel(id: '', name: 'Unknown class'),
+                          )
+                          .name;
+                  return ListTile(
+                    title: Text(ch.name),
+                    subtitle: Text('Parent: $parentName | Class: $className'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => c.deleteChild(ch.id),
+                    ),
+                    onTap: () => _showChildDialog(child: ch),
+                  );
+                })
                 .toList(),
           )),
       floatingActionButton: FloatingActionButton(
