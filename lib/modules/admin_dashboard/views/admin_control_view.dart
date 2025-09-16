@@ -13,13 +13,21 @@ class AdminControlView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return DefaultTabController(
       length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Admin Control'),
-          bottom: const TabBar(
-            tabs: [
+          centerTitle: true,
+          elevation: 0,
+          bottom: TabBar(
+            isScrollable: true,
+            indicatorWeight: 3,
+            labelStyle: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            tabs: const [
               Tab(text: 'Parents'),
               Tab(text: 'Teachers'),
               Tab(text: 'Classes'),
@@ -28,14 +36,26 @@ class AdminControlView extends StatelessWidget {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildParents(),
-            _buildTeachers(),
-            _buildClasses(),
-            _buildChildren(),
-            _buildSubjects(),
-          ],
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.05),
+                theme.colorScheme.surface,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: TabBarView(
+            children: [
+              _buildParents(),
+              _buildTeachers(),
+              _buildClasses(),
+              _buildChildren(),
+              _buildSubjects(),
+            ],
+          ),
         ),
       ),
     );
@@ -43,142 +63,577 @@ class AdminControlView extends StatelessWidget {
 
   Widget _buildParents() {
     return Scaffold(
-      body: Obx(() => ListView(
-            children: c.parents
-                .map((p) => ListTile(
-                      title: Text(p.name),
-                      subtitle: Text(p.email),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => c.deleteParent(p.id),
+      backgroundColor: Colors.transparent,
+      body: Builder(
+        builder: (context) => Obx(() {
+          final parents = c.parents;
+          if (parents.isEmpty) {
+            return _buildEmptyState(
+              context,
+              icon: Icons.diversity_3_outlined,
+              title: 'No parents yet',
+              message: 'Tap the button below to add a parent profile.',
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
+            physics: const BouncingScrollPhysics(),
+            itemCount: parents.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final parent = parents[index];
+              final theme = Theme.of(context);
+              return _buildManagementCard(
+                context: context,
+                icon: Icons.badge_outlined,
+                iconColor: theme.colorScheme.primary,
+                title: parent.name,
+                subtitle: 'Parent account',
+                onTap: () => _showParentDialog(parent: parent),
+                onDelete: () => c.deleteParent(parent.id),
+                footer: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildInfoChip(
+                        context,
+                        icon: Icons.mail_outline,
+                        label: parent.email,
                       ),
-                      onTap: () => _showParentDialog(parent: p),
-                    ))
-                .toList(),
-          )),
-      floatingActionButton: FloatingActionButton(
+                      if (parent.phone.isNotEmpty)
+                        _buildInfoChip(
+                          context,
+                          icon: Icons.phone_outlined,
+                          label: parent.phone,
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          );
+        }),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'parentsFab',
         onPressed: () => _showParentDialog(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Parent'),
       ),
     );
   }
 
   Widget _buildTeachers() {
     return Scaffold(
-      body: Obx(() => ListView(
-            children: c.teachers
-                .map((t) => ListTile(
-                      title: Text(t.name),
-                      subtitle: Text(t.email),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => c.deleteTeacher(t.id),
+      backgroundColor: Colors.transparent,
+      body: Builder(
+        builder: (context) => Obx(() {
+          final teachers = c.teachers;
+          if (teachers.isEmpty) {
+            return _buildEmptyState(
+              context,
+              icon: Icons.school_outlined,
+              title: 'No teachers yet',
+              message:
+                  'Invite teachers to start assigning them to subjects and classes.',
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
+            physics: const BouncingScrollPhysics(),
+            itemCount: teachers.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final teacher = teachers[index];
+              final theme = Theme.of(context);
+              final subject = _findSubjectById(teacher.subjectId);
+              final hasSubject =
+                  subject != null && subject.name.trim().isNotEmpty;
+              final subjectLabel = hasSubject
+                  ? subject!.name
+                  : 'Subject pending';
+
+              return _buildManagementCard(
+                context: context,
+                icon: Icons.person_outline,
+                iconColor: theme.colorScheme.secondary,
+                title: teacher.name,
+                subtitle:
+                    hasSubject ? 'Teaches $subjectLabel' : 'No subject assigned',
+                onTap: () => _showTeacherDialog(teacher: teacher),
+                onDelete: () => c.deleteTeacher(teacher.id),
+                footer: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildInfoChip(
+                        context,
+                        icon: Icons.mail_outline,
+                        label: teacher.email,
                       ),
-                      onTap: () => _showTeacherDialog(teacher: t),
-                    ))
-                .toList(),
-          )),
-      floatingActionButton: FloatingActionButton(
+                      _buildInfoChip(
+                        context,
+                        icon: Icons.menu_book_outlined,
+                        label: subjectLabel,
+                        color: hasSubject
+                            ? theme.colorScheme.secondary
+                            : theme.colorScheme.outline,
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          );
+        }),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'teachersFab',
         onPressed: () => _showTeacherDialog(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Teacher'),
       ),
     );
   }
 
   Widget _buildClasses() {
     return Scaffold(
-      body: Obx(() => ListView(
-            children: c.classes
-                .map((cl) => ListTile(
-                      title: Text(cl.name),
-                      subtitle: Text(cl.teacherSubjects.entries
-                          .map((e) {
-                            final subjectName = c.subjects
-                                .firstWhere(
-                                    (s) => s.id == e.key,
-                                    orElse: () =>
-                                        SubjectModel(id: '', name: ''))
-                                .name;
-                            final teacherName = c.teachers
-                                .firstWhere(
-                                    (t) => t.id == e.value,
-                                    orElse: () => TeacherModel(
-                                        id: '', name: '', email: '', subjectId: ''))
-                                .name;
-                            return '$subjectName: $teacherName';
-                          })
-                          .join(', ')),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => c.deleteClass(cl.id),
+      backgroundColor: Colors.transparent,
+      body: Builder(
+        builder: (context) => Obx(() {
+          final classes = c.classes;
+          if (classes.isEmpty) {
+            return _buildEmptyState(
+              context,
+              icon: Icons.meeting_room_outlined,
+              title: 'No classes created',
+              message: 'Add a class to start organising teachers and students.',
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
+            physics: const BouncingScrollPhysics(),
+            itemCount: classes.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final schoolClass = classes[index];
+              final theme = Theme.of(context);
+              final studentCount = schoolClass.childIds.length;
+              final subjectCount = schoolClass.teacherSubjects.length;
+              final subtitle =
+                  '${studentCount} ${studentCount == 1 ? 'student' : 'students'} • '
+                  '${subjectCount} ${subjectCount == 1 ? 'subject' : 'subjects'}';
+
+              return _buildManagementCard(
+                context: context,
+                icon: Icons.class_outlined,
+                iconColor: theme.colorScheme.primary,
+                title: schoolClass.name,
+                subtitle: subtitle,
+                onTap: () => _showClassDialog(schoolClass: schoolClass),
+                onDelete: () => c.deleteClass(schoolClass.id),
+                footer: [
+                  if (schoolClass.teacherSubjects.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: schoolClass.teacherSubjects.entries
+                          .map((entry) {
+                        final subject = _findSubjectById(entry.key);
+                        final subjectName =
+                            subject != null && subject.name.trim().isNotEmpty
+                                ? subject.name
+                                : 'Subject';
+                        final teacher = _findTeacherById(entry.value);
+                        final teacherAssigned =
+                            teacher != null && teacher.name.trim().isNotEmpty;
+                        final teacherName =
+                            teacherAssigned ? teacher!.name : 'Unassigned';
+                        return _buildInfoChip(
+                          context,
+                          icon: Icons.menu_book_outlined,
+                          label: '$subjectName: $teacherName',
+                          color: teacherAssigned
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
+                        );
+                      }).toList(),
+                    )
+                  else
+                    Text(
+                      'No teacher assignments yet',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
                       ),
-                      onTap: () => _showClassDialog(schoolClass: cl),
-                    ))
-                .toList(),
-          )),
-      floatingActionButton: FloatingActionButton(
+                    ),
+                  const SizedBox(height: 8),
+                  _buildInfoChip(
+                    context,
+                    icon: Icons.people_alt_outlined,
+                    label:
+                        '$studentCount ${studentCount == 1 ? 'student' : 'students'}',
+                  ),
+                ],
+              );
+            },
+          );
+        }),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'classesFab',
         onPressed: () => _showClassDialog(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Class'),
       ),
     );
   }
 
   Widget _buildChildren() {
     return Scaffold(
-      body: Obx(() {
-        final parentNameById = {for (final p in c.parents) p.id: p.name};
-        final classNameById = {for (final cl in c.classes) cl.id: cl.name};
+      backgroundColor: Colors.transparent,
+      body: Builder(
+        builder: (context) => Obx(() {
+          final children = c.children;
+          if (children.isEmpty) {
+            return _buildEmptyState(
+              context,
+              icon: Icons.family_restroom_outlined,
+              title: 'No children registered',
+              message: 'Add students to link them with parents and classes.',
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
+            physics: const BouncingScrollPhysics(),
+            itemCount: children.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final child = children[index];
+              final theme = Theme.of(context);
+              final parent = _findParentById(child.parentId);
+              final parentAssigned =
+                  parent != null && parent.name.trim().isNotEmpty;
+              final parentLabel =
+                  parentAssigned ? parent!.name : 'No parent linked';
+              final schoolClass = _findClassById(child.classId);
+              final classAssigned =
+                  schoolClass != null && schoolClass.name.trim().isNotEmpty;
+              final classLabel =
+                  classAssigned ? schoolClass!.name : 'Class pending';
 
-        return ListView(
-          children: c.children
-              .map((child) {
-                final parentName = child.parentId.isEmpty
-                    ? 'Unassigned'
-                    : parentNameById[child.parentId] ?? 'Unknown parent';
-                final className = child.classId.isEmpty
-                    ? 'Unassigned'
-                    : classNameById[child.classId] ?? 'Unknown class';
-
-                return ListTile(
-                  title: Text(child.name),
-                  subtitle:
-                      Text('Parent: $parentName | Class: $className'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => c.deleteChild(child.id),
+              return _buildManagementCard(
+                context: context,
+                icon: Icons.child_care_outlined,
+                iconColor: theme.colorScheme.tertiary,
+                title: child.name,
+                subtitle: classAssigned
+                    ? 'Class • $classLabel'
+                    : 'Awaiting class placement',
+                onTap: () => _showChildDialog(child: child),
+                onDelete: () => c.deleteChild(child.id),
+                footer: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildInfoChip(
+                        context,
+                        icon: Icons.diversity_3_outlined,
+                        label: parentLabel,
+                        color: parentAssigned
+                            ? null
+                            : theme.colorScheme.outline,
+                      ),
+                      _buildInfoChip(
+                        context,
+                        icon: Icons.meeting_room_outlined,
+                        label: classLabel,
+                        color: classAssigned
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.outline,
+                      ),
+                    ],
                   ),
-                  onTap: () => _showChildDialog(child: child),
-                );
-              })
-              .toList(),
-        );
-      }),
-      floatingActionButton: FloatingActionButton(
+                ],
+              );
+            },
+          );
+        }),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'childrenFab',
         onPressed: () => _showChildDialog(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Child'),
       ),
     );
   }
 
   Widget _buildSubjects() {
     return Scaffold(
-      body: Obx(() => ListView(
-            children: c.subjects
-                .map((s) => ListTile(
-                      title: Text(s.name),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => c.deleteSubject(s.id),
+      backgroundColor: Colors.transparent,
+      body: Builder(
+        builder: (context) => Obx(() {
+          final subjects = c.subjects;
+          if (subjects.isEmpty) {
+            return _buildEmptyState(
+              context,
+              icon: Icons.menu_book_outlined,
+              title: 'No subjects yet',
+              message: 'Create subjects to assign them to teachers and classes.',
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
+            physics: const BouncingScrollPhysics(),
+            itemCount: subjects.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final subject = subjects[index];
+              final theme = Theme.of(context);
+              final assignedTeachers =
+                  c.teachers.where((t) => t.subjectId == subject.id).toList();
+              final teacherCount = assignedTeachers.length;
+              final subtitle = teacherCount == 0
+                  ? 'No teachers assigned yet'
+                  : '$teacherCount ${teacherCount == 1 ? 'teacher' : 'teachers'} assigned';
+
+              return _buildManagementCard(
+                context: context,
+                icon: Icons.menu_book_outlined,
+                iconColor: theme.colorScheme.primary,
+                title: subject.name,
+                subtitle: subtitle,
+                onTap: () => _showSubjectDialog(subject: subject),
+                onDelete: () => c.deleteSubject(subject.id),
+                footer: [
+                  if (teacherCount > 0)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: assignedTeachers
+                          .map((teacher) => _buildInfoChip(
+                                context,
+                                icon: Icons.person_outline,
+                                label: teacher.name,
+                                color: theme.colorScheme.secondary,
+                              ))
+                          .toList(),
+                    )
+                  else
+                    Text(
+                      'Tap to assign a teacher.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
                       ),
-                      onTap: () => _showSubjectDialog(subject: s),
-                    ))
-                .toList(),
-          )),
-      floatingActionButton: FloatingActionButton(
+                    ),
+                ],
+              );
+            },
+          );
+        }),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'subjectsFab',
         onPressed: () => _showSubjectDialog(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Subject'),
       ),
     );
+  }
+
+  Widget _buildEmptyState(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 84,
+              width: 84,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 40, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildManagementCard({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    String? subtitle,
+    VoidCallback? onTap,
+    VoidCallback? onDelete,
+    List<Widget> footer = const [],
+  }) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 4,
+      shadowColor: theme.colorScheme.primary.withOpacity(0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: iconColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(icon, color: iconColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (onDelete != null)
+                    IconButton(
+                      onPressed: onDelete,
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: theme.colorScheme.error,
+                      ),
+                      tooltip: 'Delete',
+                    ),
+                ],
+              ),
+              if (footer.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                ...footer,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    Color? color,
+  }) {
+    final theme = Theme.of(context);
+    final baseColor = color ?? theme.colorScheme.primary;
+    return Chip(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      avatar: Icon(
+        icon,
+        size: 18,
+        color: baseColor,
+      ),
+      label: Text(
+        label,
+        style: theme.textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      backgroundColor: baseColor.withOpacity(0.12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+
+  ParentModel? _findParentById(String id) {
+    if (id.isEmpty) return null;
+    for (final parent in c.parents) {
+      if (parent.id == id) {
+        return parent;
+      }
+    }
+    return null;
+  }
+
+  SchoolClassModel? _findClassById(String id) {
+    if (id.isEmpty) return null;
+    for (final schoolClass in c.classes) {
+      if (schoolClass.id == id) {
+        return schoolClass;
+      }
+    }
+    return null;
+  }
+
+  TeacherModel? _findTeacherById(String id) {
+    if (id.isEmpty) return null;
+    for (final teacher in c.teachers) {
+      if (teacher.id == id) {
+        return teacher;
+      }
+    }
+    return null;
+  }
+
+  SubjectModel? _findSubjectById(String id) {
+    if (id.isEmpty) return null;
+    for (final subject in c.subjects) {
+      if (subject.id == id) {
+        return subject;
+      }
+    }
+    return null;
   }
 
   void _showParentDialog({ParentModel? parent}) {
