@@ -125,21 +125,34 @@ class AdminControlView extends StatelessWidget {
 
   Widget _buildChildren() {
     return Scaffold(
-      body: Obx(() => ListView(
-            children: c.childItems
-                .map((childItem) => ListTile(
-                      title: Text(childItem.child.name),
-                      subtitle: Text(
-                          'Parent: ${childItem.parentName} | Class: ${childItem.className}'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => c.deleteChild(childItem.child.id),
-                      ),
-                      onTap: () =>
-                          _showChildDialog(child: childItem.child),
-                    ))
-                .toList(),
-          )),
+      body: Obx(() {
+        final parentNameById = {for (final p in c.parents) p.id: p.name};
+        final classNameById = {for (final cl in c.classes) cl.id: cl.name};
+
+        return ListView(
+          children: c.children
+              .map((child) {
+                final parentName = child.parentId.isEmpty
+                    ? 'Unassigned'
+                    : parentNameById[child.parentId] ?? 'Unknown parent';
+                final className = child.classId.isEmpty
+                    ? 'Unassigned'
+                    : classNameById[child.classId] ?? 'Unknown class';
+
+                return ListTile(
+                  title: Text(child.name),
+                  subtitle:
+                      Text('Parent: $parentName | Class: $className'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => c.deleteChild(child.id),
+                  ),
+                  onTap: () => _showChildDialog(child: child),
+                );
+              })
+              .toList(),
+        );
+      }),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showChildDialog(),
         child: const Icon(Icons.add),
