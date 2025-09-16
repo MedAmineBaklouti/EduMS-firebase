@@ -8,18 +8,6 @@ import '../../../data/models/school_class_model.dart';
 import '../../../data/models/subject_model.dart';
 import '../../../data/models/teacher_model.dart';
 
-class ChildListItem {
-  final ChildModel child;
-  final String parentName;
-  final String className;
-
-  const ChildListItem({
-    required this.child,
-    required this.parentName,
-    required this.className,
-  });
-}
-
 class AdminControlController extends GetxController {
   final DatabaseService _db = Get.find();
   final AuthService _auth = Get.find();
@@ -28,15 +16,11 @@ class AdminControlController extends GetxController {
   final RxList<TeacherModel> teachers = <TeacherModel>[].obs;
   final RxList<SchoolClassModel> classes = <SchoolClassModel>[].obs;
   final RxList<ChildModel> children = <ChildModel>[].obs;
-  final RxList<ChildListItem> childItems = <ChildListItem>[].obs;
   final RxList<SubjectModel> subjects = <SubjectModel>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    ever<List<ParentModel>>(parents, (_) => _refreshChildItems());
-    ever<List<SchoolClassModel>>(classes, (_) => _refreshChildItems());
-    ever<List<ChildModel>>(children, (_) => _refreshChildItems());
     _loadAll();
   }
 
@@ -48,27 +32,6 @@ class AdminControlController extends GetxController {
       _loadChildren(),
       _loadSubjects(),
     ]);
-    _refreshChildItems();
-  }
-
-  void _refreshChildItems() {
-    final parentNameById = {for (final p in parents) p.id: p.name};
-    final classNameById = {for (final cl in classes) cl.id: cl.name};
-
-    childItems.assignAll(children.map((child) {
-      final parentName = child.parentId.isEmpty
-          ? 'Unassigned'
-          : parentNameById[child.parentId] ?? 'Unknown parent';
-      final className = child.classId.isEmpty
-          ? 'Unassigned'
-          : classNameById[child.classId] ?? 'Unknown class';
-
-      return ChildListItem(
-        child: child,
-        parentName: parentName,
-        className: className,
-      );
-    }));
   }
 
   Future<void> _loadParents() async {
