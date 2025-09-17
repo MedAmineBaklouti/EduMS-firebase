@@ -7,6 +7,7 @@ import '../../data/models/school_class_model.dart';
 import '../../data/models/subject_model.dart';
 import '../../data/models/announcement_model.dart';
 import '../../data/models/teacher_model.dart';
+import '../../data/models/course_model.dart';
 
 class DatabaseService extends GetxService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -121,5 +122,28 @@ class DatabaseService extends GetxService {
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => AnnouncementModel.fromDoc(doc)).toList());
+  }
+
+  /// Course CRUD operations
+  Future<String> addCourse(CourseModel course) async {
+    final doc = await _firestore.collection('courses').add(course.toMap());
+    return doc.id;
+  }
+
+  Future<void> updateCourse(CourseModel course) async {
+    await _firestore.collection('courses').doc(course.id).update(course.toMap());
+  }
+
+  Future<void> deleteCourse(String id) async {
+    await _firestore.collection('courses').doc(id).delete();
+  }
+
+  Stream<List<CourseModel>> streamCourses() {
+    return _firestore
+        .collection('courses')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => CourseModel.fromDoc(doc)).toList());
   }
 }

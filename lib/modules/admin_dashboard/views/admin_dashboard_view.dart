@@ -34,7 +34,7 @@ class AdminDashboard extends StatelessWidget {
           title: 'Courses',
           subtitle: 'Manage curriculum',
           color: Colors.blue,
-          onTap: () => Get.toNamed('/admin/courses'),
+          onTap: () => Get.toNamed(AppPages.ADMIN_COURSES),
         ),
         DashboardCard(
           icon: Icons.assignment,

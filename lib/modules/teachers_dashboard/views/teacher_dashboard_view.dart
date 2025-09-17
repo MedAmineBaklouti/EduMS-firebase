@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/widgets/dashboard_card.dart';
 import '../../../core/widgets/role_dashboard.dart';
+import '../../../app/routes/app_pages.dart';
 import '../controllers/teacher_controller.dart';
 
 class TeacherDashboard extends StatelessWidget {
@@ -14,6 +15,13 @@ class TeacherDashboard extends StatelessWidget {
       roleName: 'Teacher',
       onLogout: _controller.logout,
       cards: [
+        DashboardCard(
+          icon: Icons.menu_book,
+          title: 'Courses',
+          subtitle: 'Create and share lessons',
+          color: Colors.teal,
+          onTap: () => Get.toNamed(AppPages.TEACHER_COURSES),
+        ),
         DashboardCard(
           icon: Icons.school,
           title: 'My Classes',

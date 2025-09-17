@@ -8,6 +8,9 @@ import '../../modules/admin_dashboard/views/admin_dashboard_view.dart';
 import '../../modules/teachers_dashboard/views/teacher_dashboard_view.dart';
 import '../../modules/parents_dashboard/views/parent_dashboard_view.dart';
 import '../../modules/admin_dashboard/views/admin_control_view.dart';
+import '../../modules/courses/views/admin_courses_view.dart';
+import '../../modules/courses/views/teacher_courses_view.dart';
+import '../../modules/courses/views/parent_courses_view.dart';
 
 abstract class AppPages {
   static const SPLASH     = '/splash';
@@ -16,6 +19,9 @@ abstract class AppPages {
   static const ADMIN_CONTROL = '/admin/control';
   static const TEACHER_HOME = '/teacher';
   static const PARENT_HOME  = '/parent';
+  static const ADMIN_COURSES = '/admin/courses';
+  static const TEACHER_COURSES = '/teacher/courses';
+  static const PARENT_COURSES = '/parent/courses';
   static const ADMIN_ANNOUNCEMENTS = '/admin/announcements';
   static const TEACHER_ANNOUNCEMENTS = '/teacher/announcements';
   static const PARENT_ANNOUNCEMENTS = '/parent/announcements';
@@ -27,6 +33,9 @@ abstract class AppPages {
     GetPage(name: ADMIN_CONTROL, page: () => AdminControlView()),
     GetPage(name: TEACHER_HOME,page: () => TeacherDashboard()),
     GetPage(name: PARENT_HOME, page: () => ParentDashboard()),
+    GetPage(name: ADMIN_COURSES, page: () => AdminCoursesView()),
+    GetPage(name: TEACHER_COURSES, page: () => TeacherCoursesView()),
+    GetPage(name: PARENT_COURSES, page: () => ParentCoursesView()),
     GetPage(name: ADMIN_ANNOUNCEMENTS, page: () => AnnouncementListView(isAdmin: true)),
     GetPage(name: TEACHER_ANNOUNCEMENTS, page: () => AnnouncementListView(audience: 'teachers')),
     GetPage(name: PARENT_ANNOUNCEMENTS, page: () => AnnouncementListView(audience: 'parents')),
