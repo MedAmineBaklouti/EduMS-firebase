@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/widgets/dashboard_card.dart';
 import '../../../core/widgets/role_dashboard.dart';
+import '../../../app/routes/app_pages.dart';
 import '../controllers/parent_controller.dart';
 
 class ParentDashboard extends StatelessWidget {
@@ -20,6 +21,13 @@ class ParentDashboard extends StatelessWidget {
           subtitle: 'School notices',
           color: Colors.purple,
           onTap: () => Get.toNamed('/parent/announcements'),
+        ),
+        DashboardCard(
+          icon: Icons.menu_book,
+          title: 'Courses',
+          subtitle: 'View class materials',
+          color: Colors.teal,
+          onTap: () => Get.toNamed(AppPages.PARENT_COURSES),
         ),
         DashboardCard(
           icon: Icons.message,
