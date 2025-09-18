@@ -92,6 +92,36 @@ class ParentCoursesView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          Obx(() {
+            final chips = <Widget>[];
+            if (controller.selectedChildId.value.isNotEmpty) {
+              chips.add(_buildActiveFilterChip(
+                context,
+                label:
+                    'Child: ${controller.childName(controller.selectedChildId.value)}',
+                onRemoved: () => controller.updateChildFilter(''),
+              ));
+            }
+            if (controller.selectedSubjectId.value.isNotEmpty) {
+              chips.add(_buildActiveFilterChip(
+                context,
+                label:
+                    'Subject: ${controller.subjectName(controller.selectedSubjectId.value)}',
+                onRemoved: () => controller.updateSubjectFilter(''),
+              ));
+            }
+            if (chips.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: chips,
+              ),
+            );
+          }),
           Row(
             children: [
               Expanded(
@@ -159,6 +189,30 @@ class ParentCoursesView extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActiveFilterChip(
+    BuildContext context, {
+    required String label,
+    required VoidCallback onRemoved,
+  }) {
+    final theme = Theme.of(context);
+    return Chip(
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
+      ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
