@@ -93,6 +93,31 @@ class _SplashViewState extends State<SplashView> {
               ],
             ),
           ),
+
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 40),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Made with',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Image.asset(
+                    'assets/Denet_logo.png',
+                    height: 40,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
