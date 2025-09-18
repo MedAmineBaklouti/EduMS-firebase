@@ -114,8 +114,11 @@ class AnnouncementListView extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
     final dateText = _dateFormat.format(ann.createdAt);
-    final audienceLabels = _audienceLabels(ann);
+    final showAudience = isAdmin || highlightForAdmin;
+    final audienceLabels =
+        showAudience ? _audienceLabels(ann) : const <String>[];
     final showExpiryDetails = isAdmin || highlightForAdmin;
+    final showAudienceTags = showAudience && audienceLabels.isNotEmpty;
 
     return Material(
       color: Colors.transparent,
@@ -203,18 +206,20 @@ class AnnouncementListView extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  children: audienceLabels
-                      .map((label) => _buildTagChip(
-                            context,
-                            Icons.people_outline,
-                            label,
-                          ))
-                      .toList(),
-                ),
+                if (showAudienceTags) ...[
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: audienceLabels
+                        .map((label) => _buildTagChip(
+                              context,
+                              Icons.people_outline,
+                              label,
+                            ))
+                        .toList(),
+                  ),
+                ],
                 if (showExpiryDetails) ...[
                   const SizedBox(height: 16),
                   _buildExpiryStatus(

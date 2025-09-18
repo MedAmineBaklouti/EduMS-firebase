@@ -13,7 +13,6 @@ class AdminCoursesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Courses'),
@@ -23,24 +22,37 @@ class AdminCoursesView extends StatelessWidget {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        return Column(
-          children: [
-            _buildSearchAndStats(context),
-            _buildFilters(context),
-            Expanded(
-              child: controller.courses.isEmpty
-                  ? _buildEmptyState(context)
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                      itemCount: controller.courses.length,
-                      physics: const BouncingScrollPhysics(),
-                      separatorBuilder: (_, __) => const SizedBox(height: 18),
-                      itemBuilder: (context, index) {
-                        final course = controller.courses[index];
-                        return _AdminCourseTile(course: course);
-                      },
-                    ),
-            ),
+        return CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _buildFilters(context)),
+            SliverToBoxAdapter(child: _buildSearchAndStats(context)),
+            if (controller.courses.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
+                  child: _buildEmptyState(context),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final course = controller.courses[index];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == controller.courses.length - 1 ? 0 : 18,
+                        ),
+                        child: _AdminCourseTile(course: course),
+                      );
+                    },
+                    childCount: controller.courses.length,
+                  ),
+                ),
+              ),
           ],
         );
       }),
@@ -50,7 +62,7 @@ class AdminCoursesView extends StatelessWidget {
   Widget _buildSearchAndStats(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -83,37 +95,42 @@ class AdminCoursesView extends StatelessWidget {
             final filteredTeachers = controller.filteredTeacherCount;
             final filteredSubjects = controller.filteredSubjectCount;
             final filteredClasses = controller.filteredClassCount;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _buildSummaryCard(
-                  context,
-                  icon: Icons.menu_book_outlined,
-                  label: 'Visible courses',
-                  value: totalCount > 0
-                      ? '$filteredCount of $totalCount'
-                      : '$filteredCount',
-                ),
-                _buildSummaryCard(
-                  context,
-                  icon: Icons.groups_outlined,
-                  label: 'Teachers represented',
-                  value: filteredTeachers.toString(),
-                ),
-                _buildSummaryCard(
-                  context,
-                  icon: Icons.category_outlined,
-                  label: 'Subjects',
-                  value: filteredSubjects.toString(),
-                ),
-                _buildSummaryCard(
-                  context,
-                  icon: Icons.class_outlined,
-                  label: 'Classes covered',
-                  value: filteredClasses.toString(),
-                ),
-              ],
+            final cards = [
+              _buildSummaryCard(
+                context,
+                icon: Icons.menu_book_outlined,
+                label: 'Visible courses',
+                value: totalCount > 0
+                    ? '$filteredCount of $totalCount'
+                    : '$filteredCount',
+              ),
+              _buildSummaryCard(
+                context,
+                icon: Icons.groups_outlined,
+                label: 'Teachers represented',
+                value: filteredTeachers.toString(),
+              ),
+              _buildSummaryCard(
+                context,
+                icon: Icons.category_outlined,
+                label: 'Subjects',
+                value: filteredSubjects.toString(),
+              ),
+              _buildSummaryCard(
+                context,
+                icon: Icons.class_outlined,
+                label: 'Classes covered',
+                value: filteredClasses.toString(),
+              ),
+            ];
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 3,
+              children: cards,
             );
           }),
         ],
@@ -310,57 +327,54 @@ class AdminCoursesView extends StatelessWidget {
     required String value,
   }) {
     final theme = Theme.of(context);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 150),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.06),
-              blurRadius: 16,
-              offset: const Offset(0, 12),
-            ),
-          ],
-          border: Border.all(
-            color: theme.colorScheme.primary.withOpacity(0.1),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 12),
           ),
+        ],
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.1),
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.12),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+            child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

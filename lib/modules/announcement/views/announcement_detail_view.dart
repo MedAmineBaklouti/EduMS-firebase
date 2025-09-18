@@ -21,7 +21,7 @@ class AnnouncementDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final audienceLabels = _audienceLabels();
+    final audienceLabels = isAdmin ? _audienceLabels() : const <String>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -75,11 +75,34 @@ class AnnouncementDetailView extends StatelessWidget {
   Widget _buildHeroHeader(BuildContext context, List<String> audienceLabels) {
     final theme = Theme.of(context);
     final publishedLabel = DateFormat('MMM d, yyyy').format(announcement.createdAt);
-    final audienceSummary = audienceLabels.isEmpty
-        ? 'All audiences'
-        : audienceLabels.length == 1
-            ? audienceLabels.first
-            : '${audienceLabels.length} audiences';
+    final chips = <Widget>[
+      _buildHeroChip(
+        context,
+        icon: Icons.calendar_today_outlined,
+        label: 'Published $publishedLabel',
+      ),
+      _buildHeroChip(
+        context,
+        icon: Icons.hourglass_bottom_outlined,
+        label: _expiryDescription(),
+      ),
+    ];
+
+    if (isAdmin) {
+      final audienceSummary = audienceLabels.isEmpty ||
+              audienceLabels.contains('All audiences')
+          ? 'All audiences'
+          : audienceLabels.length == 1
+              ? audienceLabels.first
+              : '${audienceLabels.length} audiences';
+      chips.add(
+        _buildHeroChip(
+          context,
+          icon: Icons.people_outline,
+          label: 'Audience: $audienceSummary',
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
@@ -116,23 +139,7 @@ class AnnouncementDetailView extends StatelessWidget {
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: [
-              _buildHeroChip(
-                context,
-                icon: Icons.calendar_today_outlined,
-                label: 'Published $publishedLabel',
-              ),
-              _buildHeroChip(
-                context,
-                icon: Icons.hourglass_bottom_outlined,
-                label: _expiryDescription(),
-              ),
-              _buildHeroChip(
-                context,
-                icon: Icons.people_outline,
-                label: 'Audience: $audienceSummary',
-              ),
-            ],
+            children: chips,
           ),
         ],
       ),
@@ -148,6 +155,41 @@ class AnnouncementDetailView extends StatelessWidget {
     final published = detailedFormat.format(announcement.createdAt);
     final expiry = announcement.createdAt.add(const Duration(days: 7));
     final expiryLabel = detailedFormat.format(expiry);
+    final badges = <Widget>[
+      _buildOverviewBadge(
+        context,
+        icon: Icons.event_available_outlined,
+        label: 'Published $published',
+      ),
+      _buildOverviewBadge(
+        context,
+        icon: Icons.timer_outlined,
+        label: _expiryDescription(),
+      ),
+      _buildOverviewBadge(
+        context,
+        icon: Icons.calendar_month_outlined,
+        label: 'Expires $expiryLabel',
+      ),
+    ];
+
+    if (isAdmin) {
+      final audienceBadgeLabel = audienceLabels.isEmpty ||
+              audienceLabels.contains('All audiences')
+          ? 'All audiences'
+          : '${audienceLabels.length} audience${audienceLabels.length == 1 ? '' : 's'}';
+      badges.add(
+        _buildOverviewBadge(
+          context,
+          icon: Icons.people_outline,
+          label: audienceBadgeLabel,
+        ),
+      );
+    }
+
+    final specificAudienceLabels = audienceLabels
+        .where((label) => label.toLowerCase() != 'all audiences')
+        .toList();
 
     return Card(
       elevation: 0,
@@ -168,32 +210,9 @@ class AnnouncementDetailView extends StatelessWidget {
             Wrap(
               spacing: 12,
               runSpacing: 12,
-              children: [
-                _buildOverviewBadge(
-                  context,
-                  icon: Icons.event_available_outlined,
-                  label: 'Published $published',
-                ),
-                _buildOverviewBadge(
-                  context,
-                  icon: Icons.timer_outlined,
-                  label: _expiryDescription(),
-                ),
-                _buildOverviewBadge(
-                  context,
-                  icon: Icons.calendar_month_outlined,
-                  label: 'Expires $expiryLabel',
-                ),
-                _buildOverviewBadge(
-                  context,
-                  icon: Icons.people_outline,
-                  label: audienceLabels.isEmpty
-                      ? 'All audiences'
-                      : '${audienceLabels.length} audience${audienceLabels.length == 1 ? '' : 's'}',
-                ),
-              ],
+              children: badges,
             ),
-            if (audienceLabels.isNotEmpty) ...[
+            if (isAdmin && specificAudienceLabels.isNotEmpty) ...[
               const SizedBox(height: 20),
               Text(
                 'Target audiences',
@@ -205,7 +224,7 @@ class AnnouncementDetailView extends StatelessWidget {
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
-                children: audienceLabels
+                children: specificAudienceLabels
                     .map((label) => _buildAudienceChip(context, label))
                     .toList(),
               ),
