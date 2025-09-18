@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../data/models/course_model.dart';
 import '../controllers/admin_courses_controller.dart';
@@ -22,26 +23,39 @@ class AdminCoursesView extends StatelessWidget {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        return Column(
-          children: [
-            _buildFilters(context),
-            Expanded(
-              child: Obx(() {
-                if (controller.courses.isEmpty) {
-                  return _buildEmptyState(context);
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  itemCount: controller.courses.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final course = controller.courses[index];
-                    return _AdminCourseTile(course: course);
-                  },
-                );
-              }),
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.05),
+                theme.colorScheme.surface,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-          ],
+          ),
+          child: Column(
+            children: [
+              _buildFilters(context),
+              Expanded(
+                child: Obx(() {
+                  if (controller.courses.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: controller.courses.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 18),
+                    itemBuilder: (context, index) {
+                      final course = controller.courses[index];
+                      return _AdminCourseTile(course: course);
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
         );
       }),
     );
@@ -229,6 +243,8 @@ class _AdminCourseTile extends StatelessWidget {
 
   const _AdminCourseTile({required this.course});
 
+  static final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -238,6 +254,8 @@ class _AdminCourseTile extends StatelessWidget {
     final teacher = course.teacherName.isNotEmpty
         ? course.teacherName
         : 'Teacher unknown';
+    final hasClasses = course.classNames.isNotEmpty;
+    final dateText = _dateFormat.format(course.createdAt);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -260,11 +278,54 @@ class _AdminCourseTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  course.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        Icons.menu_book_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course.title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.label_important_outline,
+                                size: 18,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  subject,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -285,21 +346,68 @@ class _AdminCourseTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.menu_book_outlined,
+                      Icons.group_outlined,
                       size: 18,
                       color: theme.colorScheme.primary,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(
-                        subject,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                      child: hasClasses
+                          ? Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: course.classNames
+                                  .map(
+                                    (className) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        className,
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            )
+                          : Text(
+                              'No classes assigned',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_outlined,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Added on $dateText',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
