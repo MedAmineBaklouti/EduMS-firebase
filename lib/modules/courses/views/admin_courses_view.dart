@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/modern_scaffold.dart';
 import '../../../data/models/course_model.dart';
 import '../controllers/admin_courses_controller.dart';
 import 'course_detail_view.dart';
@@ -13,49 +14,37 @@ class AdminCoursesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
+    return ModernScaffold(
       appBar: AppBar(
         title: const Text('Courses'),
         centerTitle: true,
       ),
+      padding: EdgeInsets.zero,
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary.withOpacity(0.05),
-                theme.colorScheme.surface,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+        return Column(
+          children: [
+            _buildFilters(context),
+            Expanded(
+              child: Obx(() {
+                if (controller.courses.isEmpty) {
+                  return _buildEmptyState(context);
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: controller.courses.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 18),
+                  itemBuilder: (context, index) {
+                    final course = controller.courses[index];
+                    return _AdminCourseTile(course: course);
+                  },
+                );
+              }),
             ),
-          ),
-          child: Column(
-            children: [
-              _buildFilters(context),
-              Expanded(
-                child: Obx(() {
-                  if (controller.courses.isEmpty) {
-                    return _buildEmptyState(context);
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: controller.courses.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 18),
-                    itemBuilder: (context, index) {
-                      final course = controller.courses[index];
-                      return _AdminCourseTile(course: course);
-                    },
-                  );
-                }),
-              ),
-            ],
-          ),
+          ],
         );
       }),
     );

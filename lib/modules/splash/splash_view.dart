@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../app/routes/app_pages.dart';
+import '../../../core/widgets/modern_scaffold.dart';
 
 class SplashView extends StatefulWidget {
   @override
@@ -17,10 +19,7 @@ class _SplashViewState extends State<SplashView> {
   }
 
   Future<void> _initializeApp() async {
-    // Show splash for minimum 3 seconds
-    await Future.delayed(Duration(seconds: 5));
-
-    // Then check auth state
+    await Future.delayed(const Duration(seconds: 5));
     _checkAuthState();
   }
 
@@ -64,34 +63,53 @@ class _SplashViewState extends State<SplashView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
+    final theme = Theme.of(context);
+    return ModernScaffold(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(24),
+      extendBodyBehindAppBar: true,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Background image
-          Image.asset(
-            'assets/splash/background.png',
-            fit: BoxFit.cover,
-          ),
-
-          // Content
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Your logo
-                Image.asset(
-                  'assets/EduMS_logo.png',
-                  width: 200,
-                  height: 200,
-                ),
-                SizedBox(height: 20),
-                // Loading indicator
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+          Container(
+            width: 180,
+            height: 180,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.7),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.15),
+                  blurRadius: 32,
+                  offset: const Offset(0, 20),
                 ),
               ],
             ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Image.asset('assets/EduMS_logo.png'),
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'EduMS',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Preparing your personalized experience...',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.65),
+            ),
+          ),
+          const SizedBox(height: 28),
+          const SizedBox(
+            width: 38,
+            height: 38,
+            child: CircularProgressIndicator(strokeWidth: 3),
           ),
         ],
       ),

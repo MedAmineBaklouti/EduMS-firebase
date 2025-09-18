@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/widgets/modern_scaffold.dart';
 import '../../../data/models/course_model.dart';
 import '../controllers/teacher_courses_controller.dart';
 import 'course_detail_view.dart';
@@ -13,63 +14,50 @@ class TeacherCoursesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
+    return ModernScaffold(
       appBar: AppBar(
         title: const Text('My Courses'),
         centerTitle: true,
       ),
+      padding: EdgeInsets.zero,
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary.withOpacity(0.05),
-                theme.colorScheme.surface,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+        return Column(
+          children: [
+            _buildFilters(context),
+            Expanded(
+              child: controller.courses.isEmpty
+                  ? _buildEmptyState(context)
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: controller.courses.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final course = controller.courses[index];
+                        return Dismissible(
+                          key: ValueKey(course.id),
+                          background: _buildEditBackground(context),
+                          secondaryBackground: _buildDeleteBackground(context),
+                          confirmDismiss: (direction) async {
+                            if (direction == DismissDirection.startToEnd) {
+                              controller.openForm(course: course);
+                              return false;
+                            }
+                            final confirmed = await _confirmDelete(context);
+                            if (confirmed == true) {
+                              await controller.deleteCourse(course.id);
+                            }
+                            return confirmed ?? false;
+                          },
+                          child: _CourseListTile(course: course),
+                        );
+                      },
+                    ),
             ),
-          ),
-          child: Column(
-            children: [
-              _buildFilters(context),
-              Expanded(
-                child: controller.courses.isEmpty
-                    ? _buildEmptyState(context)
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: controller.courses.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final course = controller.courses[index];
-                          return Dismissible(
-                            key: ValueKey(course.id),
-                            background: _buildEditBackground(context),
-                            secondaryBackground:
-                                _buildDeleteBackground(context),
-                            confirmDismiss: (direction) async {
-                              if (direction == DismissDirection.startToEnd) {
-                                controller.openForm(course: course);
-                                return false;
-                              }
-                              final confirmed = await _confirmDelete(context);
-                              if (confirmed == true) {
-                                await controller.deleteCourse(course.id);
-                              }
-                              return confirmed ?? false;
-                            },
-                            child: _CourseListTile(course: course),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
+          ],
         );
       }),
       floatingActionButton: Obx(() {

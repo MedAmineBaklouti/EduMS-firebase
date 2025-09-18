@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/widgets/modern_scaffold.dart';
 import '../controllers/admin_control_controller.dart';
 import '../../../data/models/child_model.dart';
 import '../../../data/models/parent_model.dart';
@@ -16,7 +17,7 @@ class AdminControlView extends StatelessWidget {
     final theme = Theme.of(context);
     return DefaultTabController(
       length: 5,
-      child: Scaffold(
+      child: ModernScaffold(
         appBar: AppBar(
           title: const Text('Admin Control'),
           centerTitle: true,
@@ -36,26 +37,15 @@ class AdminControlView extends StatelessWidget {
             ],
           ),
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary.withOpacity(0.05),
-                theme.colorScheme.surface,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: TabBarView(
-            children: [
-              _buildParents(),
-              _buildTeachers(),
-              _buildClasses(),
-              _buildChildren(),
-              _buildSubjects(),
-            ],
-          ),
+        padding: EdgeInsets.zero,
+        body: TabBarView(
+          children: [
+            _buildParents(),
+            _buildTeachers(),
+            _buildClasses(),
+            _buildChildren(),
+            _buildSubjects(),
+          ],
         ),
       ),
     );

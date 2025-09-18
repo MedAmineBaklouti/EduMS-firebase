@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../../../core/widgets/modern_scaffold.dart';
 import '../../../data/models/course_model.dart';
 
 class CourseDetailView extends StatelessWidget {
@@ -13,71 +13,89 @@ class CourseDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return ModernScaffold(
       appBar: AppBar(
         title: Text(course.title),
         centerTitle: true,
       ),
+      alignment: Alignment.topCenter,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMetadataCard(context),
-            const SizedBox(height: 24),
-            Text(
-              'Description',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+        physics: const BouncingScrollPhysics(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildMetadataCard(context),
+                const SizedBox(height: 24),
+                _buildSectionTitle(context, 'Description'),
+                const SizedBox(height: 8),
+                Text(
+                  course.description.isNotEmpty
+                      ? course.description
+                      : 'No description provided for this course.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildSectionTitle(context, 'Content'),
+                const SizedBox(height: 8),
+                Text(
+                  course.content.isNotEmpty
+                      ? course.content
+                      : 'This course does not include additional content yet.',
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    label: const Text('Download as PDF'),
+                    onPressed: () => _downloadPdf(context),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              course.description.isNotEmpty
-                  ? course.description
-                  : 'No description provided for this course.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Content',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              course.content.isNotEmpty
-                  ? course.content
-                  : 'This course does not include additional content yet.',
-              style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.picture_as_pdf_outlined),
-                label: const Text('Download as PDF'),
-                onPressed: () => _downloadPdf(context),
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String label) {
+    final theme = Theme.of(context);
+    return Text(
+      label,
+      style: theme.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w700,
       ),
     );
   }
 
   Widget _buildMetadataCard(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.08),
+            blurRadius: 32,
+            offset: const Offset(0, 20),
+          ),
+        ],
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.08),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -199,73 +217,32 @@ class CourseDetailView extends StatelessWidget {
               ),
             ),
           ),
-          pw.SizedBox(height: 12),
-          pw.Text(
-            'Subject: ${course.subjectName.isNotEmpty ? course.subjectName : 'Subject not specified'}',
-            style: const pw.TextStyle(fontSize: 14),
-          ),
-          pw.Text(
-            'Teacher: ${course.teacherName.isNotEmpty ? course.teacherName : 'Teacher unknown'}',
-            style: const pw.TextStyle(fontSize: 14),
-          ),
-          pw.Text(
-            'Classes: $classList',
-            style: const pw.TextStyle(fontSize: 14),
-          ),
-          pw.SizedBox(height: 24),
-          pw.Text(
-            'Description',
-            style: pw.TextStyle(
-              fontSize: 18,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
+          pw.Paragraph(text: 'Subject: ${course.subjectName}'),
+          pw.Paragraph(text: 'Teacher: ${course.teacherName}'),
+          pw.Paragraph(text: 'Classes: $classList'),
+          pw.SizedBox(height: 20),
+          pw.Text('Description', style: pw.TextStyle(fontSize: 18)),
           pw.SizedBox(height: 8),
-          pw.Text(
-            course.description.isNotEmpty
+          pw.Paragraph(
+            text: course.description.isNotEmpty
                 ? course.description
-                : 'No description provided for this course.',
-            style: const pw.TextStyle(fontSize: 13),
+                : 'No description provided.',
           ),
           pw.SizedBox(height: 20),
-          pw.Text(
-            'Content',
-            style: pw.TextStyle(
-              fontSize: 18,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
+          pw.Text('Content', style: pw.TextStyle(fontSize: 18)),
           pw.SizedBox(height: 8),
-          pw.Text(
-            course.content.isNotEmpty
+          pw.Paragraph(
+            text: course.content.isNotEmpty
                 ? course.content
-                : 'This course does not include additional content yet.',
-            style: const pw.TextStyle(fontSize: 13, height: 1.5),
+                : 'No additional content provided.',
           ),
         ],
       ),
     );
 
-    try {
-      final bytes = await doc.save();
-      final sanitizedTitle = course.title
-          .toLowerCase()
-          .replaceAll(RegExp('[^a-z0-9]+'), '_')
-          .replaceAll(RegExp('_+'), '_')
-          .trim();
-      final fileName = sanitizedTitle.isNotEmpty
-          ? '${sanitizedTitle}_course.pdf'
-          : 'course.pdf';
-      await Printing.sharePdf(
-        bytes: bytes,
-        filename: fileName,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to generate the PDF. ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+      name: '${course.title}.pdf',
+    );
   }
 }

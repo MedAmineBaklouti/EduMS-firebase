@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/widgets/modern_scaffold.dart';
 import '../controllers/announcement_controller.dart';
 import '../../../data/models/announcement_model.dart';
 import 'announcement_detail_view.dart';
@@ -16,43 +17,11 @@ class AnnouncementListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller =
-        Get.put(AnnouncementController(audienceFilter: audience));
-    final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+    final controller = Get.put(AnnouncementController(audienceFilter: audience));
+    return ModernScaffold(
       appBar: AppBar(
         title: const Text('Announcements'),
         centerTitle: true,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.06),
-              theme.colorScheme.surface,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Obx(() {
-          if (controller.announcements.isEmpty) {
-            return _buildEmptyState(context);
-          }
-          return ListView.separated(
-            padding: EdgeInsets.fromLTRB(16, 24, 16, isAdmin ? 120 : 32),
-            physics: const BouncingScrollPhysics(),
-            itemCount: controller.announcements.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 18),
-            itemBuilder: (context, index) {
-              final ann = controller.announcements[index];
-              return isAdmin
-                  ? _buildAdminItem(context, controller, ann)
-                  : _buildAnnouncementCard(context, ann);
-            },
-          );
-        }),
       ),
       floatingActionButton: isAdmin
           ? FloatingActionButton.extended(
@@ -62,6 +31,24 @@ class AnnouncementListView extends StatelessWidget {
               label: const Text('New Announcement'),
             )
           : null,
+      padding: EdgeInsets.zero,
+      body: Obx(() {
+        if (controller.announcements.isEmpty) {
+          return _buildEmptyState(context);
+        }
+        return ListView.separated(
+          padding: EdgeInsets.fromLTRB(16, 24, 16, isAdmin ? 120 : 32),
+          physics: const BouncingScrollPhysics(),
+          itemCount: controller.announcements.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 18),
+          itemBuilder: (context, index) {
+            final ann = controller.announcements[index];
+            return isAdmin
+                ? _buildAdminItem(context, controller, ann)
+                : _buildAnnouncementCard(context, ann);
+          },
+        );
+      }),
     );
   }
 
