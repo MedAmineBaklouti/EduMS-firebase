@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/auth_service.dart';
@@ -17,6 +18,9 @@ class AdminControlController extends GetxController {
   final RxList<SchoolClassModel> classes = <SchoolClassModel>[].obs;
   final RxList<ChildModel> children = <ChildModel>[].obs;
   final RxList<SubjectModel> subjects = <SubjectModel>[].obs;
+
+  final RxString selectedParentClassId = ''.obs;
+  final RxString selectedTeacherClassId = ''.obs;
 
   @override
   void onInit() {
@@ -172,5 +176,57 @@ class AdminControlController extends GetxController {
   Future<void> deleteSubject(String id) async {
     await _db.deleteSubject(id);
     await _loadAll();
+  }
+
+  List<ParentModel> get filteredParents {
+    final classId = selectedParentClassId.value;
+    if (classId.isEmpty) {
+      return parents.toList();
+    }
+
+    final parentIdsForClass = children
+        .where((child) => child.classId == classId && child.parentId.isNotEmpty)
+        .map((child) => child.parentId)
+        .toSet();
+
+    return parents
+        .where((parent) => parentIdsForClass.contains(parent.id))
+        .toList();
+  }
+
+  List<TeacherModel> get filteredTeachers {
+    final classId = selectedTeacherClassId.value;
+    if (classId.isEmpty) {
+      return teachers.toList();
+    }
+
+    final schoolClass = classes.firstWhereOrNull((cls) => cls.id == classId);
+    if (schoolClass == null) {
+      return <TeacherModel>[];
+    }
+
+    final teacherIds = schoolClass.teacherSubjects.values
+        .where((id) => id.isNotEmpty)
+        .toSet();
+
+    return teachers
+        .where((teacher) => teacherIds.contains(teacher.id))
+        .toList();
+  }
+
+  void updateParentClassFilter(String value) {
+    selectedParentClassId.value = value;
+  }
+
+  void clearParentFilters() {
+    selectedParentClassId.value = '';
+  }
+
+  void updateTeacherClassFilter(String value) {
+    selectedTeacherClassId.value = value;
+  }
+
+  void clearTeacherFilters() {
+    selectedTeacherClassId.value = '';
   }
 }

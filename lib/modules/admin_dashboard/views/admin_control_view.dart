@@ -66,8 +66,7 @@ class AdminControlView extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: Builder(
         builder: (context) => Obx(() {
-          final parents = c.parents;
-          if (parents.isEmpty) {
+          if (c.parents.isEmpty) {
             return _buildEmptyState(
               context,
               icon: Icons.diversity_3_outlined,
@@ -75,43 +74,62 @@ class AdminControlView extends StatelessWidget {
               message: 'Tap the button below to add a parent profile.',
             );
           }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
-            physics: const BouncingScrollPhysics(),
-            itemCount: parents.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final parent = parents[index];
-              final theme = Theme.of(context);
-              return _buildManagementCard(
-                context: context,
-                icon: Icons.badge_outlined,
-                iconColor: theme.colorScheme.primary,
-                title: parent.name,
-                subtitle: 'Parent account',
-                onTap: () => _showParentDialog(parent: parent),
-                onDelete: () => c.deleteParent(parent.id),
-                footer: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildInfoChip(
+          final filteredParents = c.filteredParents;
+          final hasFilters = c.selectedParentClassId.value.isNotEmpty;
+          return Column(
+            children: [
+              _buildParentFilters(context),
+              const SizedBox(height: 8),
+              Expanded(
+                child: filteredParents.isEmpty
+                    ? _buildFilteredResultsState(
                         context,
-                        icon: Icons.mail_outline,
-                        label: parent.email,
+                        icon: Icons.filter_list_off_outlined,
+                        title: 'No parents match your filters',
+                        message:
+                            'No parents are linked to the selected class. Try a different class or clear the filter.',
+                        onClear: hasFilters ? c.clearParentFilters : null,
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: filteredParents.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final parent = filteredParents[index];
+                          final theme = Theme.of(context);
+                          return _buildManagementCard(
+                            context: context,
+                            icon: Icons.badge_outlined,
+                            iconColor: theme.colorScheme.primary,
+                            title: parent.name,
+                            subtitle: 'Parent account',
+                            onTap: () => _showParentDialog(parent: parent),
+                            onDelete: () => c.deleteParent(parent.id),
+                            footer: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _buildInfoChip(
+                                    context,
+                                    icon: Icons.mail_outline,
+                                    label: parent.email,
+                                  ),
+                                  if (parent.phone.isNotEmpty)
+                                    _buildInfoChip(
+                                      context,
+                                      icon: Icons.phone_outlined,
+                                      label: parent.phone,
+                                    ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                      if (parent.phone.isNotEmpty)
-                        _buildInfoChip(
-                          context,
-                          icon: Icons.phone_outlined,
-                          label: parent.phone,
-                        ),
-                    ],
-                  ),
-                ],
-              );
-            },
+              ),
+            ],
           );
         }),
       ),
@@ -129,8 +147,7 @@ class AdminControlView extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: Builder(
         builder: (context) => Obx(() {
-          final teachers = c.teachers;
-          if (teachers.isEmpty) {
+          if (c.teachers.isEmpty) {
             return _buildEmptyState(
               context,
               icon: Icons.school_outlined,
@@ -139,53 +156,73 @@ class AdminControlView extends StatelessWidget {
                   'Invite teachers to start assigning them to subjects and classes.',
             );
           }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
-            physics: const BouncingScrollPhysics(),
-            itemCount: teachers.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final teacher = teachers[index];
-              final theme = Theme.of(context);
-              final subject = _findSubjectById(teacher.subjectId);
-              final hasSubject =
-                  subject != null && subject.name.trim().isNotEmpty;
-              final subjectLabel = hasSubject
-                  ? subject!.name
-                  : 'Subject pending';
+          final filteredTeachers = c.filteredTeachers;
+          final hasFilters = c.selectedTeacherClassId.value.isNotEmpty;
+          return Column(
+            children: [
+              _buildTeacherFilters(context),
+              const SizedBox(height: 8),
+              Expanded(
+                child: filteredTeachers.isEmpty
+                    ? _buildFilteredResultsState(
+                        context,
+                        icon: Icons.filter_list_off_outlined,
+                        title: 'No teachers found for this class',
+                        message:
+                            'No teachers are assigned to the selected class. Try another class or clear the filter.',
+                        onClear: hasFilters ? c.clearTeacherFilters : null,
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: filteredTeachers.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final teacher = filteredTeachers[index];
+                          final theme = Theme.of(context);
+                          final subject = _findSubjectById(teacher.subjectId);
+                          final hasSubject =
+                              subject != null && subject.name.trim().isNotEmpty;
+                          final subjectLabel = hasSubject
+                              ? subject!.name
+                              : 'Subject pending';
 
-              return _buildManagementCard(
-                context: context,
-                icon: Icons.person_outline,
-                iconColor: theme.colorScheme.secondary,
-                title: teacher.name,
-                subtitle:
-                    hasSubject ? 'Teaches $subjectLabel' : 'No subject assigned',
-                onTap: () => _showTeacherDialog(teacher: teacher),
-                onDelete: () => c.deleteTeacher(teacher.id),
-                footer: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildInfoChip(
-                        context,
-                        icon: Icons.mail_outline,
-                        label: teacher.email,
+                          return _buildManagementCard(
+                            context: context,
+                            icon: Icons.person_outline,
+                            iconColor: theme.colorScheme.secondary,
+                            title: teacher.name,
+                            subtitle: hasSubject
+                                ? 'Teaches $subjectLabel'
+                                : 'No subject assigned',
+                            onTap: () => _showTeacherDialog(teacher: teacher),
+                            onDelete: () => c.deleteTeacher(teacher.id),
+                            footer: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _buildInfoChip(
+                                    context,
+                                    icon: Icons.mail_outline,
+                                    label: teacher.email,
+                                  ),
+                                  _buildInfoChip(
+                                    context,
+                                    icon: Icons.menu_book_outlined,
+                                    label: subjectLabel,
+                                    color: hasSubject
+                                        ? theme.colorScheme.secondary
+                                        : theme.colorScheme.outline,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                      _buildInfoChip(
-                        context,
-                        icon: Icons.menu_book_outlined,
-                        label: subjectLabel,
-                        color: hasSubject
-                            ? theme.colorScheme.secondary
-                            : theme.colorScheme.outline,
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
+              ),
+            ],
           );
         }),
       ),
@@ -194,6 +231,188 @@ class AdminControlView extends StatelessWidget {
         onPressed: () => _showTeacherDialog(),
         icon: const Icon(Icons.add),
         label: const Text('Add Teacher'),
+      ),
+    );
+  }
+
+  Widget _buildParentFilters(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter parents',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Obx(() {
+                final hasFilters = c.selectedParentClassId.value.isNotEmpty;
+                return TextButton.icon(
+                  onPressed: hasFilters ? c.clearParentFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final classes = c.classes.toList()
+              ..sort((a, b) => a.name.compareTo(b.name));
+            final selected = c.selectedParentClassId.value;
+            final dropdownValue = classes.any((cls) => cls.id == selected)
+                ? selected
+                : '';
+            return DropdownButtonFormField<String>(
+              value: dropdownValue,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Class',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<String>(
+                  value: '',
+                  child: Text('All classes'),
+                ),
+                ...classes.map(
+                  (schoolClass) => DropdownMenuItem<String>(
+                    value: schoolClass.id,
+                    child: Text(schoolClass.name),
+                  ),
+                ),
+              ],
+              onChanged: (value) =>
+                  c.updateParentClassFilter(value ?? ''),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeacherFilters(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter teachers',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Obx(() {
+                final hasFilters = c.selectedTeacherClassId.value.isNotEmpty;
+                return TextButton.icon(
+                  onPressed: hasFilters ? c.clearTeacherFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final classes = c.classes.toList()
+              ..sort((a, b) => a.name.compareTo(b.name));
+            final selected = c.selectedTeacherClassId.value;
+            final dropdownValue = classes.any((cls) => cls.id == selected)
+                ? selected
+                : '';
+            return DropdownButtonFormField<String>(
+              value: dropdownValue,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Class',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<String>(
+                  value: '',
+                  child: Text('All classes'),
+                ),
+                ...classes.map(
+                  (schoolClass) => DropdownMenuItem<String>(
+                    value: schoolClass.id,
+                    child: Text(schoolClass.name),
+                  ),
+                ),
+              ],
+              onChanged: (value) =>
+                  c.updateTeacherClassFilter(value ?? ''),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilteredResultsState(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+    VoidCallback? onClear,
+  }) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: theme.colorScheme.primary,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+            if (onClear != null) ...[
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
+                onPressed: onClear,
+                icon: const Icon(Icons.filter_alt_off_outlined),
+                label: const Text('Clear filters'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
