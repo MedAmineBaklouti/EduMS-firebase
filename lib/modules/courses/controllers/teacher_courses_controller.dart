@@ -18,9 +18,11 @@ class TeacherCoursesController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool isSaving = false.obs;
 
+  final RxList<CourseModel> _allCourses = <CourseModel>[].obs;
   final RxList<CourseModel> courses = <CourseModel>[].obs;
   final RxList<SchoolClassModel> availableClasses = <SchoolClassModel>[].obs;
   final RxSet<String> selectedClassIds = <String>{}.obs;
+  final RxString selectedFilterClassId = ''.obs;
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController titleController = TextEditingController();
@@ -89,9 +91,9 @@ class TeacherCoursesController extends GetxController {
       _subscription = _db.streamCourses().listen((data) {
         final filtered = data
             .where((course) => course.teacherId == teacherModel.id)
-            .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        courses.assignAll(filtered);
+            .toList();
+        _allCourses.assignAll(filtered);
+        _applyFilters();
       });
     } catch (e) {
       Get.snackbar(
@@ -218,6 +220,28 @@ class TeacherCoursesController extends GetxController {
       selectedClassIds.add(classId);
     }
     selectedClassIds.refresh();
+  }
+
+  void updateClassFilter(String value) {
+    selectedFilterClassId.value = value;
+    _applyFilters();
+  }
+
+  void clearFilters() {
+    selectedFilterClassId.value = '';
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    Iterable<CourseModel> filtered = _allCourses;
+    if (selectedFilterClassId.value.isNotEmpty) {
+      filtered = filtered
+          .where((course) => course.classIds.contains(selectedFilterClassId.value));
+    }
+
+    final list = filtered.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    courses.assignAll(list);
   }
 
   void clearForm() {

@@ -26,26 +26,38 @@ class ParentCoursesView extends StatelessWidget {
         if (controller.children.isEmpty) {
           return _buildNoChildrenState(context);
         }
-        return Column(
-          children: [
-            _buildFilters(context),
-            Expanded(
-              child: Obx(() {
-                if (controller.courses.isEmpty) {
-                  return _buildEmptyState(context);
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  itemCount: controller.courses.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final course = controller.courses[index];
-                    return _ParentCourseTile(course: course);
-                  },
-                );
-              }),
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.05),
+                theme.colorScheme.surface,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-          ],
+          ),
+          child: Column(
+            children: [
+              _buildFilters(context),
+              Expanded(
+                child: Obx(() {
+                  if (controller.courses.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    itemCount: controller.courses.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final course = controller.courses[index];
+                      return _ParentCourseTile(course: course);
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
         );
       }),
     );
@@ -58,11 +70,26 @@ class ParentCoursesView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Filter courses',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter courses',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Obx(() {
+                final hasFilters =
+                    controller.selectedChildId.value.isNotEmpty ||
+                        controller.selectedSubjectId.value.isNotEmpty;
+                return TextButton.icon(
+                  onPressed: hasFilters ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
           ),
           const SizedBox(height: 12),
           Row(
