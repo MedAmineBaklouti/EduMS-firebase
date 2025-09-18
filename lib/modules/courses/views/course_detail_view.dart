@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
@@ -23,37 +24,28 @@ class CourseDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildMetadataCard(context),
+            _buildHeroHeader(context),
             const SizedBox(height: 24),
-            Text(
-              'Description',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              course.description.isNotEmpty
-                  ? course.description
-                  : 'No description provided for this course.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                height: 1.5,
+            _buildOverviewCard(context),
+            const SizedBox(height: 24),
+            _buildSectionCard(
+              context,
+              title: 'Description',
+              child: Text(
+                course.description.isNotEmpty
+                    ? course.description
+                    : 'No description provided for this course.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.6,
+                ),
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Content',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              course.content.isNotEmpty
-                  ? course.content
-                  : 'This course does not include additional content yet.',
-              style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
+            _buildSectionCard(
+              context,
+              title: 'Learning content',
+              child: _buildContentBody(context),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -70,113 +62,214 @@ class CourseDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildMetadataCard(BuildContext context) {
+  Widget _buildHeroHeader(BuildContext context) {
     final theme = Theme.of(context);
+    final createdLabel = DateFormat('MMM d, yyyy').format(course.createdAt);
+    final subject = course.subjectName.isNotEmpty
+        ? course.subjectName
+        : 'Subject not specified';
+    final teacher = course.teacherName.isNotEmpty
+        ? course.teacherName
+        : 'Teacher unknown';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.85),
+            theme.colorScheme.primary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            course.title,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _buildHeroChip(
+                context,
+                icon: Icons.menu_book_outlined,
+                label: subject,
+              ),
+              _buildHeroChip(
+                context,
+                icon: Icons.person_outline,
+                label: teacher,
+              ),
+              _buildHeroChip(
+                context,
+                icon: Icons.calendar_today_outlined,
+                label: 'Created $createdLabel',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final classes = course.classNames.toSet().toList();
+    final wordCount = _countWords(course.content);
+
     return Card(
       elevation: 0,
       color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildMetadataRow(
-              context,
-              icon: Icons.menu_book_outlined,
-              label: 'Subject',
-              value: course.subjectName.isNotEmpty
-                  ? course.subjectName
-                  : 'Subject not specified',
+            Text(
+              'Course overview',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 12),
-            _buildMetadataRow(
-              context,
-              icon: Icons.person_outline,
-              label: 'Teacher',
-              value: course.teacherName.isNotEmpty
-                  ? course.teacherName
-                  : 'Teacher unknown',
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Assigned Classes',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (course.classNames.isEmpty)
-              Text(
-                'This course is not linked to any class.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildOverviewBadge(
+                  context,
+                  icon: Icons.groups_outlined,
+                  label: classes.isEmpty
+                      ? 'No classes linked yet'
+                      : '${classes.length} class${classes.length == 1 ? '' : 'es'} linked',
                 ),
-              )
-            else
+                if (wordCount > 0)
+                  _buildOverviewBadge(
+                    context,
+                    icon: Icons.menu_book,
+                    label: '$wordCount word${wordCount == 1 ? '' : 's'} of content',
+                  ),
+              ],
+            ),
+            if (classes.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(
+                'Assigned classes',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: course.classNames
-                    .map(
-                      (name) => Chip(
-                        label: Text(name),
-                        backgroundColor:
-                            theme.colorScheme.primary.withOpacity(0.08),
-                        labelStyle: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
+                spacing: 10,
+                runSpacing: 10,
+                children: classes
+                    .map((name) => _buildClassChip(context, name))
                     .toList(),
               ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMetadataRow(BuildContext context,
-      {required IconData icon, required String label, required String value}) {
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+  }) {
     final theme = Theme.of(context);
-    return Row(
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentBody(BuildContext context) {
+    final theme = Theme.of(context);
+    final segments = _contentSegments();
+    if (segments.isEmpty) {
+      return Text(
+        'This course does not include additional content yet.',
+        style: theme.textTheme.bodyLarge?.copyWith(
+          height: 1.6,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+    if (segments.length == 1) {
+      return Text(
+        segments.first,
+        style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
+      );
+    }
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
+      children: segments
+          .map(
+            (segment) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      segment,
+                      style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -211,6 +304,10 @@ class CourseDetailView extends StatelessWidget {
           pw.Text(
             'Classes: $classList',
             style: const pw.TextStyle(fontSize: 14),
+          ),
+          pw.Text(
+            'Created: ${DateFormat('MMM d, yyyy • h:mm a').format(course.createdAt)}',
+            style: const pw.TextStyle(fontSize: 12),
           ),
           pw.SizedBox(height: 24),
           pw.Text(
@@ -248,14 +345,7 @@ class CourseDetailView extends StatelessWidget {
 
     try {
       final bytes = await doc.save();
-      final sanitizedTitle = course.title
-          .toLowerCase()
-          .replaceAll(RegExp('[^a-z0-9]+'), '_')
-          .replaceAll(RegExp('_+'), '_')
-          .trim();
-      final fileName = sanitizedTitle.isNotEmpty
-          ? '${sanitizedTitle}_course.pdf'
-          : 'course.pdf';
+      final fileName = _pdfFileName();
       await Printing.sharePdf(
         bytes: bytes,
         filename: fileName,
@@ -267,5 +357,111 @@ class CourseDetailView extends StatelessWidget {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
+  }
+
+  Widget _buildHeroChip(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.onPrimary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewBadge(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.primary.withOpacity(0.08),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClassChip(BuildContext context, String name) {
+    final theme = Theme.of(context);
+    return Chip(
+      label: Text(
+        name,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
+  }
+
+  List<String> _contentSegments() {
+    final raw = course.content.trim();
+    if (raw.isEmpty) {
+      return [];
+    }
+    final parts = raw
+        .split(RegExp(r'\n+'))
+        .map((segment) => segment.trim())
+        .where((segment) => segment.isNotEmpty)
+        .toList();
+    return parts.isEmpty ? [raw] : parts;
+  }
+
+  int _countWords(String text) {
+    final sanitized = text.trim();
+    if (sanitized.isEmpty) {
+      return 0;
+    }
+    return sanitized.split(RegExp(r'\s+')).length;
+  }
+
+  String _pdfFileName() {
+    final trimmed = course.title.trim();
+    if (trimmed.isEmpty) {
+      return 'Course.pdf';
+    }
+    final sanitized = trimmed
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    return '$sanitized.pdf';
   }
 }

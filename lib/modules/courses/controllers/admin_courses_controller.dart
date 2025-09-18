@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/database_service.dart';
@@ -24,12 +25,17 @@ class AdminCoursesController extends GetxController {
   final RxString selectedSubjectId = ''.obs;
   final RxString selectedTeacherId = ''.obs;
   final RxString selectedClassId = ''.obs;
+  final RxString searchQuery = ''.obs;
+  final TextEditingController searchController = TextEditingController();
 
   StreamSubscription<List<CourseModel>>? _subscription;
 
   @override
   void onInit() {
     super.onInit();
+    searchController.addListener(() {
+      updateSearchQuery(searchController.text);
+    });
     _initialize();
   }
 
@@ -93,10 +99,22 @@ class AdminCoursesController extends GetxController {
     _applyFilters();
   }
 
+  void updateSearchQuery(String value) {
+    final normalized = value.trim();
+    if (searchQuery.value == normalized) {
+      return;
+    }
+    searchQuery.value = normalized;
+    _applyFilters();
+  }
+
   void clearFilters() {
     selectedSubjectId.value = '';
     selectedTeacherId.value = '';
     selectedClassId.value = '';
+    if (searchController.text.isNotEmpty) {
+      searchController.clear();
+    }
     _applyFilters();
   }
 
@@ -113,6 +131,17 @@ class AdminCoursesController extends GetxController {
     if (selectedClassId.value.isNotEmpty) {
       filtered = filtered
           .where((course) => course.classIds.contains(selectedClassId.value));
+    }
+    if (searchQuery.value.isNotEmpty) {
+      final query = searchQuery.value.toLowerCase();
+      filtered = filtered.where((course) {
+        final titleMatch = course.title.toLowerCase().contains(query);
+        final subjectMatch = course.subjectName.toLowerCase().contains(query);
+        final teacherMatch = course.teacherName.toLowerCase().contains(query);
+        final classMatch = course.classNames
+            .any((name) => name.toLowerCase().contains(query));
+        return titleMatch || subjectMatch || teacherMatch || classMatch;
+      });
     }
 
     final list = filtered.toList()
@@ -136,9 +165,30 @@ class AdminCoursesController extends GetxController {
         'Class';
   }
 
+  int get totalCourseCount => _allCourses.length;
+
+  int get totalTeacherCount =>
+      _allCourses.map((course) => course.teacherId).where((id) => id.isNotEmpty).toSet().length;
+
+  int get totalSubjectCount =>
+      _allCourses.map((course) => course.subjectId).where((id) => id.isNotEmpty).toSet().length;
+
+  int get totalClassCount =>
+      _allCourses.expand((course) => course.classIds).where((id) => id.isNotEmpty).toSet().length;
+
+  int get filteredTeacherCount =>
+      courses.map((course) => course.teacherId).where((id) => id.isNotEmpty).toSet().length;
+
+  int get filteredSubjectCount =>
+      courses.map((course) => course.subjectId).where((id) => id.isNotEmpty).toSet().length;
+
+  int get filteredClassCount =>
+      courses.expand((course) => course.classIds).where((id) => id.isNotEmpty).toSet().length;
+
   @override
   void onClose() {
     _subscription?.cancel();
+    searchController.dispose();
     super.onClose();
   }
 }
