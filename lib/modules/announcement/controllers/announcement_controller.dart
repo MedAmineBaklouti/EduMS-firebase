@@ -20,6 +20,8 @@ class AnnouncementController extends GetxController {
   final TextEditingController descriptionController = TextEditingController();
   final RxBool teachersSelected = true.obs;
   final RxBool parentsSelected = true.obs;
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  final RxBool isSaving = false.obs;
 
   AnnouncementModel? editing;
   StreamSubscription? _subscription;
@@ -66,22 +68,57 @@ class AnnouncementController extends GetxController {
   }
 
   Future<void> saveAnnouncement() async {
-    final audience = <String>[];
-    if (teachersSelected.value) audience.add('teachers');
-    if (parentsSelected.value) audience.add('parents');
-    final announcement = AnnouncementModel(
-      id: editing?.id ?? '',
-      title: titleController.text,
-      description: descriptionController.text,
-      audience: audience,
-      createdAt: editing?.createdAt ?? DateTime.now(),
-    );
-    if (editing == null) {
-      await _db.addAnnouncement(announcement);
-    } else {
-      await _db.updateAnnouncement(announcement);
+    if (formKey.currentState?.validate() != true) {
+      return;
     }
-    Get.back();
+    if (!teachersSelected.value && !parentsSelected.value) {
+      Get.snackbar(
+        'Select audience',
+        'Choose at least one audience for this announcement.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    try {
+      isSaving.value = true;
+      final audience = <String>[];
+      if (teachersSelected.value) audience.add('teachers');
+      if (parentsSelected.value) audience.add('parents');
+      final announcement = AnnouncementModel(
+        id: editing?.id ?? '',
+        title: titleController.text.trim(),
+        description: descriptionController.text.trim(),
+        audience: audience,
+        createdAt: editing?.createdAt ?? DateTime.now(),
+      );
+      if (editing == null) {
+        await _db.addAnnouncement(announcement);
+        Get.snackbar(
+          'Announcement published',
+          'Your announcement is now visible to the selected audience.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        await _db.updateAnnouncement(announcement);
+        Get.snackbar(
+          'Announcement updated',
+          'Changes have been saved successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+      Get.back();
+      editing = null;
+      clearForm();
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to save the announcement. ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isSaving.value = false;
+    }
   }
 
   Future<void> deleteAnnouncement(String id) async {
@@ -93,5 +130,6 @@ class AnnouncementController extends GetxController {
     descriptionController.clear();
     teachersSelected.value = true;
     parentsSelected.value = true;
+    formKey.currentState?.reset();
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -107,17 +109,51 @@ class AnnouncementListView extends StatelessWidget {
     );
   }
 
-  Widget _buildAnnouncementCard(BuildContext context, AnnouncementModel ann,
-      {List<Widget> footer = const []}) {
+  Widget _buildAnnouncementCard(
+    BuildContext context,
+    AnnouncementModel ann, {
+    bool highlightForAdmin = false,
+  }) {
     final theme = Theme.of(context);
     final dateText = _dateFormat.format(ann.createdAt);
     final audienceLabels = _audienceLabels(ann);
+    final expiryDate = ann.createdAt.add(const Duration(days: 7));
+    final now = DateTime.now();
+    final totalLifetime = const Duration(days: 7).inMinutes;
+    final remaining = math.max(0, expiryDate.difference(now).inMinutes);
+    final progress = 1 - (remaining / totalLifetime);
+    final isNew = now.difference(ann.createdAt).inHours < 24;
+    final timeLeftLabel = () {
+      if (remaining <= 0) {
+        return 'Expired';
+      }
+      if (remaining >= 1440) {
+        final days = remaining ~/ 1440;
+        final hours = (remaining % 1440) ~/ 60;
+        return hours > 0
+            ? '${days}d ${hours}h left'
+            : '${days}d left';
+      }
+      if (remaining >= 60) {
+        final hours = remaining ~/ 60;
+        final minutes = remaining % 60;
+        return minutes > 0
+            ? '${hours}h ${minutes}m left'
+            : '${hours}h left';
+      }
+      return '$remaining min left';
+    }();
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => Get.to(() => AnnouncementDetailView(announcement: ann)),
+        onTap: () => Get.to(
+          () => AnnouncementDetailView(
+            announcement: ann,
+            isAdmin: isAdmin,
+          ),
+        ),
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
@@ -161,12 +197,43 @@ class AnnouncementListView extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Text(
-                            dateText,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          Row(
+                            children: [
+                              if (isNew) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'New',
+                                    style:
+                                        theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Icon(
+                                Icons.schedule,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                dateText,
+                                style:
+                                    theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -195,10 +262,55 @@ class AnnouncementListView extends StatelessWidget {
                           ))
                       .toList(),
                 ),
-                if (footer.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  ...footer,
-                ],
+                const SizedBox(height: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.hourglass_bottom,
+                              size: 18,
+                              color: theme.colorScheme.secondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              timeLeftLabel,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          DateFormat('MMM d').format(expiryDate),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        minHeight: 6,
+                        value: progress.clamp(0.0, 1.0),
+                        backgroundColor:
+                            theme.colorScheme.surfaceVariant.withOpacity(0.6),
+                        valueColor: AlwaysStoppedAnimation(
+                          highlightForAdmin
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -243,26 +355,7 @@ class AnnouncementListView extends StatelessWidget {
       child: _buildAnnouncementCard(
         context,
         ann,
-        footer: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.swipe,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Swipe for quick actions',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-        ],
+        highlightForAdmin: true,
       ),
     );
   }
