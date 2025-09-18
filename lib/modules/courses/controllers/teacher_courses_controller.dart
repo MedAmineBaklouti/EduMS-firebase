@@ -1,12 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pdf_text/pdf_text.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../app/routes/app_pages.dart';
 import '../../../core/services/auth_service.dart';
@@ -220,17 +222,20 @@ class TeacherCoursesController extends GetxController {
     try {
       extractionError.value = null;
       lastContentSource.value = null;
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['pdf'],
+      final typeGroup = XTypeGroup(
+        label: 'PDF',
+        extensions: ['pdf'],
+        mimeTypes: const ['application/pdf'],
       );
-      if (result == null || result.files.isEmpty) {
+      final pickedFile = await openFile(acceptedTypeGroups: [typeGroup]);
+      if (pickedFile == null) {
         return;
       }
-      final pickedFile = result.files.single;
-      final path = pickedFile.path;
+      final fileName =
+          pickedFile.name.isNotEmpty ? pickedFile.name : 'selected file';
+      final path = await _resolveLocalFilePath(pickedFile);
       if (path == null) {
-        const message = 'Could not read the selected PDF file.';
+        final message = 'Could not read the selected PDF file $fileName.';
         extractionError.value = message;
         Get.snackbar(
           'Extraction failed',
@@ -243,7 +248,7 @@ class TeacherCoursesController extends GetxController {
       final pdfDoc = await PDFDoc.fromPath(path);
       final text = (await pdfDoc.text).trim();
       if (text.isEmpty) {
-        final message = 'No readable text was found in ${pickedFile.name}.';
+        final message = 'No readable text was found in $fileName.';
         extractionError.value = message;
         Get.snackbar(
           'No text found',
@@ -253,7 +258,7 @@ class TeacherCoursesController extends GetxController {
         return;
       }
       contentController.text = text;
-      lastContentSource.value = 'Extracted from ${pickedFile.name}';
+      lastContentSource.value = 'Extracted from $fileName';
       Get.snackbar(
         'Content updated',
         'Text extracted from the selected PDF.',
@@ -269,6 +274,26 @@ class TeacherCoursesController extends GetxController {
       );
     } finally {
       isExtractingContent.value = false;
+    }
+  }
+
+  Future<String?> _resolveLocalFilePath(XFile pickedFile) async {
+    final existingPath = pickedFile.path;
+    if (existingPath != null && existingPath.isNotEmpty) {
+      return existingPath;
+    }
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final fileName = pickedFile.name.isNotEmpty
+          ? pickedFile.name
+          : 'selected_pdf_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final tempFile = File(
+        '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}_$fileName',
+      );
+      await tempFile.writeAsBytes(await pickedFile.readAsBytes(), flush: true);
+      return tempFile.path;
+    } catch (_) {
+      return null;
     }
   }
 
