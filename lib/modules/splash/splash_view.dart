@@ -102,16 +102,16 @@ class _SplashViewState extends State<SplashView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Made with',
+                    'Made by',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: Colors.blueGrey,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   Image.asset(
                     'assets/Denet_logo.png',
-                    height: 100,
+                    height: 35,
                   ),
                 ],
               ),
