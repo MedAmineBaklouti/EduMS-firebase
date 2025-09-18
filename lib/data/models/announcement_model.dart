@@ -26,12 +26,34 @@ class AnnouncementModel {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
+  AnnouncementModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    List<String>? audience,
+    DateTime? createdAt,
+  }) {
+    return AnnouncementModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      audience: audience ?? List<String>.from(this.audience),
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  Map<String, dynamic> toMap({bool includeId = false, bool serverTimestamp = false}) {
+    final map = <String, dynamic>{
       'title': title,
       'description': description,
       'audience': audience,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': serverTimestamp
+          ? FieldValue.serverTimestamp()
+          : Timestamp.fromDate(createdAt),
     };
+    if (includeId) {
+      map['id'] = id;
+    }
+    return map;
   }
 }

@@ -16,8 +16,12 @@ class AnnouncementListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller =
-        Get.put(AnnouncementController(audienceFilter: audience));
+    final controller = Get.put(
+      AnnouncementController(
+        audienceFilter: audience,
+        isAdminView: isAdmin,
+      ),
+    );
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,

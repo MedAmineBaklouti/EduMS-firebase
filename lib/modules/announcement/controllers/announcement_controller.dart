@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_pages.dart';
 import '../../../core/services/database_service.dart';
 import '../../../data/models/announcement_model.dart';
 import '../views/announcement_form_view.dart';
@@ -11,8 +12,9 @@ class AnnouncementController extends GetxController {
   final DatabaseService _db = Get.find();
 
   final String? audienceFilter;
+  final bool isAdminView;
 
-  AnnouncementController({this.audienceFilter});
+  AnnouncementController({this.audienceFilter, this.isAdminView = false});
 
   final RxList<AnnouncementModel> announcements = <AnnouncementModel>[].obs;
 
@@ -85,7 +87,7 @@ class AnnouncementController extends GetxController {
       final audience = <String>[];
       if (teachersSelected.value) audience.add('teachers');
       if (parentsSelected.value) audience.add('parents');
-      final announcement = AnnouncementModel(
+      var announcement = AnnouncementModel(
         id: editing?.id ?? '',
         title: titleController.text.trim(),
         description: descriptionController.text.trim(),
@@ -93,7 +95,8 @@ class AnnouncementController extends GetxController {
         createdAt: editing?.createdAt ?? DateTime.now(),
       );
       if (editing == null) {
-        await _db.addAnnouncement(announcement);
+        final newId = await _db.addAnnouncement(announcement);
+        announcement = announcement.copyWith(id: newId);
         Get.snackbar(
           'Announcement published',
           'Your announcement is now visible to the selected audience.',
@@ -107,9 +110,9 @@ class AnnouncementController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
       }
-      Get.back();
       editing = null;
       clearForm();
+      _navigateToListView();
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -131,5 +134,37 @@ class AnnouncementController extends GetxController {
     teachersSelected.value = true;
     parentsSelected.value = true;
     formKey.currentState?.reset();
+  }
+
+  void _navigateToListView() {
+    final targetRoute = _resolveListRoute();
+    if (targetRoute == null) {
+      if (Get.key.currentState?.canPop() ?? false) {
+        Get.back();
+      }
+      return;
+    }
+
+    if (Get.currentRoute == targetRoute) {
+      return;
+    }
+
+    Get.until((route) => route.settings.name == targetRoute);
+    if (Get.currentRoute != targetRoute) {
+      Get.offAllNamed(targetRoute);
+    }
+  }
+
+  String? _resolveListRoute() {
+    if (isAdminView) {
+      return AppPages.ADMIN_ANNOUNCEMENTS;
+    }
+    if (audienceFilter == 'teachers') {
+      return AppPages.TEACHER_ANNOUNCEMENTS;
+    }
+    if (audienceFilter == 'parents') {
+      return AppPages.PARENT_ANNOUNCEMENTS;
+    }
+    return null;
   }
 }

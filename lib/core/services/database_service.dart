@@ -100,8 +100,12 @@ class DatabaseService extends GetxService {
 
   /// Announcement CRUD operations
   Future<String> addAnnouncement(AnnouncementModel announcement) async {
-    final doc = await _firestore.collection('announcements').add(announcement.toMap());
-    return doc.id;
+    final docRef = _firestore.collection('announcements').doc();
+    final payload = announcement
+        .copyWith(id: docRef.id, createdAt: DateTime.now())
+        .toMap(includeId: true, serverTimestamp: true);
+    await docRef.set(payload);
+    return docRef.id;
   }
 
   Future<void> updateAnnouncement(AnnouncementModel announcement) async {
