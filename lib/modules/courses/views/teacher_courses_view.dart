@@ -23,34 +23,53 @@ class TeacherCoursesView extends StatelessWidget {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (controller.courses.isEmpty) {
-          return _buildEmptyState(context);
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
-          physics: const BouncingScrollPhysics(),
-          itemCount: controller.courses.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
-          itemBuilder: (context, index) {
-            final course = controller.courses[index];
-            return Dismissible(
-              key: ValueKey(course.id),
-              background: _buildEditBackground(context),
-              secondaryBackground: _buildDeleteBackground(context),
-              confirmDismiss: (direction) async {
-                if (direction == DismissDirection.startToEnd) {
-                  controller.openForm(course: course);
-                  return false;
-                }
-                final confirmed = await _confirmDelete(context);
-                if (confirmed == true) {
-                  await controller.deleteCourse(course.id);
-                }
-                return confirmed ?? false;
-              },
-              child: _CourseListTile(course: course),
-            );
-          },
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.05),
+                theme.colorScheme.surface,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildFilters(context),
+              Expanded(
+                child: controller.courses.isEmpty
+                    ? _buildEmptyState(context)
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: controller.courses.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final course = controller.courses[index];
+                          return Dismissible(
+                            key: ValueKey(course.id),
+                            background: _buildEditBackground(context),
+                            secondaryBackground:
+                                _buildDeleteBackground(context),
+                            confirmDismiss: (direction) async {
+                              if (direction == DismissDirection.startToEnd) {
+                                controller.openForm(course: course);
+                                return false;
+                              }
+                              final confirmed = await _confirmDelete(context);
+                              if (confirmed == true) {
+                                await controller.deleteCourse(course.id);
+                              }
+                              return confirmed ?? false;
+                            },
+                            child: _CourseListTile(course: course),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         );
       }),
       floatingActionButton: Obx(() {
@@ -103,6 +122,69 @@ class TeacherCoursesView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFilters(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter courses',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Obx(() {
+                final hasFilter =
+                    controller.selectedFilterClassId.value.isNotEmpty;
+                return TextButton.icon(
+                  onPressed: hasFilter ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final classes = controller.availableClasses;
+            return DropdownButtonFormField<String>(
+              value: controller.selectedFilterClassId.value.isEmpty
+                  ? null
+                  : controller.selectedFilterClassId.value,
+              decoration: const InputDecoration(
+                labelText: 'Class',
+                border: OutlineInputBorder(),
+              ),
+              hint: Text(
+                classes.isNotEmpty ? 'All classes' : 'No classes available',
+              ),
+              items: [
+                const DropdownMenuItem<String>(
+                  value: '',
+                  child: Text('All classes'),
+                ),
+                ...classes
+                    .map(
+                      (schoolClass) => DropdownMenuItem<String>(
+                        value: schoolClass.id,
+                        child: Text(schoolClass.name),
+                      ),
+                    )
+                    .toList(),
+              ],
+              onChanged: (value) => controller.updateClassFilter(value ?? ''),
+            );
+          }),
+        ],
       ),
     );
   }

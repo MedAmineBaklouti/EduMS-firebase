@@ -231,8 +231,12 @@ class AnnouncementListView extends StatelessWidget {
           controller.openForm(announcement: ann);
           return false;
         } else if (direction == DismissDirection.endToStart) {
-          await controller.deleteAnnouncement(ann.id);
-          return true;
+          final confirmed = await _confirmDelete(context);
+          if (confirmed == true) {
+            await controller.deleteAnnouncement(ann.id);
+            return true;
+          }
+          return false;
         }
         return false;
       },
@@ -343,5 +347,33 @@ class AnnouncementListView extends StatelessWidget {
   String _capitalize(String value) {
     if (value.isEmpty) return value;
     return value[0].toUpperCase() + value.substring(1);
+  }
+
+  Future<bool?> _confirmDelete(BuildContext context) {
+    final theme = Theme.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete announcement'),
+        content:
+            const Text('Are you sure you want to delete this announcement?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'Delete',
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

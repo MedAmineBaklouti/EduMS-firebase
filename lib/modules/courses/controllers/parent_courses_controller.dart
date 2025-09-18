@@ -93,6 +93,12 @@ class ParentCoursesController extends GetxController {
     _applyFilters();
   }
 
+  void clearFilters() {
+    selectedChildId.value = '';
+    selectedSubjectId.value = '';
+    _applyFilters();
+  }
+
   void _applyFilters() {
     final relevantClassIds = _parentClassIds;
     Iterable<CourseModel> filtered = _allCourses.where(
