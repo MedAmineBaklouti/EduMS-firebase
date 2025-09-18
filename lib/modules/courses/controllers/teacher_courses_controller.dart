@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -11,6 +10,7 @@ import 'package:pdf_text/pdf_text.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/services/pdf_picker_service.dart';
 import '../../../data/models/course_model.dart';
 import '../../../data/models/school_class_model.dart';
 import '../../../data/models/subject_model.dart';
@@ -23,6 +23,7 @@ class TeacherCoursesController extends GetxController {
   final DatabaseService _db = Get.find();
   final AuthService _auth = Get.find();
   final ImagePicker _imagePicker = ImagePicker();
+  final PdfPickerService _pdfPicker = PdfPickerService();
 
   final RxBool isLoading = true.obs;
   final RxBool isSaving = false.obs;
@@ -220,16 +221,12 @@ class TeacherCoursesController extends GetxController {
     try {
       extractionError.value = null;
       lastContentSource.value = null;
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['pdf'],
-      );
-      if (result == null || result.files.isEmpty) {
+      final pickedFile = await _pdfPicker.pickPdf();
+      if (pickedFile == null) {
         return;
       }
-      final pickedFile = result.files.single;
       final path = pickedFile.path;
-      if (path == null) {
+      if (path.isEmpty) {
         const message = 'Could not read the selected PDF file.';
         extractionError.value = message;
         Get.snackbar(
@@ -257,6 +254,13 @@ class TeacherCoursesController extends GetxController {
       Get.snackbar(
         'Content updated',
         'Text extracted from the selected PDF.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on PdfPickerException catch (e) {
+      extractionError.value = e.message;
+      Get.snackbar(
+        'File picker unavailable',
+        e.message,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
