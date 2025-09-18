@@ -61,7 +61,7 @@ class AdminCoursesView extends StatelessWidget {
               prefixIcon: const Icon(Icons.search),
               suffixIcon: Obx(
                 () => controller.searchQuery.value.isEmpty
-                    ? null
+                    ? const SizedBox.shrink()
                     : IconButton(
                         tooltip: 'Clear search',
                         icon: const Icon(Icons.close),
