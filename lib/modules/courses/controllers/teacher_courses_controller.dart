@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:pdf_text/pdf_text.dart';
 
 import '../../../app/routes/app_pages.dart';
 import '../../../core/services/auth_service.dart';
@@ -13,9 +17,12 @@ import '../../../data/models/subject_model.dart';
 import '../../../data/models/teacher_model.dart';
 import '../views/course_form_view.dart';
 
+enum CourseContentInputMode { manual, pdf, image }
+
 class TeacherCoursesController extends GetxController {
   final DatabaseService _db = Get.find();
   final AuthService _auth = Get.find();
+  final ImagePicker _imagePicker = ImagePicker();
 
   final RxBool isLoading = true.obs;
   final RxBool isSaving = false.obs;
@@ -25,6 +32,11 @@ class TeacherCoursesController extends GetxController {
   final RxList<SchoolClassModel> availableClasses = <SchoolClassModel>[].obs;
   final RxSet<String> selectedClassIds = <String>{}.obs;
   final RxString selectedFilterClassId = ''.obs;
+  final Rx<CourseContentInputMode> contentInputMode =
+      CourseContentInputMode.manual.obs;
+  final RxBool isExtractingContent = false.obs;
+  final Rxn<String> lastContentSource = Rxn<String>();
+  final Rxn<String> extractionError = Rxn<String>();
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController titleController = TextEditingController();
@@ -109,6 +121,7 @@ class TeacherCoursesController extends GetxController {
   }
 
   void openForm({CourseModel? course}) {
+    _resetContentExtractionState();
     if (course != null) {
       editing = course;
       titleController.text = course.title;
@@ -122,6 +135,11 @@ class TeacherCoursesController extends GetxController {
       clearForm();
     }
     Get.to(() => CourseFormView(controller: this));
+  }
+
+  void setContentInputMode(CourseContentInputMode mode) {
+    contentInputMode.value = mode;
+    extractionError.value = null;
   }
 
   Future<void> saveCourse() async {
@@ -198,6 +216,115 @@ class TeacherCoursesController extends GetxController {
     }
   }
 
+  Future<void> pickPdfAndExtractText() async {
+    try {
+      extractionError.value = null;
+      lastContentSource.value = null;
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+      );
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+      final pickedFile = result.files.single;
+      final path = pickedFile.path;
+      if (path == null) {
+        const message = 'Could not read the selected PDF file.';
+        extractionError.value = message;
+        Get.snackbar(
+          'Extraction failed',
+          message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+      isExtractingContent.value = true;
+      final pdfDoc = await PDFDoc.fromPath(path);
+      final text = (await pdfDoc.text).trim();
+      if (text.isEmpty) {
+        final message = 'No readable text was found in ${pickedFile.name}.';
+        extractionError.value = message;
+        Get.snackbar(
+          'No text found',
+          message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+      contentController.text = text;
+      lastContentSource.value = 'Extracted from ${pickedFile.name}';
+      Get.snackbar(
+        'Content updated',
+        'Text extracted from the selected PDF.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      final message = 'Failed to extract text from the PDF. ${e.toString()}';
+      extractionError.value = message;
+      Get.snackbar(
+        'Extraction failed',
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isExtractingContent.value = false;
+    }
+  }
+
+  Future<void> pickImageAndExtractText({required bool fromCamera}) async {
+    try {
+      extractionError.value = null;
+      lastContentSource.value = null;
+      final pickedFile = await _imagePicker.pickImage(
+        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      );
+      if (pickedFile == null) {
+        return;
+      }
+      isExtractingContent.value = true;
+      final inputImage = InputImage.fromFilePath(pickedFile.path);
+      final textRecognizer = TextRecognizer(
+        script: TextRecognitionScript.latin,
+      );
+      try {
+        final recognisedText = await textRecognizer.processImage(inputImage);
+        final text = recognisedText.text.trim();
+        if (text.isEmpty) {
+          const message = 'No text was detected in the selected image.';
+          extractionError.value = message;
+          Get.snackbar(
+            'No text found',
+            message,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return;
+        }
+        contentController.text = text;
+        lastContentSource.value = fromCamera
+            ? 'Extracted from captured photo'
+            : 'Extracted from selected image';
+        Get.snackbar(
+          'Content updated',
+          'Text extracted from the image.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } finally {
+        await textRecognizer.close();
+      }
+    } catch (e) {
+      final message = 'Failed to read text from the image. ${e.toString()}';
+      extractionError.value = message;
+      Get.snackbar(
+        'Extraction failed',
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isExtractingContent.value = false;
+    }
+  }
+
   Future<void> deleteCourse(String id) async {
     try {
       await _db.deleteCourse(id);
@@ -256,6 +383,7 @@ class TeacherCoursesController extends GetxController {
     descriptionController.clear();
     contentController.clear();
     selectedClassIds.clear();
+    _resetContentExtractionState();
   }
 
   void _returnToCourseList() {
@@ -280,5 +408,12 @@ class TeacherCoursesController extends GetxController {
     descriptionController.dispose();
     contentController.dispose();
     super.onClose();
+  }
+
+  void _resetContentExtractionState() {
+    contentInputMode.value = CourseContentInputMode.manual;
+    isExtractingContent.value = false;
+    lastContentSource.value = null;
+    extractionError.value = null;
   }
 }
