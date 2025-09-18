@@ -21,12 +21,15 @@ class AnnouncementDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateText = _dateFormat.format(announcement.createdAt);
     final audienceLabels = _audienceLabels();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Announcement'),
+        title: Text(
+          announcement.title.isNotEmpty
+              ? announcement.title
+              : 'Announcement',
+        ),
         centerTitle: true,
         actions: [
           if (isAdmin)
@@ -37,176 +40,309 @@ class AnnouncementDetailView extends StatelessWidget {
             ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.06),
-              theme.colorScheme.surface,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
-              child: Card(
-                elevation: 12,
-                shadowColor: theme.colorScheme.primary.withOpacity(0.2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color:
-                                  theme.colorScheme.primary.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: Icon(
-                              Icons.campaign_rounded,
-                              size: 28,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  announcement.title,
-                                  style:
-                                      theme.textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  dateText,
-                                  style:
-                                      theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                if (isAdmin) ...[
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.hourglass_bottom,
-                                        size: 18,
-                                        color: theme.colorScheme.secondary,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        _expiryDescription(),
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      if (audienceLabels.isNotEmpty) ...[
-                        Text(
-                          'Audience',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: audienceLabels
-                              .map(
-                                (label) => _buildTagChip(
-                                  context,
-                                  icon: Icons.people_outline,
-                                  label: label,
-                                ),
-                              )
-                              .toList(),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                      Divider(color: theme.colorScheme.surfaceVariant),
-                      const SizedBox(height: 24),
-                      Text(
-                        announcement.description,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          height: 1.6,
-                        ),
-                      ),
-                      if (isAdmin) ...[
-                        const SizedBox(height: 32),
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceVariant
-                                .withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Admin tools',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Download a formatted PDF copy for records or offline sharing.',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme
-                                      .colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(
-                                      Icons.picture_as_pdf_outlined),
-                                  label: const Text('Download announcement PDF'),
-                                  onPressed: () => _downloadPdf(context),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeroHeader(context, audienceLabels),
+            const SizedBox(height: 24),
+            _buildOverviewCard(context, audienceLabels),
+            const SizedBox(height: 24),
+            _buildSectionCard(
+              context,
+              title: 'Announcement',
+              child: Text(
+                announcement.description.isNotEmpty
+                    ? announcement.description
+                    : 'No additional details were provided for this announcement.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.6,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
-          ),
+            if (isAdmin) ...[
+              const SizedBox(height: 32),
+              _buildAdminToolsCard(context),
+            ],
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHeroHeader(BuildContext context, List<String> audienceLabels) {
+    final theme = Theme.of(context);
+    final publishedLabel = DateFormat('MMM d, yyyy').format(announcement.createdAt);
+    final audienceSummary = audienceLabels.isEmpty
+        ? 'All audiences'
+        : audienceLabels.length == 1
+            ? audienceLabels.first
+            : '${audienceLabels.length} audiences';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.85),
+            theme.colorScheme.primary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            announcement.title,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _buildHeroChip(
+                context,
+                icon: Icons.calendar_today_outlined,
+                label: 'Published $publishedLabel',
+              ),
+              _buildHeroChip(
+                context,
+                icon: Icons.hourglass_bottom_outlined,
+                label: _expiryDescription(),
+              ),
+              _buildHeroChip(
+                context,
+                icon: Icons.people_outline,
+                label: 'Audience: $audienceSummary',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard(
+    BuildContext context,
+    List<String> audienceLabels,
+  ) {
+    final theme = Theme.of(context);
+    final detailedFormat = DateFormat('MMM d, yyyy • h:mm a');
+    final published = detailedFormat.format(announcement.createdAt);
+    final expiry = announcement.createdAt.add(const Duration(days: 7));
+    final expiryLabel = detailedFormat.format(expiry);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Announcement overview',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildOverviewBadge(
+                  context,
+                  icon: Icons.event_available_outlined,
+                  label: 'Published $published',
+                ),
+                _buildOverviewBadge(
+                  context,
+                  icon: Icons.timer_outlined,
+                  label: _expiryDescription(),
+                ),
+                _buildOverviewBadge(
+                  context,
+                  icon: Icons.calendar_month_outlined,
+                  label: 'Expires $expiryLabel',
+                ),
+                _buildOverviewBadge(
+                  context,
+                  icon: Icons.people_outline,
+                  label: audienceLabels.isEmpty
+                      ? 'All audiences'
+                      : '${audienceLabels.length} audience${audienceLabels.length == 1 ? '' : 's'}',
+                ),
+              ],
+            ),
+            if (audienceLabels.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(
+                'Target audiences',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: audienceLabels
+                    .map((label) => _buildAudienceChip(context, label))
+                    .toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminToolsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return _buildSectionCard(
+      context,
+      title: 'Admin tools',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Download a formatted PDF copy for records or offline sharing. Announcements remain visible for seven days by default.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              label: const Text('Download announcement PDF'),
+              onPressed: () => _downloadPdf(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroChip(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.onPrimary.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.onPrimary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewBadge(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: theme.colorScheme.primary.withOpacity(0.08),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAudienceChip(BuildContext context, String label) {
+    final theme = Theme.of(context);
+    return Chip(
+      label: Text(
+        label,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
 
@@ -230,30 +366,6 @@ class AnnouncementDetailView extends StatelessWidget {
   String _capitalize(String value) {
     if (value.isEmpty) return value;
     return value[0].toUpperCase() + value.substring(1);
-  }
-
-  Widget _buildTagChip(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-  }) {
-    final theme = Theme.of(context);
-    return Chip(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      avatar: Icon(
-        icon,
-        size: 18,
-        color: theme.colorScheme.primary,
-      ),
-      label: Text(
-        label,
-        style: theme.textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    );
   }
 
   String _expiryDescription() {
