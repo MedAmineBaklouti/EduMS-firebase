@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_pages.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../data/models/course_model.dart';
@@ -182,7 +183,7 @@ class TeacherCoursesController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
         );
       }
-      Get.back();
+      _returnToCourseList();
       clearForm();
       editing = null;
     } catch (e) {
@@ -249,6 +250,21 @@ class TeacherCoursesController extends GetxController {
     descriptionController.clear();
     contentController.clear();
     selectedClassIds.clear();
+  }
+
+  void _returnToCourseList() {
+    Get.until((route) {
+      if (route.settings.name == AppPages.TEACHER_COURSES) {
+        return true;
+      }
+      if (route.isFirst) {
+        return true;
+      }
+      return false;
+    });
+    if (Get.currentRoute != AppPages.TEACHER_COURSES) {
+      Get.toNamed(AppPages.TEACHER_COURSES);
+    }
   }
 
   @override
