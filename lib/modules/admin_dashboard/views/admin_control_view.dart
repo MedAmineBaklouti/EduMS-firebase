@@ -719,70 +719,125 @@ class AdminControlView extends StatelessWidget {
     List<Widget> footer = const [],
   }) {
     final theme = Theme.of(context);
-    return Card(
-      elevation: 4,
-      shadowColor: theme.colorScheme.primary.withOpacity(0.12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+    final borderRadius = BorderRadius.circular(24);
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: borderRadius,
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(icon, color: iconColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.surface,
+                theme.colorScheme.primary.withOpacity(0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.08),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(0.08),
+                blurRadius: 22,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            iconColor.withOpacity(0.22),
+                            iconColor.withOpacity(0.08),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 4),
+                      ),
+                      child: Icon(icon, color: iconColor),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            subtitle,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              subtitle!,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  ),
-                  if (onDelete != null)
-                    IconButton(
-                      onPressed: onDelete,
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: theme.colorScheme.error,
                       ),
-                      tooltip: 'Delete',
                     ),
+                    if (onDelete != null)
+                      IconButton(
+                        onPressed: onDelete,
+                        tooltip: 'Delete',
+                        icon: const Icon(Icons.delete_outline),
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              theme.colorScheme.errorContainer.withOpacity(0.9),
+                          foregroundColor: theme.colorScheme.onErrorContainer,
+                          padding: const EdgeInsets.all(12),
+                        ),
+                      ),
+                  ],
+                ),
+                if (footer.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: theme.colorScheme.primary.withOpacity(0.08),
+                  ),
+                  const SizedBox(height: 12),
+                  ...footer,
                 ],
-              ),
-              if (footer.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                ...footer,
+                if (onTap != null) ...[
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      FilledButton.icon(
+                        onPressed: onTap,
+                        icon: const Icon(Icons.manage_accounts_outlined),
+                        label: const Text('Manage'),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
