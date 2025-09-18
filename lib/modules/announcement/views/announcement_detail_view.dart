@@ -101,26 +101,26 @@ class AnnouncementDetailView extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.hourglass_bottom,
-                                      size: 18,
-                                      color: theme.colorScheme.secondary,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      _expiryDescription(),
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color: theme
-                                            .colorScheme.onSurfaceVariant,
-                                        fontWeight: FontWeight.w600,
+                                if (isAdmin) ...[
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.hourglass_bottom,
+                                        size: 18,
+                                        color: theme.colorScheme.secondary,
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _expiryDescription(),
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                           ),

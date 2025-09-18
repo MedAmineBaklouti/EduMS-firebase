@@ -456,7 +456,6 @@ class _AdminCourseTile extends StatelessWidget {
         ? course.teacherName
         : 'Teacher unknown';
     final createdLabel = _dateFormat.format(course.createdAt);
-    final isNew = DateTime.now().difference(course.createdAt).inDays < 5;
     final uniqueClasses = course.classNames.toSet().toList();
     return Material(
       color: Colors.transparent,
@@ -504,22 +503,6 @@ class _AdminCourseTile extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (isNew)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'New',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.secondary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
                 const SizedBox(height: 10),
