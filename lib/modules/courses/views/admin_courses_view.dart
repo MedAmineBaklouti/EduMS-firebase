@@ -13,6 +13,7 @@ class AdminCoursesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Courses'),
@@ -22,118 +23,109 @@ class AdminCoursesView extends StatelessWidget {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        return CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(child: _buildFilters(context)),
-            SliverToBoxAdapter(child: _buildSearchAndStats(context)),
-            if (controller.courses.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
-                  child: _buildEmptyState(context),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final course = controller.courses[index];
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: index == controller.courses.length - 1 ? 0 : 18,
-                        ),
-                        child: _AdminCourseTile(course: course),
-                      );
-                    },
-                    childCount: controller.courses.length,
-                  ),
-                ),
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.05),
+                theme.colorScheme.surface,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildFilters(context),
+              _buildStatsSection(context),
+              Expanded(
+                child: controller.courses.isEmpty
+                    ? _buildEmptyState(context)
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: controller.courses.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final course = controller.courses[index];
+                          return _AdminCourseTile(course: course);
+                        },
+                      ),
               ),
-          ],
+            ],
+          ),
         );
       }),
     );
   }
 
-  Widget _buildSearchAndStats(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildStatsSection(BuildContext context) {
+    final filteredCount = controller.courses.length;
+    final totalCount = controller.totalCourseCount;
+    final filteredTeachers = controller.filteredTeacherCount;
+    final filteredSubjects = controller.filteredSubjectCount;
+    final filteredClasses = controller.filteredClassCount;
+
+    final cards = [
+      _buildSummaryCard(
+        context,
+        icon: Icons.menu_book_outlined,
+        label: 'Visible courses',
+        value:
+            totalCount > 0 ? '$filteredCount of $totalCount' : '$filteredCount',
+      ),
+      _buildSummaryCard(
+        context,
+        icon: Icons.groups_outlined,
+        label: 'Teachers represented',
+        value: filteredTeachers.toString(),
+      ),
+      _buildSummaryCard(
+        context,
+        icon: Icons.category_outlined,
+        label: 'Subjects',
+        value: filteredSubjects.toString(),
+      ),
+      _buildSummaryCard(
+        context,
+        icon: Icons.class_outlined,
+        label: 'Classes covered',
+        value: filteredClasses.toString(),
+      ),
+    ];
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: controller.searchController,
-            decoration: InputDecoration(
-              hintText: 'Search by course, subject, teacher or class',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: Obx(
-                () => controller.searchQuery.value.isEmpty
-                    ? const SizedBox.shrink()
-                    : IconButton(
-                        tooltip: 'Clear search',
-                        icon: const Icon(Icons.close),
-                        onPressed: controller.searchController.clear,
-                      ),
-              ),
-              filled: true,
-              fillColor: theme.colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            textInputAction: TextInputAction.search,
-          ),
-          const SizedBox(height: 16),
-          Obx(() {
-            final filteredCount = controller.courses.length;
-            final totalCount = controller.totalCourseCount;
-            final filteredTeachers = controller.filteredTeacherCount;
-            final filteredSubjects = controller.filteredSubjectCount;
-            final filteredClasses = controller.filteredClassCount;
-            final cards = [
-              _buildSummaryCard(
-                context,
-                icon: Icons.menu_book_outlined,
-                label: 'Visible courses',
-                value: totalCount > 0
-                    ? '$filteredCount of $totalCount'
-                    : '$filteredCount',
-              ),
-              _buildSummaryCard(
-                context,
-                icon: Icons.groups_outlined,
-                label: 'Teachers represented',
-                value: filteredTeachers.toString(),
-              ),
-              _buildSummaryCard(
-                context,
-                icon: Icons.category_outlined,
-                label: 'Subjects',
-                value: filteredSubjects.toString(),
-              ),
-              _buildSummaryCard(
-                context,
-                icon: Icons.class_outlined,
-                label: 'Classes covered',
-                value: filteredClasses.toString(),
-              ),
-            ];
-            return GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 3,
-              children: cards,
-            );
-          }),
-        ],
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          int columnCount;
+          if (maxWidth >= 1100) {
+            columnCount = 4;
+          } else if (maxWidth >= 720) {
+            columnCount = 2;
+          } else {
+            columnCount = 1;
+          }
+          const spacing = 12.0;
+          final effectiveColumns =
+              columnCount.clamp(1, cards.length).toInt();
+          final itemWidth =
+              (maxWidth - (effectiveColumns - 1) * spacing) / effectiveColumns;
+
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: cards
+                .map(
+                  (card) => SizedBox(
+                    width: itemWidth,
+                    child: card,
+                  ),
+                )
+                .toList(),
+          );
+        },
       ),
     );
   }
@@ -157,8 +149,7 @@ class AdminCoursesView extends StatelessWidget {
               Obx(() {
                 final hasFilters = controller.selectedSubjectId.value.isNotEmpty ||
                     controller.selectedTeacherId.value.isNotEmpty ||
-                    controller.selectedClassId.value.isNotEmpty ||
-                    controller.searchQuery.value.isNotEmpty;
+                    controller.selectedClassId.value.isNotEmpty;
                 return TextButton.icon(
                   onPressed: hasFilters ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
@@ -170,13 +161,6 @@ class AdminCoursesView extends StatelessWidget {
           const SizedBox(height: 12),
           Obx(() {
             final chips = <Widget>[];
-            if (controller.searchQuery.value.isNotEmpty) {
-              chips.add(_buildActiveFilterChip(
-                context,
-                label: 'Search: ${controller.searchQuery.value}',
-                onRemoved: controller.searchController.clear,
-              ));
-            }
             if (controller.selectedSubjectId.value.isNotEmpty) {
               chips.add(_buildActiveFilterChip(
                 context,
@@ -436,14 +420,6 @@ class AdminCoursesView extends StatelessWidget {
               'Adjust the filters or check back later for new courses.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Tip: use the search box above to find a specific class or teacher.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),

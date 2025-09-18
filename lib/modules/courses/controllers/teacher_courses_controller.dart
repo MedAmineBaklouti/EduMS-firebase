@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -231,6 +232,11 @@ class TeacherCoursesController extends GetxController {
   void clearFilters() {
     selectedFilterClassId.value = '';
     _applyFilters();
+  }
+
+  String className(String id) {
+    return availableClasses.firstWhereOrNull((element) => element.id == id)?.name ??
+        'Class';
   }
 
   void _applyFilters() {

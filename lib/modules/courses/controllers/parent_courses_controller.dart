@@ -99,6 +99,17 @@ class ParentCoursesController extends GetxController {
     _applyFilters();
   }
 
+  String childName(String id) {
+    return children.firstWhereOrNull((child) => child.id == id)?.name ?? 'Child';
+  }
+
+  String subjectName(String id) {
+    return subjectOptions
+            .firstWhereOrNull((option) => option.id == id)
+            ?.name ??
+        'Subject';
+  }
+
   void _applyFilters() {
     final relevantClassIds = _parentClassIds;
     Iterable<CourseModel> filtered = _allCourses.where(
