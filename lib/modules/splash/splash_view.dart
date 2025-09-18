@@ -104,15 +104,14 @@ class _SplashViewState extends State<SplashView> {
                   Text(
                     'Made with',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 8),
                   Image.asset(
                     'assets/Denet_logo.png',
-                    height: 40,
+                    height: 100,
                   ),
                 ],
               ),
