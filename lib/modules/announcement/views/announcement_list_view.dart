@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -117,32 +115,7 @@ class AnnouncementListView extends StatelessWidget {
     final theme = Theme.of(context);
     final dateText = _dateFormat.format(ann.createdAt);
     final audienceLabels = _audienceLabels(ann);
-    final expiryDate = ann.createdAt.add(const Duration(days: 7));
-    final now = DateTime.now();
-    final totalLifetime = const Duration(days: 7).inMinutes;
-    final remaining = math.max(0, expiryDate.difference(now).inMinutes);
-    final progress = 1 - (remaining / totalLifetime);
-    final isNew = now.difference(ann.createdAt).inHours < 24;
-    final timeLeftLabel = () {
-      if (remaining <= 0) {
-        return 'Expired';
-      }
-      if (remaining >= 1440) {
-        final days = remaining ~/ 1440;
-        final hours = (remaining % 1440) ~/ 60;
-        return hours > 0
-            ? '${days}d ${hours}h left'
-            : '${days}d left';
-      }
-      if (remaining >= 60) {
-        final hours = remaining ~/ 60;
-        final minutes = remaining % 60;
-        return minutes > 0
-            ? '${hours}h ${minutes}m left'
-            : '${hours}h left';
-      }
-      return '$remaining min left';
-    }();
+    final showExpiryDetails = isAdmin || highlightForAdmin;
 
     return Material(
       color: Colors.transparent,
@@ -199,26 +172,6 @@ class AnnouncementListView extends StatelessWidget {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              if (isNew) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary
-                                        .withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'New',
-                                    style:
-                                        theme.textTheme.labelSmall?.copyWith(
-                                      color: theme.colorScheme.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
                               Icon(
                                 Icons.schedule,
                                 size: 16,
@@ -262,55 +215,14 @@ class AnnouncementListView extends StatelessWidget {
                           ))
                       .toList(),
                 ),
-                const SizedBox(height: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.hourglass_bottom,
-                              size: 18,
-                              color: theme.colorScheme.secondary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              timeLeftLabel,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          DateFormat('MMM d').format(expiryDate),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        minHeight: 6,
-                        value: progress.clamp(0.0, 1.0),
-                        backgroundColor:
-                            theme.colorScheme.surfaceVariant.withOpacity(0.6),
-                        valueColor: AlwaysStoppedAnimation(
-                          highlightForAdmin
-                              ? theme.colorScheme.error
-                              : theme.colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                if (showExpiryDetails) ...[
+                  const SizedBox(height: 16),
+                  _buildExpiryStatus(
+                    context,
+                    announcement: ann,
+                    highlightForAdmin: highlightForAdmin,
+                  ),
+                ],
               ],
             ),
           ),
@@ -358,6 +270,93 @@ class AnnouncementListView extends StatelessWidget {
         highlightForAdmin: true,
       ),
     );
+  }
+
+  Widget _buildExpiryStatus(
+    BuildContext context, {
+    required AnnouncementModel announcement,
+    required bool highlightForAdmin,
+  }) {
+    final theme = Theme.of(context);
+    final expiryDate = announcement.createdAt.add(const Duration(days: 7));
+    final totalLifetimeMinutes = const Duration(days: 7).inMinutes;
+    final remainingMinutes = expiryDate.difference(DateTime.now()).inMinutes;
+    final clampedRemaining = remainingMinutes < 0 ? 0 : remainingMinutes;
+
+    double progress = 1 - (clampedRemaining / totalLifetimeMinutes);
+    if (progress < 0) {
+      progress = 0;
+    } else if (progress > 1) {
+      progress = 1;
+    }
+
+    final timeLeftLabel = _formatRemainingTime(clampedRemaining);
+    final expiryLabel = DateFormat('MMM d').format(expiryDate);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.hourglass_bottom,
+                  size: 18,
+                  color: theme.colorScheme.secondary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  timeLeftLabel,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              expiryLabel,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            minHeight: 6,
+            value: progress,
+            backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.6),
+            valueColor: AlwaysStoppedAnimation(
+              highlightForAdmin
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatRemainingTime(int remainingMinutes) {
+    if (remainingMinutes <= 0) {
+      return 'Expired';
+    }
+    if (remainingMinutes >= 1440) {
+      final days = remainingMinutes ~/ 1440;
+      final hours = (remainingMinutes % 1440) ~/ 60;
+      return hours > 0 ? '${days}d ${hours}h left' : '${days}d left';
+    }
+    if (remainingMinutes >= 60) {
+      final hours = remainingMinutes ~/ 60;
+      final minutes = remainingMinutes % 60;
+      return minutes > 0 ? '${hours}h ${minutes}m left' : '${hours}h left';
+    }
+    return '$remainingMinutes min left';
   }
 
   Widget _buildSwipeBackground(
