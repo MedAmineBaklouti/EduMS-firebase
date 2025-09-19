@@ -103,170 +103,34 @@ class CourseFormView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Obx(() {
-                final mode = controller.contentInputMode.value;
-                final isExtracting = controller.isExtractingContent.value;
-                final source = controller.lastContentSource.value;
-                final error = controller.extractionError.value;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('Write text'),
-                          selected: mode == CourseContentInputMode.manual,
-                          onSelected: (selected) {
-                            if (selected) {
-                              controller
-                                  .setContentInputMode(CourseContentInputMode.manual);
-                            }
-                          },
-                        ),
-                        ChoiceChip(
-                          label: const Text('Upload PDF'),
-                          selected: mode == CourseContentInputMode.pdf,
-                          onSelected: (selected) {
-                            if (selected) {
-                              controller
-                                  .setContentInputMode(CourseContentInputMode.pdf);
-                            }
-                          },
-                        ),
-                        ChoiceChip(
-                          label: const Text('Use image'),
-                          selected: mode == CourseContentInputMode.image,
-                          onSelected: (selected) {
-                            if (selected) {
-                              controller
-                                  .setContentInputMode(CourseContentInputMode.image);
-                            }
-                          },
-                        ),
-                      ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Type the course content in the field below.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: controller.contentController,
+                    minLines: 5,
+                    maxLines: 10,
+                    decoration: const InputDecoration(
+                      labelText: 'Content',
+                      border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                      hintText:
+                          'Add the detailed course content here... This will be available in the PDF download.',
                     ),
-                    const SizedBox(height: 12),
-                    if (mode == CourseContentInputMode.manual)
-                      Text(
-                        'Type the course content in the field below.',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    if (mode == CourseContentInputMode.pdf) ...[
-                      Text(
-                        'Upload a PDF to extract its text into the content field.',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed:
-                            isExtracting ? null : controller.pickPdfAndExtractText,
-                        icon: const Icon(Icons.picture_as_pdf_outlined),
-                        label: Text(
-                          isExtracting ? 'Extracting…' : 'Select PDF',
-                        ),
-                      ),
-                    ],
-                    if (mode == CourseContentInputMode.image) ...[
-                      Text(
-                        'Capture or select an image containing the course text.',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: isExtracting
-                                  ? null
-                                  : () => controller.pickImageAndExtractText(
-                                        fromCamera: true,
-                                      ),
-                              icon: const Icon(Icons.photo_camera_outlined),
-                              label: Text(
-                                isExtracting ? 'Processing…' : 'Use camera',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: isExtracting
-                                  ? null
-                                  : () => controller.pickImageAndExtractText(
-                                        fromCamera: false,
-                                      ),
-                              icon: const Icon(Icons.image_outlined),
-                              label: Text(
-                                isExtracting ? 'Processing…' : 'Upload image',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (isExtracting) ...[
-                      const SizedBox(height: 12),
-                      const LinearProgressIndicator(),
-                    ],
-                    if (source != null) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          source,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                    if (error != null) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.error.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          error,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: controller.contentController,
-                      minLines: 5,
-                      maxLines: 10,
-                      enabled: !isExtracting,
-                      decoration: InputDecoration(
-                        labelText: 'Content',
-                        border: const OutlineInputBorder(),
-                        alignLabelWithHint: true,
-                        hintText:
-                            mode == CourseContentInputMode.manual
-                                ? 'Add the detailed course content here... This will be available in the PDF download.'
-                                : 'Extracted text will appear here. You can review and edit it before saving.',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Course content is required';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                );
-              }),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Course content is required';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
               Text(
                 'Assign to classes',
