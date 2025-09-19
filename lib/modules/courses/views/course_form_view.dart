@@ -11,7 +11,6 @@ class CourseFormView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final subjectName = controller.subject.value?.name ?? 'Subject not set';
     return Scaffold(
       appBar: AppBar(
         title: Text(controller.editing == null ? 'Add Course' : 'Edit Course'),
@@ -24,43 +23,17 @@ class CourseFormView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                elevation: 0,
-                color: theme.colorScheme.primary.withOpacity(0.08),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+              Text(
+                'Course details',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.menu_book_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Subject',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              subjectName,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Provide a clear title, a short description, and the lesson content below.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 24),
@@ -131,47 +104,6 @@ class CourseFormView extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Assign to classes',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Obx(() {
-                if (controller.availableClasses.isEmpty) {
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: theme.colorScheme.error.withOpacity(0.08),
-                    ),
-                    child: Text(
-                      'No classes are linked to your subject yet. Contact the administrator.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.error,
-                      ),
-                    ),
-                  );
-                }
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: controller.availableClasses
-                      .map(
-                        (schoolClass) => FilterChip(
-                          label: Text(schoolClass.name),
-                          selected: controller.selectedClassIds
-                              .contains(schoolClass.id),
-                          onSelected: (_) =>
-                              controller.toggleClassSelection(schoolClass.id),
-                        ),
-                      )
-                      .toList(),
-                );
-              }),
               const SizedBox(height: 32),
               Obx(() {
                 final saving = controller.isSaving.value;

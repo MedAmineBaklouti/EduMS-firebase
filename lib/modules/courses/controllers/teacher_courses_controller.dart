@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,9 +7,6 @@ import '../../../app/routes/app_pages.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../data/models/course_model.dart';
-import '../../../data/models/school_class_model.dart';
-import '../../../data/models/subject_model.dart';
-import '../../../data/models/teacher_model.dart';
 import '../views/course_form_view.dart';
 
 class TeacherCoursesController extends GetxController {
@@ -20,18 +16,15 @@ class TeacherCoursesController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool isSaving = false.obs;
 
-  final RxList<CourseModel> _allCourses = <CourseModel>[].obs;
   final RxList<CourseModel> courses = <CourseModel>[].obs;
-  final RxList<SchoolClassModel> availableClasses = <SchoolClassModel>[].obs;
-  final RxSet<String> selectedClassIds = <String>{}.obs;
-  final RxString selectedFilterClassId = ''.obs;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
 
-  final Rxn<TeacherModel> teacher = Rxn<TeacherModel>();
-  final Rxn<SubjectModel> subject = Rxn<SubjectModel>();
+  String? _teacherId;
+  String _teacherName = '';
+  String _teacherEmail = '';
 
   CourseModel? editing;
   StreamSubscription<List<CourseModel>>? _subscription;
@@ -55,46 +48,24 @@ class TeacherCoursesController extends GetxController {
         return;
       }
 
+      _teacherId = uid;
+      _teacherName = _auth.currentUser?.displayName ?? '';
+      _teacherEmail = _auth.currentUser?.email ?? '';
+
       final teacherDoc =
           await _db.firestore.collection('teachers').doc(uid).get();
-      if (!teacherDoc.exists) {
-        Get.snackbar(
-          'Profile missing',
-          'Please contact the administrator to complete your profile.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        return;
+      if (teacherDoc.exists) {
+        final data = teacherDoc.data() as Map<String, dynamic>?;
+        _teacherName = (data?['name'] as String?)?.trim() ?? _teacherName;
+        _teacherEmail = (data?['email'] as String?)?.trim() ?? _teacherEmail;
       }
-
-      final teacherModel = TeacherModel.fromDoc(teacherDoc);
-      teacher.value = teacherModel;
-
-      if (teacherModel.subjectId.isNotEmpty) {
-        final subjectDoc = await _db.firestore
-            .collection('subjects')
-            .doc(teacherModel.subjectId)
-            .get();
-        if (subjectDoc.exists) {
-          subject.value = SubjectModel.fromDoc(subjectDoc);
-        }
-      }
-
-      final classesSnap = await _db.firestore.collection('classes').get();
-      final classes = classesSnap.docs
-          .map((doc) => SchoolClassModel.fromDoc(doc))
-          .where((schoolClass) =>
-              schoolClass.teacherSubjects[teacherModel.subjectId] ==
-              teacherModel.id)
-          .toList()
-        ..sort((a, b) => a.name.compareTo(b.name));
-      availableClasses.assignAll(classes);
 
       _subscription = _db.streamCourses().listen((data) {
         final filtered = data
-            .where((course) => course.teacherId == teacherModel.id)
-            .toList();
-        _allCourses.assignAll(filtered);
-        _applyFilters();
+            .where((course) => course.teacherId == _teacherId)
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        courses.assignAll(filtered);
       });
     } catch (e) {
       Get.snackbar(
@@ -113,9 +84,6 @@ class TeacherCoursesController extends GetxController {
       titleController.text = course.title;
       descriptionController.text = course.description;
       contentController.text = course.content;
-      selectedClassIds
-        ..clear()
-        ..addAll(course.classIds);
     } else {
       editing = null;
       clearForm();
@@ -127,42 +95,36 @@ class TeacherCoursesController extends GetxController {
     if (formKey.currentState?.validate() != true) {
       return;
     }
-    if (selectedClassIds.isEmpty) {
-      Get.snackbar(
-        'Missing information',
-        'Please select at least one class.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-    final teacherModel = teacher.value;
-    if (teacherModel == null) {
+    final teacherId = _teacherId;
+    if (teacherId == null) {
       Get.snackbar(
         'Error',
-        'Teacher profile missing. Please contact the administrator.',
+        'Unable to determine the authenticated teacher.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
 
-    final selectedClasses = availableClasses
-        .where((element) => selectedClassIds.contains(element.id))
-        .toList();
-    final subjectName = subject.value?.name.trim().isNotEmpty == true
-        ? subject.value!.name
-        : 'Unknown Subject';
+    final subjectName = editing?.subjectName.trim().isNotEmpty == true
+        ? editing!.subjectName
+        : 'General';
+    final classIds = List<String>.from(editing?.classIds ?? const <String>[]);
+    final classNames = List<String>.from(editing?.classNames ?? const <String>[]);
+    final teacherName = _teacherName.trim().isNotEmpty
+        ? _teacherName
+        : (_teacherEmail.trim().isNotEmpty ? _teacherEmail : 'Teacher');
 
     final course = CourseModel(
       id: editing?.id ?? '',
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       content: contentController.text.trim(),
-      subjectId: subject.value?.id ?? teacherModel.subjectId,
+      subjectId: editing?.subjectId ?? '',
       subjectName: subjectName,
-      teacherId: teacherModel.id,
-      teacherName: teacherModel.name,
-      classIds: selectedClasses.map((e) => e.id).toList(),
-      classNames: selectedClasses.map((e) => e.name).toList(),
+      teacherId: teacherId,
+      teacherName: teacherName,
+      classIds: classIds,
+      classNames: classNames,
       createdAt: editing?.createdAt ?? DateTime.now(),
     );
 
@@ -197,7 +159,6 @@ class TeacherCoursesController extends GetxController {
     }
   }
 
-
   Future<void> deleteCourse(String id) async {
     try {
       await _db.deleteCourse(id);
@@ -215,47 +176,10 @@ class TeacherCoursesController extends GetxController {
     }
   }
 
-  void toggleClassSelection(String classId) {
-    if (selectedClassIds.contains(classId)) {
-      selectedClassIds.remove(classId);
-    } else {
-      selectedClassIds.add(classId);
-    }
-    selectedClassIds.refresh();
-  }
-
-  void updateClassFilter(String value) {
-    selectedFilterClassId.value = value;
-    _applyFilters();
-  }
-
-  void clearFilters() {
-    selectedFilterClassId.value = '';
-    _applyFilters();
-  }
-
-  String className(String id) {
-    return availableClasses.firstWhereOrNull((element) => element.id == id)?.name ??
-        'Class';
-  }
-
-  void _applyFilters() {
-    Iterable<CourseModel> filtered = _allCourses;
-    if (selectedFilterClassId.value.isNotEmpty) {
-      filtered = filtered
-          .where((course) => course.classIds.contains(selectedFilterClassId.value));
-    }
-
-    final list = filtered.toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    courses.assignAll(list);
-  }
-
   void clearForm() {
     titleController.clear();
     descriptionController.clear();
     contentController.clear();
-    selectedClassIds.clear();
   }
 
   void _returnToCourseList() {

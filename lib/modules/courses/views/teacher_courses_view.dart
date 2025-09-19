@@ -36,7 +36,6 @@ class TeacherCoursesView extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _buildFilters(context),
               Expanded(
                 child: controller.courses.isEmpty
                     ? _buildEmptyState(context)
@@ -70,17 +69,14 @@ class TeacherCoursesView extends StatelessWidget {
               ),
             ],
           ),
-        );
-      }),
-      floatingActionButton: Obx(() {
-        final hasClasses = controller.availableClasses.isNotEmpty;
-        return FloatingActionButton.extended(
-          heroTag: 'teacherCoursesFab',
-          onPressed: hasClasses ? () => controller.openForm() : null,
-          icon: const Icon(Icons.add),
-          label: Text(hasClasses ? 'New Course' : 'No classes available'),
-        );
-      }),
+      );
+    }),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'teacherCoursesFab',
+        onPressed: controller.openForm,
+        icon: const Icon(Icons.add),
+        label: const Text('New Course'),
+      ),
     );
   }
 
@@ -122,113 +118,6 @@ class TeacherCoursesView extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildFilters(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Filter courses',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Obx(() {
-                final hasFilter =
-                    controller.selectedFilterClassId.value.isNotEmpty;
-                return TextButton.icon(
-                  onPressed: hasFilter ? controller.clearFilters : null,
-                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
-                );
-              }),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Obx(() {
-            final selectedId = controller.selectedFilterClassId.value;
-            if (selectedId.isEmpty) {
-              return const SizedBox.shrink();
-            }
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildActiveFilterChip(
-                    context,
-                    label: 'Class: ${controller.className(selectedId)}',
-                    onRemoved: () => controller.updateClassFilter(''),
-                  ),
-                ],
-              ),
-            );
-          }),
-          Obx(() {
-            final classes = controller.availableClasses;
-            return DropdownButtonFormField<String>(
-              value: controller.selectedFilterClassId.value.isEmpty
-                  ? null
-                  : controller.selectedFilterClassId.value,
-              decoration: const InputDecoration(
-                labelText: 'Class',
-                border: OutlineInputBorder(),
-              ),
-              hint: Text(
-                classes.isNotEmpty ? 'All classes' : 'No classes available',
-              ),
-              items: [
-                const DropdownMenuItem<String>(
-                  value: '',
-                  child: Text('All classes'),
-                ),
-                ...classes
-                    .map(
-                      (schoolClass) => DropdownMenuItem<String>(
-                        value: schoolClass.id,
-                        child: Text(schoolClass.name),
-                      ),
-                    )
-                    .toList(),
-              ],
-              onChanged: (value) => controller.updateClassFilter(value ?? ''),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActiveFilterChip(
-    BuildContext context, {
-    required String label,
-    required VoidCallback onRemoved,
-  }) {
-    final theme = Theme.of(context);
-    return Chip(
-      avatar: Icon(
-        Icons.filter_alt_outlined,
-        size: 18,
-        color: theme.colorScheme.primary,
-      ),
-      label: Text(label),
-      deleteIcon: const Icon(Icons.close, size: 18),
-      onDeleted: onRemoved,
-      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      labelStyle: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.primary,
-        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -303,9 +192,9 @@ class _CourseListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final classes = course.classNames.isEmpty
-        ? 'No class assigned'
-        : course.classNames.join(', ');
+    final descriptionPreview = course.description.isEmpty
+        ? 'Tap to view the course details.'
+        : course.description;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -335,23 +224,13 @@ class _CourseListTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.group_outlined,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        classes,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  descriptionPreview,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
