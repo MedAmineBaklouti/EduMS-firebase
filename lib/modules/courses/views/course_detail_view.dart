@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+
+import 'package:edums/core/services/pdf_downloader/pdf_downloader.dart';
 
 import '../../../data/models/course_model.dart';
 
@@ -346,11 +347,17 @@ class CourseDetailView extends StatelessWidget {
     try {
       final bytes = await doc.save();
       final fileName = _pdfFileName();
-      await Printing.sharePdf(
-        bytes: bytes,
-        filename: fileName,
+      final savedPath = await savePdf(bytes, fileName);
+      Get.closeCurrentSnackbar();
+      Get.snackbar(
+        'Download complete',
+        savedPath != null
+            ? 'Saved to $savedPath'
+            : 'The PDF download has started.',
+        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
+      Get.closeCurrentSnackbar();
       Get.snackbar(
         'Error',
         'Failed to generate the PDF. ${e.toString()}',

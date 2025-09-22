@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+
+import 'package:edums/core/services/pdf_downloader/pdf_downloader.dart';
 
 import '../../../data/models/announcement_model.dart';
 
@@ -81,12 +82,17 @@ class AnnouncementDetailView extends StatelessWidget {
         icon: Icons.calendar_today_outlined,
         label: 'Published $publishedLabel',
       ),
-      _buildHeroChip(
-        context,
-        icon: Icons.hourglass_bottom_outlined,
-        label: _expiryDescription(),
-      ),
     ];
+
+    if (isAdmin) {
+      chips.add(
+        _buildHeroChip(
+          context,
+          icon: Icons.hourglass_bottom_outlined,
+          label: _expiryDescription(),
+        ),
+      );
+    }
 
     if (isAdmin) {
       final audienceSummary = audienceLabels.isEmpty ||
@@ -153,25 +159,33 @@ class AnnouncementDetailView extends StatelessWidget {
     final theme = Theme.of(context);
     final detailedFormat = DateFormat('MMM d, yyyy • h:mm a');
     final published = detailedFormat.format(announcement.createdAt);
-    final expiry = announcement.createdAt.add(const Duration(days: 7));
-    final expiryLabel = detailedFormat.format(expiry);
     final badges = <Widget>[
       _buildOverviewBadge(
         context,
         icon: Icons.event_available_outlined,
         label: 'Published $published',
       ),
-      _buildOverviewBadge(
-        context,
-        icon: Icons.timer_outlined,
-        label: _expiryDescription(),
-      ),
-      _buildOverviewBadge(
-        context,
-        icon: Icons.calendar_month_outlined,
-        label: 'Expires $expiryLabel',
-      ),
     ];
+
+    if (isAdmin) {
+      final expiry = announcement.createdAt.add(const Duration(days: 7));
+      final expiryLabel = detailedFormat.format(expiry);
+      badges
+        ..add(
+          _buildOverviewBadge(
+            context,
+            icon: Icons.timer_outlined,
+            label: _expiryDescription(),
+          ),
+        )
+        ..add(
+          _buildOverviewBadge(
+            context,
+            icon: Icons.calendar_month_outlined,
+            label: 'Expires $expiryLabel',
+          ),
+        );
+    }
 
     if (isAdmin) {
       final audienceBadgeLabel = audienceLabels.isEmpty ||
@@ -472,11 +486,13 @@ class AnnouncementDetailView extends StatelessWidget {
       final sanitized = _sanitizeFileName(announcement.title);
       final fileName =
           sanitized.isEmpty ? 'announcement.pdf' : '$sanitized.pdf';
-      await Printing.sharePdf(bytes: bytes, filename: fileName);
+      final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(
         'Download ready',
-        'The announcement PDF was generated successfully.',
+        savedPath != null
+            ? 'Saved to $savedPath'
+            : 'The PDF download has started.',
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
