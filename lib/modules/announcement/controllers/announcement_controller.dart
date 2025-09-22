@@ -41,6 +41,7 @@ class AnnouncementController extends GetxController {
           valid.add(ann);
         }
       }
+      valid.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       announcements.value = valid;
     });
   }
@@ -92,24 +93,25 @@ class AnnouncementController extends GetxController {
         audience: audience,
         createdAt: editing?.createdAt ?? DateTime.now(),
       );
-      if (editing == null) {
-        await _db.addAnnouncement(announcement);
-        Get.snackbar(
-          'Announcement published',
-          'Your announcement is now visible to the selected audience.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      } else {
+      final isEditingExisting = editing != null;
+
+      if (isEditingExisting) {
         await _db.updateAnnouncement(announcement);
-        Get.snackbar(
-          'Announcement updated',
-          'Changes have been saved successfully.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+      } else {
+        await _db.addAnnouncement(announcement);
       }
-      Get.back();
-      editing = null;
+
       clearForm();
+      editing = null;
+
+      Get.back();
+      Get.snackbar(
+        isEditingExisting ? 'Announcement updated' : 'Announcement published',
+        isEditingExisting
+            ? 'Changes have been saved successfully.'
+            : 'Your announcement is now visible to the selected audience.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
       Get.snackbar(
         'Error',

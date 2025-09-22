@@ -117,11 +117,12 @@ class DatabaseService extends GetxService {
     if (audience != null) {
       query = query.where('audience', arrayContains: audience);
     }
-    return query
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => AnnouncementModel.fromDoc(doc)).toList());
+    return query.snapshots().map((snapshot) {
+      final items =
+          snapshot.docs.map((doc) => AnnouncementModel.fromDoc(doc)).toList();
+      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return items;
+    });
   }
 
   /// Course CRUD operations
