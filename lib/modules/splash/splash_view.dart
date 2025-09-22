@@ -111,7 +111,7 @@ class _SplashViewState extends State<SplashView> {
                   ),
                   Image.asset(
                     'assets/Denet_logo.png',
-                    height: 100,
+                    height: 40,
                   ),
                 ],
               ),
