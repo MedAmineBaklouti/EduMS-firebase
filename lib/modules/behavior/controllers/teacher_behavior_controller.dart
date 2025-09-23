@@ -238,16 +238,6 @@ class TeacherBehaviorController extends GetxController {
         createdAt: editing?.createdAt ?? now,
       );
       await docRef.set(model.toMap());
-      if (editing == null) {
-        _allBehaviors.add(model);
-      } else {
-        final index =
-            _allBehaviors.indexWhere((element) => element.id == editing!.id);
-        if (index != -1) {
-          _allBehaviors[index] = model;
-        }
-      }
-      _applyFilters();
       startCreate();
       return true;
     } catch (e) {
