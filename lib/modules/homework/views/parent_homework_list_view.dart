@@ -115,97 +115,94 @@ class _ParentHomeworkFilters extends StatelessWidget {
             final hasChildFilter = (childFilter ?? '').isNotEmpty;
             final hasStatusFilter = completionFilter != null;
             final hasFilters = hasChildFilter || hasStatusFilter;
-            return ModuleCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Filter homeworks',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Filter homeworks',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      TextButton.icon(
-                        onPressed: hasFilters ? controller.clearFilters : null,
-                        icon:
-                            const Icon(Icons.filter_alt_off_outlined, size: 18),
-                        label: const Text('Clear'),
-                      ),
-                    ],
-                  ),
-                  if (hasFilters) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (hasChildFilter)
-                          _ParentFilterChip(
-                            label:
-                                'Child: ${controller.childName(childFilter!)}',
-                            onRemoved: () => controller.setChildFilter(null),
-                          ),
-                        if (hasStatusFilter)
-                          _ParentFilterChip(
-                            label: completionFilter == true
-                                ? 'Status: Completed'
-                                : 'Status: Pending',
-                            onRemoved: () => controller.setCompletionFilter(null),
-                          ),
-                      ],
+                    ),
+                    TextButton.icon(
+                      onPressed: hasFilters ? controller.clearFilters : null,
+                      icon:
+                          const Icon(Icons.filter_alt_off_outlined, size: 18),
+                      label: const Text('Clear'),
                     ),
                   ],
+                ),
+                if (hasFilters) ...[
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String?>(
-                    value: childFilter,
-                    decoration: const InputDecoration(
-                      labelText: 'Child',
-                      border: OutlineInputBorder(),
-                    ),
-                    hint: const Text('All children'),
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('All children'),
-                      ),
-                      ...controller.children.map(
-                        (child) => DropdownMenuItem<String?>(
-                          value: child.id,
-                          child: Text(child.name),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (hasChildFilter)
+                        _ParentFilterChip(
+                          label:
+                              'Child: ${controller.childName(childFilter!)}',
+                          onRemoved: () => controller.setChildFilter(null),
                         ),
-                      ),
+                      if (hasStatusFilter)
+                        _ParentFilterChip(
+                          label: completionFilter == true
+                              ? 'Status: Completed'
+                              : 'Status: Pending',
+                          onRemoved: () => controller.setCompletionFilter(null),
+                        ),
                     ],
-                    onChanged: controller.setChildFilter,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<bool?>(
-                    value: completionFilter,
-                    decoration: const InputDecoration(
-                      labelText: 'Status',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem<bool?>(
-                        value: null,
-                        child: Text('All homeworks'),
-                      ),
-                      DropdownMenuItem<bool?>(
-                        value: false,
-                        child: Text('Pending only'),
-                      ),
-                      DropdownMenuItem<bool?>(
-                        value: true,
-                        child: Text('Completed only'),
-                      ),
-                    ],
-                    onChanged: controller.setCompletionFilter,
                   ),
                 ],
-              ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String?>(
+                  value: childFilter,
+                  decoration: const InputDecoration(
+                    labelText: 'Child',
+                    border: OutlineInputBorder(),
+                  ),
+                  hint: const Text('All children'),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('All children'),
+                    ),
+                    ...controller.children.map(
+                      (child) => DropdownMenuItem<String?>(
+                        value: child.id,
+                        child: Text(child.name),
+                      ),
+                    ),
+                  ],
+                  onChanged: controller.setChildFilter,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<bool?>(
+                  value: completionFilter,
+                  decoration: const InputDecoration(
+                    labelText: 'Status',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem<bool?>(
+                      value: null,
+                      child: Text('All homeworks'),
+                    ),
+                    DropdownMenuItem<bool?>(
+                      value: false,
+                      child: Text('Pending only'),
+                    ),
+                    DropdownMenuItem<bool?>(
+                      value: true,
+                      child: Text('Completed only'),
+                    ),
+                  ],
+                  onChanged: controller.setCompletionFilter,
+                ),
+              ],
             );
           });
         },
