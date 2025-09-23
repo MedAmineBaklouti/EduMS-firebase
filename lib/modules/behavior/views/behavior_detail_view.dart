@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/behavior_model.dart';
-import '../../common/widgets/module_card.dart';
-import '../../common/widgets/module_page_container.dart';
 import '../widgets/behavior_type_chip.dart';
 
 class BehaviorDetailView extends StatelessWidget {
@@ -25,7 +23,8 @@ class BehaviorDetailView extends StatelessWidget {
         behavior.type == BehaviorType.positive ? Colors.green : Colors.red;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Behavior Details'),
+        title: const Text('Behavior details'),
+        centerTitle: true,
         actions: [
           if (onEdit != null)
             IconButton(
@@ -33,114 +32,330 @@ class BehaviorDetailView extends StatelessWidget {
               onPressed: () async {
                 await onEdit?.call();
               },
-              icon: Icon(
-                Icons.edit_outlined,
-                color: Colors.black,
-              ),
+              icon: const Icon(Icons.edit_outlined),
             ),
         ],
       ),
-      body: ModulePageContainer(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeroHeader(context, palette),
+            const SizedBox(height: 24),
+            _buildOverviewCard(context),
+            const SizedBox(height: 24),
+            _buildSectionCard(
+              context,
+              title: 'Description',
+              child: Text(
+                behavior.description.trim().isEmpty
+                    ? 'No description was provided for this behavior update.'
+                    : behavior.description.trim(),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.6,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroHeader(BuildContext context, MaterialColor palette) {
+    final theme = Theme.of(context);
+    final recordedLabel = _dateFormat.format(behavior.createdAt);
+    final classLabel = behavior.className.trim().isEmpty
+        ? null
+        : behavior.className.trim();
+    final teacherLabel = behavior.teacherName.trim().isEmpty
+        ? null
+        : behavior.teacherName.trim();
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            palette.shade500.withOpacity(0.85),
+            palette.shade700,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: palette.shade400.withOpacity(0.4),
+            blurRadius: 18,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ModuleCard(
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: Colors.white.withOpacity(0.18),
+                child: Text(
+                  _initialsFor(behavior.childName),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 28,
-                          backgroundColor:
-                              theme.colorScheme.primary.withOpacity(0.12),
-                          child: Text(
-                            _initialsFor(behavior.childName),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                behavior.childName,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                behavior.className,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Icon(Icons.person_outline, size: 16),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      'Teacher: ${behavior.teacherName}',
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        BehaviorTypeChip(type: behavior.type),
-                      ],
+                    Text(
+                      behavior.childName.trim().isEmpty
+                          ? 'Student'
+                          : behavior.childName,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Icon(Icons.schedule, size: 18),
-                        const SizedBox(width: 6),
-                        Text(
-                          _dateFormat.format(behavior.createdAt),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    if (classLabel != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        classLabel,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withOpacity(0.85),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Description',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ModuleCard(
-                child: Text(
-                  behavior.description.isEmpty
-                      ? 'No description provided.'
-                      : behavior.description,
-                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _buildHeroChip(
+                context,
+                icon: _behaviorTypeIcon(behavior.type),
+                label: _behaviorTypeHeadline(behavior.type),
+              ),
+              _buildHeroChip(
+                context,
+                icon: Icons.schedule,
+                label: 'Recorded $recordedLabel',
+              ),
+              if (teacherLabel != null)
+                _buildHeroChip(
+                  context,
+                  icon: Icons.person_outline,
+                  label: 'Teacher: $teacherLabel',
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final badges = <Widget>[
+      _buildOverviewBadge(
+        context,
+        icon: Icons.schedule,
+        label: _dateFormat.format(behavior.createdAt),
+      ),
+    ];
+
+    if (behavior.className.trim().isNotEmpty) {
+      badges.add(
+        _buildOverviewBadge(
+          context,
+          icon: Icons.class_outlined,
+          label: behavior.className.trim(),
+        ),
+      );
+    }
+
+    if (behavior.teacherName.trim().isNotEmpty) {
+      badges.add(
+        _buildOverviewBadge(
+          context,
+          icon: Icons.person_outline,
+          label: behavior.teacherName.trim(),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Behavior overview',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: badges,
+            ),
+            const SizedBox(height: 20),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BehaviorTypeChip(type: behavior.type),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _behaviorTypeSummary(),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroChip(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewBadge(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+  }) {
+    final theme = Theme.of(context);
+    final MaterialColor palette =
+        behavior.type == BehaviorType.positive ? Colors.green : Colors.red;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: palette.shade50,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: palette.shade600),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: palette.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _behaviorTypeIcon(BehaviorType type) {
+    switch (type) {
+      case BehaviorType.positive:
+        return Icons.thumb_up_alt_outlined;
+      case BehaviorType.negative:
+        return Icons.report_outlined;
+    }
+  }
+
+  String _behaviorTypeHeadline(BehaviorType type) {
+    switch (type) {
+      case BehaviorType.positive:
+        return 'Positive behavior';
+      case BehaviorType.negative:
+        return 'Needs attention';
+    }
+  }
+
+  String _behaviorTypeSummary() {
+    switch (behavior.type) {
+      case BehaviorType.positive:
+        return 'This positive note highlights progress, achievements, or conduct worth celebrating.';
+      case BehaviorType.negative:
+        return 'This entry flags a concern that may require follow-up, guidance, or additional support.';
+    }
   }
 
   String _initialsFor(String value) {
