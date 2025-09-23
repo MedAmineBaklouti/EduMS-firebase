@@ -103,6 +103,29 @@ class ParentHomeworkController extends GetxController {
     _applyFilters();
   }
 
+  void clearFilters() {
+    childFilter.value = null;
+    completionFilter.value = null;
+    _applyFilters();
+  }
+
+  List<ChildModel> childrenForClass(String classId) {
+    return children
+        .where((child) => child.classId == classId)
+        .toList();
+  }
+
+  int childCountForClass(String classId) {
+    return childrenForClass(classId).length;
+  }
+
+  String childName(String id) {
+    return children
+            .firstWhereOrNull((child) => child.id == id)
+            ?.name ??
+        'Child';
+  }
+
   Future<void> refreshData() async {
     final parentId = _auth.currentUser?.uid;
     if (parentId == null) {

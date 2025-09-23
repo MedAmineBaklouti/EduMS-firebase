@@ -63,6 +63,8 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final homework = items[index];
+                    final totalChildren =
+                        controller.childCountForClass(homework.classId);
                     return Dismissible(
                       key: ValueKey(homework.id),
                       background: SwipeActionBackground(
@@ -93,10 +95,13 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
                       child: _TeacherHomeworkCard(
                         homework: homework,
                         dateFormat: dateFormat,
+                        totalChildren: totalChildren,
                         onTap: () {
                           Get.to(
                             () => HomeworkDetailView(
                               homework: homework,
+                              initialChildCount: totalChildren,
+                              showTeacherInsights: true,
                               onEdit: () async {
                                 Get.back();
                                 await Future<void>.delayed(Duration.zero);
@@ -104,10 +109,6 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
                                 await Get.to(
                                   () => const TeacherHomeworkFormView(),
                                 );
-                              },
-                              onDelete: () async {
-                                controller.removeHomework(homework);
-                                Get.back();
                               },
                             ),
                           );
@@ -268,16 +269,24 @@ class _TeacherHomeworkCard extends StatelessWidget {
   const _TeacherHomeworkCard({
     required this.homework,
     required this.dateFormat,
+    this.totalChildren,
     this.onTap,
   });
 
   final HomeworkModel homework;
   final DateFormat dateFormat;
+  final int? totalChildren;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final completedCount =
+        homework.completionByChildId.values.where((value) => value).length;
+    final totalCount = totalChildren ?? homework.completionByChildId.length;
+    final completionLabel = totalCount > 0
+        ? '$completedCount/$totalCount completed'
+        : '$completedCount completed';
     return ModuleCard(
       onTap: onTap,
       child: Column(
@@ -318,6 +327,24 @@ class _TeacherHomeworkCard extends StatelessWidget {
                 'Due ${dateFormat.format(homework.dueDate)}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(
+                Icons.assignment_turned_in_outlined,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                completionLabel,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),

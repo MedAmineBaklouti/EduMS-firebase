@@ -1,42 +1,51 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../core/services/database_service.dart';
 import '../../../core/services/pdf_downloader/pdf_downloader.dart';
+import '../../../data/models/child_model.dart';
 import '../../../data/models/homework_model.dart';
+import '../../../data/models/school_class_model.dart';
 
 class HomeworkDetailView extends StatefulWidget {
   const HomeworkDetailView({
     super.key,
     required this.homework,
     this.showParentControls = false,
-    this.parentChildId,
-    this.parentChildName,
+    this.parentChildren = const [],
     this.isParentLocked = false,
-    this.initialParentCompletion,
     this.onEdit,
-    this.onDelete,
     this.onParentToggle,
+    this.initialChildCount,
+    this.showTeacherInsights = false,
   });
 
   final HomeworkModel homework;
   final bool showParentControls;
-  final String? parentChildId;
-  final String? parentChildName;
+  final List<ChildModel> parentChildren;
   final bool isParentLocked;
-  final bool? initialParentCompletion;
   final Future<void> Function()? onEdit;
-  final Future<void> Function()? onDelete;
-  final Future<bool> Function(bool completed)? onParentToggle;
+  final Future<bool> Function(String childId, bool completed)? onParentToggle;
+  final int? initialChildCount;
+  final bool showTeacherInsights;
 
   @override
   State<HomeworkDetailView> createState() => _HomeworkDetailViewState();
 }
 
 class _HomeworkDetailViewState extends State<HomeworkDetailView> {
+  final DatabaseService _db = Get.find();
+
   late HomeworkModel _homework;
-  bool? _parentCompletion;
+  List<_ParentChildEntry> _parentEntries = <_ParentChildEntry>[];
+  Map<String, _TeacherClassGroup> _teacherChildrenByClass =
+      <String, _TeacherClassGroup>{};
+  String? _selectedTeacherClassId;
+  bool _isTeacherChildrenLoading = false;
+  int? _assignedChildrenCount;
 
   final DateFormat _dateTimeFormat = DateFormat('MMM d, yyyy • h:mm a');
 
@@ -44,7 +53,30 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
   void initState() {
     super.initState();
     _homework = widget.homework;
-    _parentCompletion = widget.initialParentCompletion;
+    _assignedChildrenCount = widget.initialChildCount;
+    _initializeParentEntries();
+    if (widget.showTeacherInsights) {
+      _loadTeacherChildren();
+    }
+  }
+
+  void _initializeParentEntries() {
+    if (!widget.showParentControls) {
+      return;
+    }
+    _parentEntries = widget.parentChildren
+        .map(
+          (child) => _ParentChildEntry(
+            child: child,
+            completed: widget.homework.isCompletedForChild(child.id),
+          ),
+        )
+        .toList()
+      ..sort((a, b) => a.child.name.compareTo(b.child.name));
+    if (_parentEntries.isNotEmpty &&
+        (_assignedChildrenCount == null || _assignedChildrenCount == 0)) {
+      _assignedChildrenCount = _parentEntries.length;
+    }
   }
 
   @override
@@ -67,11 +99,6 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
                 await widget.onEdit?.call();
               },
             ),
-          IconButton(
-            tooltip: 'Download PDF',
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            onPressed: () => _downloadPdf(context),
-          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -100,63 +127,9 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
               const SizedBox(height: 24),
               _buildParentStatusCard(context),
             ],
-            if (widget.onEdit != null || widget.onDelete != null) ...[
-              const SizedBox(height: 32),
-              Text(
-                'Actions',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  if (widget.onEdit != null)
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await widget.onEdit?.call();
-                      },
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        color: Colors.white,
-                      ),
-                      label: const Text('Edit homework'),
-                    ),
-                  if (widget.onDelete != null)
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Delete homework'),
-                              content: const Text(
-                                'Are you sure you want to delete this homework assignment?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(false),
-                                  child: const Text('Cancel'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.of(context).pop(true),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        if (confirmed == true) {
-                          await widget.onDelete?.call();
-                        }
-                      },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete homework'),
-                    ),
-                ],
-              ),
+            if (widget.showTeacherInsights) ...[
+              const SizedBox(height: 24),
+              _buildTeacherChildrenCard(context),
             ],
             const SizedBox(height: 32),
             SizedBox(
@@ -256,11 +229,27 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
   Widget _buildOverviewCard(BuildContext context, String completionStats) {
     final theme = Theme.of(context);
     final dueStatus = _dueStatusLabel();
-    final childStatusSummary = widget.showParentControls &&
-            widget.parentChildId != null &&
-            widget.parentChildName != null
-        ? '${widget.parentChildName}: ${(_parentCompletion ?? false) ? 'Completed' : 'Pending'}'
-        : null;
+    String? childStatusSummary;
+    if (widget.showParentControls) {
+      if (_parentEntries.isEmpty) {
+        childStatusSummary =
+            'No children from your account are linked to this homework yet.';
+      } else {
+        final completed =
+            _parentEntries.where((entry) => entry.completed).length;
+        final total = _parentEntries.length;
+        childStatusSummary =
+            '$completed of $total of your children have completed this homework.';
+      }
+    } else if (widget.showTeacherInsights) {
+      final total = _assignedChildrenCount ?? 0;
+      if (total > 0) {
+        final completed =
+            _homework.completionByChildId.values.where((value) => value).length;
+        childStatusSummary =
+            '$completed of $total students have completed this homework.';
+      }
+    }
 
     return Card(
       elevation: 0,
@@ -358,15 +347,14 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
 
   Widget _buildParentStatusCard(BuildContext context) {
     final theme = Theme.of(context);
-    final hasChild = widget.parentChildId != null;
     final isLocked = widget.isParentLocked;
 
-    if (!hasChild) {
+    if (_parentEntries.isEmpty) {
       return _buildSectionCard(
         context,
-        title: 'Completion status',
+        title: 'Manage completion',
         child: Text(
-          'Select a child from the homework list to update the completion status for this assignment.',
+          'No children from your account are linked to this homework yet.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.5,
@@ -375,76 +363,238 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
       );
     }
 
-    final currentStatus = (_parentCompletion ?? false) ? 'Completed' : 'Pending';
-    final statusColor = (_parentCompletion ?? false)
-        ? Colors.green
-        : theme.colorScheme.secondary;
+    return _buildSectionCard(
+      context,
+      title: 'Manage completion',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isLocked
+                ? 'The due date has passed. Updates are disabled.'
+                : 'Mark each child as completed once they finish the assignment.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isLocked
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.onSurfaceVariant,
+              fontWeight: isLocked ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _parentEntries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final entry = _parentEntries[index];
+              final statusColor =
+                  entry.completed ? Colors.green : theme.colorScheme.secondary;
+              return Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: statusColor.withOpacity(0.08),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      entry.completed
+                          ? Icons.check_circle_outline
+                          : Icons.hourglass_bottom_outlined,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.child.name,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            entry.completed ? 'Completed' : 'Pending',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Checkbox(
+                      value: entry.completed,
+                      onChanged: isLocked
+                          ? null
+                          : (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              _toggleParentChild(entry.child.id, value);
+                            },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+  Widget _buildTeacherChildrenCard(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_isTeacherChildrenLoading) {
+      return _buildSectionCard(
+        context,
+        title: 'Student progress',
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (_teacherChildrenByClass.isEmpty) {
+      return _buildSectionCard(
+        context,
+        title: 'Student progress',
+        child: Text(
+          'Student completion data will appear here once learners are linked to this homework.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+      );
+    }
+
+    final classIds = _teacherChildrenByClass.keys.toList();
+    final selectedId =
+        _selectedTeacherClassId ?? (classIds.isNotEmpty ? classIds.first : null);
+    final selectedGroup =
+        selectedId != null ? _teacherChildrenByClass[selectedId] : null;
+
+    return _buildSectionCard(
+      context,
+      title: 'Student progress',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (classIds.length > 1)
+            DropdownButtonFormField<String>(
+              value: selectedId,
+              decoration: const InputDecoration(
+                labelText: 'Class',
+                border: OutlineInputBorder(),
+              ),
+              items: classIds
+                  .map(
+                    (id) => DropdownMenuItem<String>(
+                      value: id,
+                      child: Text(
+                        _teacherChildrenByClass[id]?.className.isNotEmpty == true
+                            ? _teacherChildrenByClass[id]!.className
+                            : 'Class',
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _selectedTeacherClassId = value;
+                });
+              },
+            )
+          else if (selectedGroup != null)
             Text(
-              'Manage completion',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+              selectedGroup.className.isNotEmpty
+                  ? selectedGroup.className
+                  : 'Class overview',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 16),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: statusColor.withOpacity(0.08),
-              ),
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                leading: Icon(
-                  (_parentCompletion ?? false)
-                      ? Icons.check_circle_outline
-                      : Icons.hourglass_bottom_outlined,
-                  color: statusColor,
-                ),
-                title: Text(
-                  'Status for ${widget.parentChildName ?? 'Selected child'}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(currentStatus),
-                trailing: Switch.adaptive(
-                  value: _parentCompletion ?? false,
-                  onChanged: isLocked
-                      ? null
-                      : (value) {
-                          _handleParentToggle(value);
-                        },
-                ),
+          if (selectedGroup != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              '${selectedGroup.children.where((child) => child.completed).length} of ${selectedGroup.children.length} students completed',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
-            if (isLocked)
+            if (selectedGroup.children.isEmpty)
               Text(
-                'The due date has passed. This homework can no longer be updated.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error,
-                  fontWeight: FontWeight.w600,
+                'No students are linked to this homework for the selected class yet.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.5,
                 ),
               )
             else
-              Text(
-                'Toggle the switch to mark this homework as completed for ${widget.parentChildName ?? 'the selected child'}.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: selectedGroup.children.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final entry = selectedGroup.children[index];
+                  final statusColor = entry.completed
+                      ? Colors.green
+                      : theme.colorScheme.secondary;
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: statusColor.withOpacity(0.08),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          entry.completed
+                              ? Icons.check_circle_outline
+                              : Icons.hourglass_bottom_outlined,
+                          color: statusColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            entry.child.name,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          entry.completed ? 'Completed' : 'Pending',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -510,8 +660,15 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
   }
 
   String _completionStats() {
-    final total = _homework.completionByChildId.length;
-    if (total == 0) {
+    if (widget.showParentControls && _parentEntries.isNotEmpty) {
+      final completed =
+          _parentEntries.where((entry) => entry.completed).length;
+      final total = _parentEntries.length;
+      return '$completed of $total completed';
+    }
+
+    final total = _assignedChildrenCount ?? _homework.completionByChildId.length;
+    if (total <= 0) {
       return 'No completion updates yet';
     }
     final completed =
@@ -538,41 +695,204 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
     return 'Due in $minutes minute${minutes == 1 ? '' : 's'}';
   }
 
-  Future<void> _handleParentToggle(bool value) async {
-    final childId = widget.parentChildId;
-    if (childId == null || widget.onParentToggle == null) {
+  Future<void> _toggleParentChild(String childId, bool value) async {
+    if (widget.onParentToggle == null) {
       return;
     }
-    final previous = _parentCompletion ?? false;
-    final previousHomework = _homework;
+    final index =
+        _parentEntries.indexWhere((entry) => entry.child.id == childId);
+    if (index == -1) {
+      return;
+    }
+
+    final previousEntry = _parentEntries[index];
+    final previousMap = Map<String, bool>.from(_homework.completionByChildId);
+
     setState(() {
-      _parentCompletion = value;
+      _parentEntries[index] = previousEntry.copyWith(completed: value);
       final updatedMap = Map<String, bool>.from(_homework.completionByChildId)
         ..[childId] = value;
       _homework = _homework.copyWith(completionByChildId: updatedMap);
     });
+
     var success = false;
     try {
-      success = await widget.onParentToggle!(value);
+      success = await widget.onParentToggle!(childId, value);
     } catch (_) {
       success = false;
     }
-    if (!success) {
+
+    if (!success && mounted) {
       setState(() {
-        _parentCompletion = previous;
-        _homework = previousHomework;
+        _parentEntries[index] = previousEntry;
+        _homework =
+            _homework.copyWith(completionByChildId: previousMap);
       });
     }
+  }
+
+  Future<void> _loadTeacherChildren() async {
+    setState(() {
+      _isTeacherChildrenLoading = true;
+    });
+
+    final classGroups = <String, _TeacherClassGroup>{};
+    final classIds = <String>{};
+    if (widget.homework.classId.isNotEmpty) {
+      classIds.add(widget.homework.classId);
+    }
+
+    try {
+      for (final classId in classIds) {
+        final classDoc =
+            await _db.firestore.collection('classes').doc(classId).get();
+        if (!classDoc.exists) {
+          continue;
+        }
+        final classModel = SchoolClassModel.fromDoc(classDoc);
+        final children = await _fetchChildrenByIds(classModel.childIds);
+        final statuses = children
+            .map(
+              (child) => _TeacherChildStatus(
+                child: child,
+                completed: widget.homework.isCompletedForChild(child.id),
+              ),
+            )
+            .toList()
+          ..sort((a, b) => a.child.name.compareTo(b.child.name));
+        classGroups[classId] = _TeacherClassGroup(
+          classId: classId,
+          className: classModel.name,
+          children: statuses,
+        );
+      }
+
+      final knownChildIds = classGroups.values
+          .expand((group) => group.children.map((entry) => entry.child.id))
+          .toSet();
+      final completionIds = widget.homework.completionByChildId.keys
+          .where((id) => id.isNotEmpty)
+          .toSet();
+      final missingIds =
+          completionIds.difference(knownChildIds).toList(growable: false);
+
+      if (missingIds.isNotEmpty) {
+        final extraChildren = await _fetchChildrenByIds(missingIds);
+        for (final child in extraChildren) {
+          final classId = child.classId;
+          final group = classGroups.putIfAbsent(
+            classId,
+            () => _TeacherClassGroup(
+              classId: classId,
+              className: '',
+              children: <_TeacherChildStatus>[],
+            ),
+          );
+          group.children.add(
+            _TeacherChildStatus(
+              child: child,
+              completed: widget.homework.isCompletedForChild(child.id),
+            ),
+          );
+        }
+      }
+
+      final unresolvedClassIds = classGroups.entries
+          .where((entry) => entry.value.className.isEmpty)
+          .map((entry) => entry.key)
+          .toList();
+      for (final classId in unresolvedClassIds) {
+        final doc =
+            await _db.firestore.collection('classes').doc(classId).get();
+        if (doc.exists) {
+          final classModel = SchoolClassModel.fromDoc(doc);
+          final group = classGroups[classId];
+          if (group != null) {
+            classGroups[classId] = group.copyWith(className: classModel.name);
+          }
+        }
+      }
+
+      for (final group in classGroups.values) {
+        group.children.sort((a, b) => a.child.name.compareTo(b.child.name));
+      }
+
+      final totalAssigned = classGroups.values
+          .fold<int>(0, (sum, group) => sum + group.children.length);
+      final selectedId = _selectedTeacherClassId ??
+          (classGroups.isNotEmpty ? classGroups.keys.first : null);
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _teacherChildrenByClass = classGroups;
+        _selectedTeacherClassId = selectedId;
+        if (totalAssigned > 0) {
+          _assignedChildrenCount = totalAssigned;
+        }
+        _isTeacherChildrenLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isTeacherChildrenLoading = false;
+      });
+      Get.snackbar(
+        'Load failed',
+        'Unable to load student details for this homework.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  Future<List<ChildModel>> _fetchChildrenByIds(List<String> ids) async {
+    if (ids.isEmpty) {
+      return <ChildModel>[];
+    }
+    final uniqueIds = ids.where((id) => id.isNotEmpty).toSet().toList();
+    final results = <ChildModel>[];
+    for (var i = 0; i < uniqueIds.length; i += 10) {
+      final end = (i + 10) > uniqueIds.length ? uniqueIds.length : i + 10;
+      final chunk = uniqueIds.sublist(i, end);
+      final snapshot = await _db.firestore
+          .collection('children')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      results.addAll(snapshot.docs.map(ChildModel.fromDoc));
+    }
+    return results;
   }
 
   Future<void> _downloadPdf(BuildContext context) async {
     final doc = pw.Document();
     final completionStats = _completionStats();
-    final childStatus = widget.parentChildName != null &&
-            widget.parentChildId != null &&
-            _parentCompletion != null
-        ? '${widget.parentChildName}: ${(_parentCompletion ?? false) ? 'Completed' : 'Pending'}'
-        : null;
+    final parentStatusLines = widget.showParentControls &&
+            _parentEntries.isNotEmpty
+        ? _parentEntries
+            .map(
+              (entry) =>
+                  '${entry.child.name}: ${entry.completed ? 'Completed' : 'Pending'}',
+            )
+            .toList()
+        : const <String>[];
+    final teacherStatusLines = widget.showTeacherInsights &&
+            _teacherChildrenByClass.isNotEmpty
+        ? _teacherChildrenByClass.values
+            .map(
+              (group) {
+                final completed =
+                    group.children.where((child) => child.completed).length;
+                final label = group.className.isNotEmpty
+                    ? group.className
+                    : 'Class';
+                return '$label: $completed of ${group.children.length} completed';
+              },
+            )
+            .toList()
+        : const <String>[];
 
     doc.addPage(
       pw.MultiPage(
@@ -617,11 +937,38 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
             completionStats,
             style: const pw.TextStyle(fontSize: 13),
           ),
-          if (childStatus != null) ...[
+          if (parentStatusLines.isNotEmpty) ...[
             pw.SizedBox(height: 6),
             pw.Text(
-              childStatus,
-              style: const pw.TextStyle(fontSize: 12),
+              'Per-child progress:',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            ...parentStatusLines.map(
+              (line) => pw.Text(
+                line,
+                style: const pw.TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+          if (teacherStatusLines.isNotEmpty) ...[
+            pw.SizedBox(height: 12),
+            pw.Text(
+              'Class summaries:',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            ...teacherStatusLines.map(
+              (line) => pw.Text(
+                line,
+                style: const pw.TextStyle(fontSize: 12),
+              ),
             ),
           ],
           pw.SizedBox(height: 20),
@@ -677,5 +1024,46 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
         .replaceAll(RegExp(r'_$'), '');
     final dueDateLabel = DateFormat('yyyyMMdd').format(_homework.dueDate);
     return '${sanitizedTitle.isEmpty ? 'homework' : sanitizedTitle}_$dueDateLabel.pdf';
+  }
+}
+
+class _ParentChildEntry {
+  const _ParentChildEntry({required this.child, required this.completed});
+
+  final ChildModel child;
+  final bool completed;
+
+  _ParentChildEntry copyWith({bool? completed}) {
+    return _ParentChildEntry(
+      child: child,
+      completed: completed ?? this.completed,
+    );
+  }
+}
+
+class _TeacherChildStatus {
+  _TeacherChildStatus({required this.child, required this.completed});
+
+  final ChildModel child;
+  final bool completed;
+}
+
+class _TeacherClassGroup {
+  _TeacherClassGroup({
+    required this.classId,
+    required this.className,
+    required this.children,
+  });
+
+  final String classId;
+  final String className;
+  final List<_TeacherChildStatus> children;
+
+  _TeacherClassGroup copyWith({String? className, List<_TeacherChildStatus>? children}) {
+    return _TeacherClassGroup(
+      classId: classId,
+      className: className ?? this.className,
+      children: children ?? this.children,
+    );
   }
 }
