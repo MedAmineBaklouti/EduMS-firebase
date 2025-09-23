@@ -95,113 +95,110 @@ class _AdminHomeworkFilters extends StatelessWidget {
             final hasTeacherFilter =
                 (controller.teacherFilter.value ?? '').isNotEmpty;
             final hasFilters = hasClassFilter || hasTeacherFilter;
-            return ModuleCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Filter homeworks',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Filter homeworks',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      TextButton.icon(
-                        onPressed: hasFilters ? controller.clearFilters : null,
-                        icon:
-                            const Icon(Icons.filter_alt_off_outlined, size: 18),
-                        label: const Text('Clear'),
-                      ),
-                    ],
-                  ),
-                  if (hasFilters) ...[
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (hasClassFilter)
-                          _ActiveFilterChip(
-                            label:
-                                'Class: ${controller.className(controller.classFilter.value!)}',
-                            onRemoved: () => controller.setClassFilter(null),
-                          ),
-                        if (hasTeacherFilter)
-                          _ActiveFilterChip(
-                            label:
-                                'Teacher: ${controller.teacherName(controller.teacherFilter.value!)}',
-                            onRemoved: () => controller.setTeacherFilter(null),
-                          ),
-                      ],
+                    ),
+                    TextButton.icon(
+                      onPressed: hasFilters ? controller.clearFilters : null,
+                      icon:
+                          const Icon(Icons.filter_alt_off_outlined, size: 18),
+                      label: const Text('Clear'),
                     ),
                   ],
+                ),
+                if (hasFilters) ...[
                   const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth > 720;
-                      final fieldWidth =
-                          isWide ? constraints.maxWidth / 2 - 8 : double.infinity;
-                      return Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          SizedBox(
-                            width: fieldWidth,
-                            child: DropdownButtonFormField<String?>(
-                              value: controller.classFilter.value,
-                              decoration: const InputDecoration(
-                                labelText: 'Class',
-                                border: OutlineInputBorder(),
-                              ),
-                              hint: const Text('All classes'),
-                              items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Text('All classes'),
-                                ),
-                                ...controller.classes.map(
-                                  (item) => DropdownMenuItem<String?>(
-                                    value: item.id,
-                                    child: Text(item.name),
-                                  ),
-                                ),
-                              ],
-                              onChanged: controller.setClassFilter,
-                            ),
-                          ),
-                          SizedBox(
-                            width: fieldWidth,
-                            child: DropdownButtonFormField<String?>(
-                              value: controller.teacherFilter.value,
-                              decoration: const InputDecoration(
-                                labelText: 'Teacher',
-                                border: OutlineInputBorder(),
-                              ),
-                              hint: const Text('All teachers'),
-                              items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Text('All teachers'),
-                                ),
-                                ...controller.teachers.map(
-                                  (item) => DropdownMenuItem<String?>(
-                                    value: item.id,
-                                    child: Text(item.name),
-                                  ),
-                                ),
-                              ],
-                              onChanged: controller.setTeacherFilter,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (hasClassFilter)
+                        _ActiveFilterChip(
+                          label:
+                              'Class: ${controller.className(controller.classFilter.value!)}',
+                          onRemoved: () => controller.setClassFilter(null),
+                        ),
+                      if (hasTeacherFilter)
+                        _ActiveFilterChip(
+                          label:
+                              'Teacher: ${controller.teacherName(controller.teacherFilter.value!)}',
+                          onRemoved: () => controller.setTeacherFilter(null),
+                        ),
+                    ],
                   ),
                 ],
-              ),
+                const SizedBox(height: 12),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth > 720;
+                    final fieldWidth =
+                        isWide ? constraints.maxWidth / 2 - 8 : double.infinity;
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        SizedBox(
+                          width: fieldWidth,
+                          child: DropdownButtonFormField<String?>(
+                            value: controller.classFilter.value,
+                            decoration: const InputDecoration(
+                              labelText: 'Class',
+                              border: OutlineInputBorder(),
+                            ),
+                            hint: const Text('All classes'),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('All classes'),
+                              ),
+                              ...controller.classes.map(
+                                (item) => DropdownMenuItem<String?>(
+                                  value: item.id,
+                                  child: Text(item.name),
+                                ),
+                              ),
+                            ],
+                            onChanged: controller.setClassFilter,
+                          ),
+                        ),
+                        SizedBox(
+                          width: fieldWidth,
+                          child: DropdownButtonFormField<String?>(
+                            value: controller.teacherFilter.value,
+                            decoration: const InputDecoration(
+                              labelText: 'Teacher',
+                              border: OutlineInputBorder(),
+                            ),
+                            hint: const Text('All teachers'),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('All teachers'),
+                              ),
+                              ...controller.teachers.map(
+                                (item) => DropdownMenuItem<String?>(
+                                  value: item.id,
+                                  child: Text(item.name),
+                                ),
+                              ),
+                            ],
+                            onChanged: controller.setTeacherFilter,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             );
           });
         },
