@@ -19,8 +19,6 @@ class BehaviorDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final MaterialColor palette =
-        behavior.type == BehaviorType.positive ? Colors.green : Colors.red;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Behavior details'),
@@ -41,7 +39,7 @@ class BehaviorDetailView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeroHeader(context, palette),
+            _buildHeroHeader(context),
             const SizedBox(height: 24),
             _buildOverviewCard(context),
             const SizedBox(height: 24),
@@ -64,8 +62,11 @@ class BehaviorDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroHeader(BuildContext context, MaterialColor palette) {
+  Widget _buildHeroHeader(BuildContext context) {
     final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final gradientStart = Color.lerp(primary, Colors.white, 0.1)!;
+    final gradientEnd = Color.lerp(primary, Colors.black, 0.15)!;
     final recordedLabel = _dateFormat.format(behavior.createdAt);
     final classLabel = behavior.className.trim().isEmpty
         ? null
@@ -79,8 +80,8 @@ class BehaviorDetailView extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            palette.shade500.withOpacity(0.85),
-            palette.shade700,
+            gradientStart,
+            gradientEnd,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -88,7 +89,7 @@ class BehaviorDetailView extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: palette.shade400.withOpacity(0.4),
+            color: primary.withOpacity(0.3),
             blurRadius: 18,
             offset: const Offset(0, 12),
           ),
@@ -220,21 +221,36 @@ class BehaviorDetailView extends StatelessWidget {
               children: badges,
             ),
             const SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                BehaviorTypeChip(type: behavior.type),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _behaviorTypeSummary(),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.5,
-                    ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final summaryText = Text(
+                  _behaviorTypeSummary(),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.5,
                   ),
-                ),
-              ],
+                );
+
+                if (constraints.maxWidth < 360) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BehaviorTypeChip(type: behavior.type),
+                      const SizedBox(height: 12),
+                      summaryText,
+                    ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BehaviorTypeChip(type: behavior.type),
+                    const SizedBox(width: 12),
+                    Expanded(child: summaryText),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -306,23 +322,21 @@ class BehaviorDetailView extends StatelessWidget {
     required String label,
   }) {
     final theme = Theme.of(context);
-    final MaterialColor palette =
-        behavior.type == BehaviorType.positive ? Colors.green : Colors.red;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: palette.shade50,
+        color: theme.colorScheme.primary.withOpacity(0.08),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: palette.shade600),
+          Icon(icon, size: 18, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: palette.shade700,
+              color: theme.colorScheme.primary,
               fontWeight: FontWeight.w600,
             ),
           ),
