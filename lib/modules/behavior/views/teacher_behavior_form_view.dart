@@ -29,6 +29,13 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (classes.isEmpty)
+                const _InfoBanner(
+                  icon: Icons.info_outline,
+                  message:
+                      'No classes have been assigned to you yet. Please contact the administrator to link your profile to a class before recording behaviors.',
+                ),
+              if (classes.isNotEmpty) const SizedBox(height: 8),
               DropdownButtonFormField<SchoolClassModel?>(
                 value: selectedClass,
                 decoration: const InputDecoration(
@@ -50,6 +57,14 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
                 },
               ),
               const SizedBox(height: 16),
+              if (selectedClass != null && availableChildren.isEmpty)
+                const _InfoBanner(
+                  icon: Icons.groups_2_outlined,
+                  message:
+                      'There are no students registered for the selected class yet. Once students are added to this class you will be able to record their behaviors.',
+                ),
+              if (selectedClass != null && availableChildren.isEmpty)
+                const SizedBox(height: 16),
               DropdownButtonFormField<ChildModel?>(
                 value: selectedChild,
                 decoration: const InputDecoration(
@@ -117,7 +132,7 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: isSaving
+                      onPressed: isSaving || selectedClass == null || selectedChild == null
                           ? null
                           : () async {
                               final success = await controller.saveBehavior();
@@ -135,6 +150,40 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
           ),
         );
       }),
+    );
+  }
+}
+
+class _InfoBanner extends StatelessWidget {
+  const _InfoBanner({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: theme.colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
