@@ -115,47 +115,109 @@ class _TeacherHomeworkFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final controller = Get.find<TeacherHomeworkController>();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: ModuleCard(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Filter assignments',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Obx(() {
-              final controller = Get.find<TeacherHomeworkController>();
-              final classes = controller.classes;
-              final classFilter = controller.filterClassId.value;
-              return DropdownButtonFormField<String?>(
-                value: classFilter,
-                decoration: const InputDecoration(
-                  labelText: 'Filter by class',
-                  border: OutlineInputBorder(),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter assignments',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('All classes'),
-                  ),
-                  ...classes.map(
-                    (item) => DropdownMenuItem<String?>(
-                      value: item.id,
-                      child: Text(item.name),
-                    ),
+              ),
+              Obx(() {
+                final hasFilter =
+                    (controller.filterClassId.value ?? '').isNotEmpty;
+                return TextButton.icon(
+                  onPressed: hasFilter ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final classFilter = controller.filterClassId.value;
+            if (classFilter == null || classFilter.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _ActiveFilterChip(
+                    label: 'Class: ${controller.className(classFilter)}',
+                    onRemoved: controller.clearFilters,
                   ),
                 ],
-                onChanged: controller.setFilterClass,
-              );
-            }),
-          ],
-        ),
+              ),
+            );
+          }),
+          Obx(() {
+            final classes = controller.classes;
+            final classFilter = controller.filterClassId.value;
+            final isDisabled = classes.isEmpty;
+            return DropdownButtonFormField<String?>(
+              value: classFilter,
+              decoration: const InputDecoration(
+                labelText: 'Class',
+                border: OutlineInputBorder(),
+              ),
+              hint: Text(
+                isDisabled ? 'No classes available' : 'All classes',
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('All classes'),
+                ),
+                ...classes.map(
+                  (item) => DropdownMenuItem<String?>(
+                    value: item.id,
+                    child: Text(item.name),
+                  ),
+                ),
+              ],
+              onChanged: isDisabled ? null : controller.setFilterClass,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Chip(
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
+      ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

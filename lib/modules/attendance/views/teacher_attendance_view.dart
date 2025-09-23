@@ -22,6 +22,9 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
       ),
       body: ModulePageContainer(
         child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final classes = controller.classes;
           final selectedClass = controller.selectedClass.value;
           final selectedDate = controller.selectedDate.value;
@@ -129,62 +132,102 @@ class _TeacherAttendanceFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      child: ModuleCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DropdownButtonFormField<SchoolClassModel?>(
-              value: selectedClass,
-              decoration: const InputDecoration(
-                labelText: 'Class',
-                border: OutlineInputBorder(),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Attendance tools',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              items: classes
-                  .map(
-                    (item) => DropdownMenuItem<SchoolClassModel?>(
-                      value: item,
-                      child: Text(item.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: onClassChanged,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(selectedDate.year - 1),
-                        lastDate: DateTime(selectedDate.year + 1),
-                      );
-                      if (picked != null) {
-                        onDateChanged(picked);
-                      }
-                    },
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(dateFormat.format(selectedDate)),
+              Wrap(
+                spacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: onExport,
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    label:
+                        Text(isExporting ? 'Exporting...' : 'Export PDF'),
                   ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: onSave,
-                  child: Text(isSaving ? 'Saving...' : 'Save'),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  onPressed: onExport,
-                  child: Text(isExporting ? 'Exporting...' : 'Export PDF'),
-                ),
-              ],
-            ),
-          ],
-        ),
+                  ElevatedButton.icon(
+                    onPressed: onSave,
+                    icon: const Icon(Icons.save_outlined, size: 18),
+                    label: Text(isSaving ? 'Saving...' : 'Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 720;
+              final fieldWidth = isWide
+                  ? constraints.maxWidth / 2 - 8
+                  : double.infinity;
+              final dropdownItems = classes.isEmpty
+                  ? <DropdownMenuItem<SchoolClassModel?>>[
+                      const DropdownMenuItem<SchoolClassModel?>(
+                        value: null,
+                        enabled: false,
+                        child: Text('No classes available'),
+                      ),
+                    ]
+                  : classes
+                      .map(
+                        (item) => DropdownMenuItem<SchoolClassModel?>(
+                          value: item,
+                          child: Text(item.name),
+                        ),
+                      )
+                      .toList();
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: fieldWidth,
+                    child: DropdownButtonFormField<SchoolClassModel?>(
+                      value: classes.isEmpty ? null : selectedClass,
+                      decoration: const InputDecoration(
+                        labelText: 'Class',
+                        border: OutlineInputBorder(),
+                      ),
+                      hint: const Text('Select a class'),
+                      items: dropdownItems,
+                      onChanged: classes.isEmpty ? null : onClassChanged,
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: _DateSelector(
+                      label: 'Date',
+                      value: dateFormat.format(selectedDate),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(selectedDate.year - 1),
+                          lastDate: DateTime(selectedDate.year + 1),
+                        );
+                        if (picked != null) {
+                          onDateChanged(picked);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -245,6 +288,41 @@ class _AttendanceEntryCard extends StatelessWidget {
   }
 }
 
+class _DateSelector extends StatelessWidget {
+  const _DateSelector({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          suffixIcon: const Icon(Icons.calendar_today, size: 18),
+        ),
+        isEmpty: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            value,
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PreviousSessionsCard extends StatelessWidget {
   const _PreviousSessionsCard({required this.sessions});
 
@@ -252,54 +330,76 @@ class _PreviousSessionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (sessions.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        child: ModuleCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text('Recent submissions'),
-              SizedBox(height: 8),
-              Text('No previous attendance submissions.'),
-            ],
-          ),
-        ),
-      );
-    }
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: ModuleCard(
-        child: SizedBox(
-          height: 200,
-          child: ListView.separated(
-            padding: const EdgeInsets.all(0),
-            itemCount: sessions.length,
-            separatorBuilder: (_, __) => const Divider(height: 20),
-            itemBuilder: (context, index) {
-              final session = sessions[index];
-              final presentCount = session.records
-                  .where((record) => record.status == AttendanceStatus.present)
-                  .length;
-              return Column(
+        child: sessions.isEmpty
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Recent submissions'),
+                  SizedBox(height: 8),
+                  Text('No previous attendance submissions.'),
+                ],
+              )
+            : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    DateFormat.yMMMMd().format(session.date),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                    'Recent submissions',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${presentCount}/${session.records.length} present',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  const SizedBox(height: 12),
+                  ...sessions.take(4).map((session) {
+                    final presentCount = session.records
+                        .where((record) => record.status == AttendanceStatus.present)
+                        .length;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.event_available_outlined,
+                            size: 20,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  DateFormat.yMMMMd().format(session.date),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${presentCount}/${session.records.length} present',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  if (sessions.length > 4)
+                    Text(
+                      '+${sessions.length - 4} more',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                 ],
-              );
-            },
-          ),
-        ),
+              ),
       ),
     );
   }

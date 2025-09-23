@@ -20,78 +20,86 @@ class TeacherPickupView extends GetView<TeacherPickupController> {
         centerTitle: true,
       ),
       body: ModulePageContainer(
-        child: Column(
-          children: [
-            const _TeacherPickupFilters(),
-            Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final tickets = controller.tickets;
-                if (tickets.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.directions_car_outlined,
-                        title: 'No pickup tickets',
-                        message:
-                            'Parents will appear here when they confirm pickups that require your validation.',
-                      ),
-                    ],
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: tickets.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final ticket = tickets[index];
-                    return ModuleCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${ticket.childName} • ${ticket.className}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return Column(
+            children: [
+              const _TeacherPickupFilters(),
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    final tickets = controller.tickets;
+                    if (tickets.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                        children: const [
+                          ModuleEmptyState(
+                            icon: Icons.directions_car_outlined,
+                            title: 'No pickup tickets',
+                            message:
+                                'Parents will appear here when they confirm pickups that require your validation.',
                           ),
-                          const SizedBox(height: 8),
-                          _PickupStageChip(stage: ticket.stage),
-                          const SizedBox(height: 12),
-                          if (ticket.parentConfirmedAt != null)
-                            Text(
-                              'Parent confirmed at ${timeFormat.format(ticket.parentConfirmedAt!)}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          if (ticket.teacherValidatedAt != null)
-                            Text(
-                              'Teacher validated at ${timeFormat.format(ticket.teacherValidatedAt!)}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          if (ticket.stage == PickupStage.awaitingTeacher) ...[
-                            const SizedBox(height: 16),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                onPressed: () => controller.validatePickup(ticket),
-                                child: const Text('Validate'),
-                              ),
-                            ),
-                          ],
                         ],
-                      ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: tickets.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final ticket = tickets[index];
+                        return ModuleCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${ticket.childName} • ${ticket.className}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              const SizedBox(height: 8),
+                              _PickupStageChip(stage: ticket.stage),
+                              const SizedBox(height: 12),
+                              if (ticket.parentConfirmedAt != null)
+                                Text(
+                                  'Parent confirmed at ${timeFormat.format(ticket.parentConfirmedAt!)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              if (ticket.teacherValidatedAt != null)
+                                Text(
+                                  'Teacher validated at ${timeFormat.format(ticket.teacherValidatedAt!)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              if (ticket.stage == PickupStage.awaitingTeacher) ...[
+                                const SizedBox(height: 16),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: ElevatedButton(
+                                    onPressed: () =>
+                                        controller.validatePickup(ticket),
+                                    child: const Text('Validate'),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              }),
-            ),
-          ],
-        ),
+                ),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -102,38 +110,110 @@ class _TeacherPickupFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final controller = Get.find<TeacherPickupController>();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: GetBuilder<TeacherPickupController>(
-        builder: (controller) {
-          return ModuleCard(
-            padding: const EdgeInsets.all(20),
-            child: Obx(() {
-              final classFilter = controller.classFilter.value;
-              final classes = controller.classes;
-              return DropdownButtonFormField<String?>(
-                value: classFilter,
-                decoration: const InputDecoration(
-                  labelText: 'Class',
-                  border: OutlineInputBorder(),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter queue',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('All classes'),
-                  ),
-                  ...classes.map(
-                    (schoolClass) => DropdownMenuItem<String?>(
-                      value: schoolClass.id,
-                      child: Text(schoolClass.name),
-                    ),
+              ),
+              Obx(() {
+                final hasFilter =
+                    (controller.classFilter.value ?? '').isNotEmpty;
+                return TextButton.icon(
+                  onPressed: hasFilter ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final classFilter = controller.classFilter.value;
+            if (classFilter == null || classFilter.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _ActiveFilterChip(
+                    label: 'Class: ${controller.className(classFilter)}',
+                    onRemoved: controller.clearFilters,
                   ),
                 ],
-                onChanged: controller.setClassFilter,
-              );
-            }),
-          );
-        },
+              ),
+            );
+          }),
+          Obx(() {
+            final classes = controller.classes;
+            final classFilter = controller.classFilter.value;
+            final isDisabled = classes.isEmpty;
+            return DropdownButtonFormField<String?>(
+              value: classFilter,
+              decoration: const InputDecoration(
+                labelText: 'Class',
+                border: OutlineInputBorder(),
+              ),
+              hint: Text(
+                isDisabled ? 'No classes available' : 'All classes',
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('All classes'),
+                ),
+                ...classes.map(
+                  (schoolClass) => DropdownMenuItem<String?>(
+                    value: schoolClass.id,
+                    child: Text(schoolClass.name),
+                  ),
+                ),
+              ],
+              onChanged: isDisabled ? null : controller.setClassFilter,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Chip(
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
+      ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

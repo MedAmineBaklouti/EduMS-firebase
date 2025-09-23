@@ -1,12 +1,27 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/database_service.dart';
 import '../../../data/models/homework_model.dart';
 import '../../../data/models/school_class_model.dart';
 import '../../../data/models/teacher_model.dart';
 
 class TeacherHomeworkController extends GetxController {
+  final DatabaseService _db = Get.find();
+  final AuthService _auth = Get.find();
+
+  StreamSubscription? _teacherSubscription;
+  StreamSubscription? _classesSubscription;
+  StreamSubscription? _homeworksSubscription;
+
+  bool _teacherLoaded = false;
+  bool _classesLoaded = false;
+  bool _homeworksLoaded = false;
+
   final RxList<HomeworkModel> _allHomeworks = <HomeworkModel>[].obs;
   final RxList<HomeworkModel> homeworks = <HomeworkModel>[].obs;
 
@@ -25,9 +40,18 @@ class TeacherHomeworkController extends GetxController {
   HomeworkModel? editing;
 
   @override
+  void onInit() {
+    super.onInit();
+    _initialize();
+  }
+
+  @override
   void onClose() {
     titleController.dispose();
     descriptionController.dispose();
+    _teacherSubscription?.cancel();
+    _classesSubscription?.cancel();
+    _homeworksSubscription?.cancel();
     super.onClose();
   }
 
@@ -36,7 +60,10 @@ class TeacherHomeworkController extends GetxController {
   }
 
   void setClasses(List<SchoolClassModel> items) {
-    classes.assignAll(items);
+    classes.assignAll(
+      List<SchoolClassModel>.from(items)
+        ..sort((a, b) => a.name.compareTo(b.name)),
+    );
     if (selectedClass.value != null) {
       final classId = selectedClass.value!.id;
       selectedClass.value =
@@ -55,8 +82,17 @@ class TeacherHomeworkController extends GetxController {
   }
 
   void setFilterClass(String? classId) {
-    filterClassId.value = classId;
+    filterClassId.value = classId == null || classId.isEmpty ? null : classId;
     _applyFilters();
+  }
+
+  void clearFilters() {
+    filterClassId.value = null;
+    _applyFilters();
+  }
+
+  String className(String id) {
+    return classes.firstWhereOrNull((item) => item.id == id)?.name ?? 'Class';
   }
 
   void _applyFilters() {
@@ -115,8 +151,11 @@ class TeacherHomeworkController extends GetxController {
     isSaving.value = true;
     try {
       final now = DateTime.now();
+      final collection = _db.firestore.collection('homeworks');
+      final docRef =
+          editing == null ? collection.doc() : collection.doc(editing!.id);
       final homework = HomeworkModel(
-        id: editing?.id ?? now.millisecondsSinceEpoch.toString(),
+        id: docRef.id,
         title: title,
         description: description,
         classId: classModel.id,
@@ -128,6 +167,7 @@ class TeacherHomeworkController extends GetxController {
         completionByChildId:
             editing?.completionByChildId ?? <String, bool>{},
       );
+      await docRef.set(homework.toMap());
       if (editing == null) {
         _allHomeworks.add(homework);
       } else {
@@ -148,5 +188,69 @@ class TeacherHomeworkController extends GetxController {
   void removeHomework(HomeworkModel homework) {
     _allHomeworks.removeWhere((item) => item.id == homework.id);
     _applyFilters();
+    _db.firestore.collection('homeworks').doc(homework.id).delete();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      final teacherId = _auth.currentUser?.uid;
+      if (teacherId == null) {
+        Get.snackbar(
+          'Authentication required',
+          'Unable to determine the authenticated teacher.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+      isLoading.value = true;
+
+      _teacherSubscription = _db.firestore
+          .collection('teachers')
+          .doc(teacherId)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists) {
+          setTeacher(TeacherModel.fromDoc(snapshot));
+        }
+        _teacherLoaded = true;
+        _maybeFinishLoading();
+      });
+
+      _classesSubscription = _db.firestore
+          .collection('classes')
+          .snapshots()
+          .listen((snapshot) {
+        final teacherClasses = snapshot.docs
+            .map(SchoolClassModel.fromDoc)
+            .where((item) => item.teacherSubjects.values.contains(teacherId))
+            .toList();
+        setClasses(teacherClasses);
+        _classesLoaded = true;
+        _maybeFinishLoading();
+      });
+
+      _homeworksSubscription = _db.firestore
+          .collection('homeworks')
+          .where('teacherId', isEqualTo: teacherId)
+          .snapshots()
+          .listen((snapshot) {
+        setHomeworks(snapshot.docs.map(HomeworkModel.fromDoc).toList());
+        _homeworksLoaded = true;
+        _maybeFinishLoading();
+      });
+    } catch (error) {
+      isLoading.value = false;
+      Get.snackbar(
+        'Load failed',
+        'Unable to load homework data: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void _maybeFinishLoading() {
+    if (_teacherLoaded && _classesLoaded && _homeworksLoaded) {
+      isLoading.value = false;
+    }
   }
 }
