@@ -10,13 +10,11 @@ import '../../../data/models/course_model.dart';
 class CourseDetailView extends StatelessWidget {
   final CourseModel course;
   final Future<void> Function()? onEdit;
-  final Future<void> Function()? onDelete;
 
   CourseDetailView({
     super.key,
     required this.course,
     this.onEdit,
-    this.onDelete,
   });
 
   @override
@@ -65,64 +63,6 @@ class CourseDetailView extends StatelessWidget {
               title: 'Learning content',
               child: _buildContentBody(context),
             ),
-            if (onEdit != null || onDelete != null) ...[
-              const SizedBox(height: 32),
-              Text(
-                'Actions',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  if (onEdit != null)
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await onEdit?.call();
-                      },
-                      icon: const Icon(
-                        Icons.edit_outlined,
-                        color: Colors.white,
-                      ),
-                      label: const Text('Edit course'),
-                    ),
-                  if (onDelete != null)
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Delete course'),
-                              content: const Text(
-                                'Are you sure you want to delete this course?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(false),
-                                  child: const Text('Cancel'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.of(context).pop(true),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        if (confirmed == true) {
-                          await onDelete?.call();
-                        }
-                      },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete course'),
-                    ),
-                ],
-              ),
-            ],
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
