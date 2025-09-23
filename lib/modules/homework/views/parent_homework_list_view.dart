@@ -24,25 +24,6 @@ class ParentHomeworkListView extends GetView<ParentHomeworkController> {
         child: Column(
           children: [
             const _ParentHomeworkFilters(),
-            Obx(() {
-              final activeChild = controller.activeChild;
-              if (controller.children.length > 1 && activeChild == null) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Select a child to manage homework completion status.',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
@@ -63,7 +44,7 @@ class ParentHomeworkListView extends GetView<ParentHomeworkController> {
                     ],
                   );
                 }
-                final activeChildId = controller.activeChildId;
+                final now = DateTime.now();
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                   physics: const BouncingScrollPhysics(),
@@ -71,47 +52,38 @@ class ParentHomeworkListView extends GetView<ParentHomeworkController> {
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final homework = items[index];
-                    final isLocked = homework.isLockedForParent(DateTime.now());
-                    final isCompleted = activeChildId == null
-                        ? false
-                        : homework.isCompletedForChild(activeChildId);
+                    final isLocked = homework.isLockedForParent(now);
+                    final relevantChildren =
+                        controller.childrenForClass(homework.classId)
+                          ..sort((a, b) => a.name.compareTo(b.name));
+                    final childStatuses = relevantChildren
+                        .map(
+                          (child) => _ParentChildStatus(
+                            childId: child.id,
+                            name: child.name,
+                            completed:
+                                homework.isCompletedForChild(child.id),
+                          ),
+                        )
+                        .toList();
                     return _ParentHomeworkCard(
                       homework: homework,
                       dateFormat: dateFormat,
                       isLocked: isLocked,
-                      isCompleted: isCompleted,
-                      onChanged: activeChildId == null || isLocked
-                          ? null
-                          : (value) {
-                              controller.markCompletion(
-                                homework,
-                                activeChildId,
-                                value ?? false,
-                              );
-                            },
+                      childStatuses: childStatuses,
                       onTap: () {
-                        final currentChildId = controller.activeChildId;
-                        final currentChild = controller.activeChild;
-                        final locked =
-                            homework.isLockedForParent(DateTime.now());
-                        final completionForChild = currentChildId == null
-                            ? null
-                            : homework.isCompletedForChild(currentChildId);
+                        final relevantChildren =
+                            controller.childrenForClass(homework.classId)
+                              ..sort((a, b) => a.name.compareTo(b.name));
                         Get.to(
                           () => HomeworkDetailView(
                             homework: homework,
                             showParentControls: true,
-                            parentChildId: currentChildId,
-                            parentChildName: currentChild?.name,
-                            isParentLocked: locked,
-                            initialParentCompletion: completionForChild,
-                            onParentToggle: currentChildId == null || locked
-                                ? null
-                                : (value) => controller.markCompletion(
-                                      homework,
-                                      currentChildId,
-                                      value,
-                                    ),
+                            parentChildren: relevantChildren,
+                            isParentLocked: isLocked,
+                            initialChildCount: relevantChildren.length,
+                            onParentToggle: (childId, value) => controller
+                                .markCompletion(homework, childId, value),
                           ),
                         );
                       },
@@ -137,33 +109,70 @@ class _ParentHomeworkFilters extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
       child: GetBuilder<ParentHomeworkController>(
         builder: (controller) {
-          return ModuleCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Filter homeworks',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+          return Obx(() {
+            final childFilter = controller.childFilter.value;
+            final completionFilter = controller.completionFilter.value;
+            final hasChildFilter = (childFilter ?? '').isNotEmpty;
+            final hasStatusFilter = completionFilter != null;
+            final hasFilters = hasChildFilter || hasStatusFilter;
+            return ModuleCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Filter homeworks',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: hasFilters ? controller.clearFilters : null,
+                        icon:
+                            const Icon(Icons.filter_alt_off_outlined, size: 18),
+                        label: const Text('Clear'),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                Obx(() {
-                  final children = controller.children;
-                  final childFilter = controller.childFilter.value;
-                  return DropdownButtonFormField<String?>(
+                  if (hasFilters) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (hasChildFilter)
+                          _ParentFilterChip(
+                            label:
+                                'Child: ${controller.childName(childFilter!)}',
+                            onRemoved: () => controller.setChildFilter(null),
+                          ),
+                        if (hasStatusFilter)
+                          _ParentFilterChip(
+                            label: completionFilter == true
+                                ? 'Status: Completed'
+                                : 'Status: Pending',
+                            onRemoved: () => controller.setCompletionFilter(null),
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String?>(
                     value: childFilter,
                     decoration: const InputDecoration(
-                      labelText: 'Filter by child',
+                      labelText: 'Child',
                       border: OutlineInputBorder(),
                     ),
+                    hint: const Text('All children'),
                     items: [
                       const DropdownMenuItem<String?>(
                         value: null,
                         child: Text('All children'),
                       ),
-                      ...children.map(
+                      ...controller.children.map(
                         (child) => DropdownMenuItem<String?>(
                           value: child.id,
                           child: Text(child.name),
@@ -171,12 +180,9 @@ class _ParentHomeworkFilters extends StatelessWidget {
                       ),
                     ],
                     onChanged: controller.setChildFilter,
-                  );
-                }),
-                const SizedBox(height: 12),
-                Obx(() {
-                  final completionFilter = controller.completionFilter.value;
-                  return DropdownButtonFormField<bool?>(
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<bool?>(
                     value: completionFilter,
                     decoration: const InputDecoration(
                       labelText: 'Status',
@@ -197,12 +203,40 @@ class _ParentHomeworkFilters extends StatelessWidget {
                       ),
                     ],
                     onChanged: controller.setCompletionFilter,
-                  );
-                }),
-              ],
-            ),
-          );
+                  ),
+                ],
+              ),
+            );
+          });
         },
+      ),
+    );
+  }
+}
+
+class _ParentFilterChip extends StatelessWidget {
+  const _ParentFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Chip(
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
+      ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -213,31 +247,33 @@ class _ParentHomeworkCard extends StatelessWidget {
     required this.homework,
     required this.dateFormat,
     required this.isLocked,
-    required this.isCompleted,
-    required this.onChanged,
+    required this.childStatuses,
     this.onTap,
   });
 
   final HomeworkModel homework;
   final DateFormat dateFormat;
   final bool isLocked;
-  final bool isCompleted;
-  final ValueChanged<bool?>? onChanged;
+  final List<_ParentChildStatus> childStatuses;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final statusColor = isLocked
+    final totalChildren = childStatuses.length;
+    final completedChildren =
+        childStatuses.where((status) => status.completed).length;
+    final allCompleted = totalChildren > 0 && completedChildren == totalChildren;
+    final summaryColor = isLocked
         ? theme.colorScheme.outline
-        : isCompleted
+        : allCompleted
             ? Colors.green
-            : Colors.orange;
-    final statusLabel = isLocked
-        ? 'Locked'
-        : isCompleted
-            ? 'Completed'
-            : 'Pending';
+            : theme.colorScheme.secondary;
+    final summaryLabel = totalChildren == 0
+        ? 'No linked children'
+        : allCompleted
+            ? 'Completed for all children'
+            : '$completedChildren of $totalChildren completed';
     return ModuleCard(
       onTap: onTap,
       child: Column(
@@ -280,20 +316,67 @@ class _ParentHomeworkCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Checkbox(
-                value: isCompleted,
-                onChanged: onChanged,
-              ),
+              const Icon(Icons.chevron_right),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            statusLabel,
+            summaryLabel,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: statusColor,
+              color: summaryColor,
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (isLocked) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Marked as closed. Updates can be managed from the homework details.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (childStatuses.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: childStatuses
+                  .map(
+                    (status) => Chip(
+                      avatar: Icon(
+                        status.completed
+                            ? Icons.check_circle_outline
+                            : Icons.radio_button_unchecked,
+                        size: 18,
+                        color: status.completed
+                            ? Colors.green
+                            : theme.colorScheme.secondary,
+                      ),
+                      label: Text(status.name),
+                      backgroundColor: status.completed
+                          ? Colors.green.withOpacity(0.12)
+                          : theme.colorScheme.secondary.withOpacity(0.12),
+                      labelStyle: theme.textTheme.bodySmall?.copyWith(
+                        color: status.completed
+                            ? Colors.green.shade700
+                            : theme.colorScheme.secondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ]
+          else ...[
+            const SizedBox(height: 12),
+            Text(
+              'This homework isn\'t linked to any of your children.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (homework.description.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
@@ -305,4 +388,16 @@ class _ParentHomeworkCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ParentChildStatus {
+  const _ParentChildStatus({
+    required this.childId,
+    required this.name,
+    required this.completed,
+  });
+
+  final String childId;
+  final String name;
+  final bool completed;
 }

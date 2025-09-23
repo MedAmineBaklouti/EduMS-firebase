@@ -43,6 +43,32 @@ class AdminHomeworkController extends GetxController {
   final RxnString teacherFilter = RxnString();
   final RxBool isLoading = false.obs;
 
+  void clearFilters() {
+    classFilter.value = null;
+    teacherFilter.value = null;
+    _applyFilters();
+  }
+
+  int? childCountForClass(String classId) {
+    final classModel =
+        classes.firstWhereOrNull((item) => item.id == classId);
+    return classModel?.childIds.length;
+  }
+
+  String className(String classId) {
+    return classes
+            .firstWhereOrNull((item) => item.id == classId)
+            ?.name ??
+        'Class';
+  }
+
+  String teacherName(String teacherId) {
+    return teachers
+            .firstWhereOrNull((item) => item.id == teacherId)
+            ?.name ??
+        'Teacher';
+  }
+
   void setClasses(List<SchoolClassModel> items) {
     classes.assignAll(items);
     if (classFilter.value != null &&

@@ -91,6 +91,12 @@ class TeacherHomeworkController extends GetxController {
     _applyFilters();
   }
 
+  int? childCountForClass(String classId) {
+    final classModel =
+        classes.firstWhereOrNull((item) => item.id == classId);
+    return classModel?.childIds.length;
+  }
+
   String className(String id) {
     return classes.firstWhereOrNull((item) => item.id == id)?.name ?? 'Class';
   }
