@@ -17,23 +17,28 @@ class SwipeActionBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isLeftAligned = alignment == Alignment.centerLeft;
     return Container(
       alignment: alignment,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.85), color],
+          begin: isLeftAligned ? Alignment.centerLeft : Alignment.centerRight,
+          end: isLeftAligned ? Alignment.centerRight : Alignment.centerLeft,
+        ),
       ),
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color),
+          Icon(icon, color: Colors.white),
           const SizedBox(width: 8),
           Text(
             label,
             style: theme.textTheme.titleSmall?.copyWith(
-              color: color,
+              color: Colors.white,
               fontWeight: FontWeight.w600,
             ),
           ),

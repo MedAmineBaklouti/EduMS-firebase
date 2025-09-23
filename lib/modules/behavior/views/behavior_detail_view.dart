@@ -163,7 +163,7 @@ class BehaviorDetailView extends StatelessWidget {
                               return AlertDialog(
                                 title: const Text('Delete behavior'),
                                 content: const Text(
-                                  'Are you sure you want to remove this behavior record?',
+                                  'Are you sure you want to delete this behavior record?',
                                 ),
                                 actions: [
                                   TextButton(
