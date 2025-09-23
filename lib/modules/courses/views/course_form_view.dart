@@ -167,7 +167,10 @@ class CourseFormView extends StatelessWidget {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.save_outlined),
+                        : const Icon(
+                        Icons.save_outlined,
+                        color: Colors.white,
+                    ),
                     label: Text(saving ? 'Saving...' : 'Save Course'),
                     onPressed: saving ? null : controller.saveCourse,
                   ),

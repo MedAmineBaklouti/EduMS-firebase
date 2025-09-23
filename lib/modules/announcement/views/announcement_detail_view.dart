@@ -40,7 +40,9 @@ class AnnouncementDetailView extends StatelessWidget {
           if (isAdmin && onEdit != null)
             IconButton(
               tooltip: 'Edit announcement',
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(
+                  Icons.edit_outlined,
+              ),
               onPressed: () async {
                 await onEdit?.call();
               },
@@ -93,7 +95,10 @@ class AnnouncementDetailView extends StatelessWidget {
                       onPressed: () async {
                         await onEdit?.call();
                       },
-                      icon: const Icon(Icons.edit_outlined),
+                      icon: const Icon(
+                          Icons.edit_outlined,
+                        color: Colors.white,
+                      ),
                       label: const Text('Edit announcement'),
                     ),
                   if (onDelete != null)
@@ -363,7 +368,10 @@ class AnnouncementDetailView extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              icon: const Icon(Icons.picture_as_pdf_outlined),
+              icon: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                color: Colors.white,
+              ),
               label: const Text('Download announcement PDF'),
               onPressed: () => _downloadPdf(context),
             ),

@@ -83,7 +83,10 @@ class CourseDetailView extends StatelessWidget {
                       onPressed: () async {
                         await onEdit?.call();
                       },
-                      icon: const Icon(Icons.edit_outlined),
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: Colors.white,
+                      ),
                       label: const Text('Edit course'),
                     ),
                   if (onDelete != null)
@@ -124,7 +127,10 @@ class CourseDetailView extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.picture_as_pdf_outlined),
+                icon: const Icon(
+                    Icons.picture_as_pdf_outlined,
+                  color: Colors.white,
+                ),
                 label: const Text('Download as PDF'),
                 onPressed: () => _downloadPdf(context),
               ),

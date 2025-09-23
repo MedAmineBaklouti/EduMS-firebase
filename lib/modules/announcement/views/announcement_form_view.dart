@@ -245,6 +245,7 @@ class AnnouncementFormView extends StatelessWidget {
                                       isEditing
                                           ? Icons.save_outlined
                                           : Icons.send_rounded,
+                                          color: Colors.white,
                                     ),
                               label: Text(
                                 saving

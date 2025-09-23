@@ -140,7 +140,10 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
                                 Get.back();
                               }
                             },
-                      icon: const Icon(Icons.save),
+                      icon: const Icon(
+                          Icons.save,
+                          color: Colors.white,
+                      ),
                       label: Text(isSaving ? 'Saving...' : 'Save'),
                     ),
                   ),
