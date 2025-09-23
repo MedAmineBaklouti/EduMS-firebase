@@ -14,8 +14,16 @@ class BehaviorTypeChip extends StatelessWidget {
     final icon = type == BehaviorType.positive
         ? Icons.thumb_up_alt_outlined
         : Icons.report_outlined;
-    final background = theme.colorScheme.primary.withOpacity(0.1);
-    final textColor = theme.colorScheme.primary;
+    final Color textColor;
+    final Color background;
+
+    if (type == BehaviorType.positive) {
+      textColor = Colors.green.shade600;
+      background = Colors.green.shade50;
+    } else {
+      textColor = Colors.red.shade600;
+      background = Colors.red.shade50;
+    }
     return Chip(
       visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
       avatar: Icon(
