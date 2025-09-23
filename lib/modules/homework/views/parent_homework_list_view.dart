@@ -7,6 +7,7 @@ import '../../common/widgets/module_card.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../controllers/parent_homework_controller.dart';
+import 'homework_detail_view.dart';
 
 class ParentHomeworkListView extends GetView<ParentHomeworkController> {
   const ParentHomeworkListView({super.key});
@@ -88,6 +89,32 @@ class ParentHomeworkListView extends GetView<ParentHomeworkController> {
                                 value ?? false,
                               );
                             },
+                      onTap: () {
+                        final currentChildId = controller.activeChildId;
+                        final currentChild = controller.activeChild;
+                        final locked =
+                            homework.isLockedForParent(DateTime.now());
+                        final completionForChild = currentChildId == null
+                            ? null
+                            : homework.isCompletedForChild(currentChildId);
+                        Get.to(
+                          () => HomeworkDetailView(
+                            homework: homework,
+                            showParentControls: true,
+                            parentChildId: currentChildId,
+                            parentChildName: currentChild?.name,
+                            isParentLocked: locked,
+                            initialParentCompletion: completionForChild,
+                            onParentToggle: currentChildId == null || locked
+                                ? null
+                                : (value) => controller.markCompletion(
+                                      homework,
+                                      currentChildId,
+                                      value,
+                                    ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );
@@ -188,6 +215,7 @@ class _ParentHomeworkCard extends StatelessWidget {
     required this.isLocked,
     required this.isCompleted,
     required this.onChanged,
+    this.onTap,
   });
 
   final HomeworkModel homework;
@@ -195,6 +223,7 @@ class _ParentHomeworkCard extends StatelessWidget {
   final bool isLocked;
   final bool isCompleted;
   final ValueChanged<bool?>? onChanged;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -210,6 +239,7 @@ class _ParentHomeworkCard extends StatelessWidget {
             ? 'Completed'
             : 'Pending';
     return ModuleCard(
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -140,15 +140,43 @@ class ParentHomeworkController extends GetxController {
     homeworks.assignAll(filtered);
   }
 
-  void markCompletion(HomeworkModel homework, String childId, bool completed) {
+  Future<bool> markCompletion(
+      HomeworkModel homework, String childId, bool completed) async {
     final updatedMap = Map<String, bool>.from(homework.completionByChildId)
       ..[childId] = completed;
     final updatedHomework =
         homework.copyWith(completionByChildId: updatedMap);
+
     final index = _allHomeworks.indexWhere((item) => item.id == homework.id);
-    if (index != -1) {
-      _allHomeworks[index] = updatedHomework;
+    final rawIndex = _rawHomeworks.indexWhere((item) => item.id == homework.id);
+
+    if (index == -1) {
+      return false;
+    }
+
+    _allHomeworks[index] = updatedHomework;
+    if (rawIndex != -1) {
+      _rawHomeworks[rawIndex] = updatedHomework;
+    }
+    _applyFilters();
+
+    try {
+      await _db.firestore.collection('homeworks').doc(homework.id).update({
+        'completionByChildId.$childId': completed,
+      });
+      return true;
+    } catch (e) {
+      _allHomeworks[index] = homework;
+      if (rawIndex != -1) {
+        _rawHomeworks[rawIndex] = homework;
+      }
       _applyFilters();
+      Get.snackbar(
+        'Update failed',
+        'Unable to update the homework status. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
     }
   }
 

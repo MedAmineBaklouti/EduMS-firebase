@@ -8,6 +8,7 @@ import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../../common/widgets/swipe_action_background.dart';
 import '../controllers/teacher_homework_controller.dart';
+import 'homework_detail_view.dart';
 import 'teacher_homework_form_view.dart';
 
 class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
@@ -93,8 +94,23 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
                         homework: homework,
                         dateFormat: dateFormat,
                         onTap: () {
-                          controller.startEdit(homework);
-                          Get.to(() => const TeacherHomeworkFormView());
+                          Get.to(
+                            () => HomeworkDetailView(
+                              homework: homework,
+                              onEdit: () async {
+                                Get.back();
+                                await Future<void>.delayed(Duration.zero);
+                                controller.startEdit(homework);
+                                await Get.to(
+                                  () => const TeacherHomeworkFormView(),
+                                );
+                              },
+                              onDelete: () async {
+                                controller.removeHomework(homework);
+                                Get.back();
+                              },
+                            ),
+                          );
                         },
                       ),
                     );

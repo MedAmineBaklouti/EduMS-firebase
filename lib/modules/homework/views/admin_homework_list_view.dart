@@ -7,6 +7,7 @@ import '../../common/widgets/module_card.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../controllers/admin_homework_controller.dart';
+import 'homework_detail_view.dart';
 
 class AdminHomeworkListView extends GetView<AdminHomeworkController> {
   const AdminHomeworkListView({super.key});
@@ -55,6 +56,13 @@ class AdminHomeworkListView extends GetView<AdminHomeworkController> {
                     return _AdminHomeworkCard(
                       homework: homework,
                       dateFormat: dateFormat,
+                      onTap: () {
+                        Get.to(
+                          () => HomeworkDetailView(
+                            homework: homework,
+                          ),
+                        );
+                      },
                     );
                   },
                 );
@@ -168,16 +176,19 @@ class _AdminHomeworkCard extends StatelessWidget {
   const _AdminHomeworkCard({
     required this.homework,
     required this.dateFormat,
+    this.onTap,
   });
 
   final HomeworkModel homework;
   final DateFormat dateFormat;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final statusColor = theme.colorScheme.primary;
     return ModuleCard(
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
