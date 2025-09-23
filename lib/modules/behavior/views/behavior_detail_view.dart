@@ -25,7 +25,6 @@ class BehaviorDetailView extends StatelessWidget {
     final theme = Theme.of(context);
     final MaterialColor palette =
         behavior.type == BehaviorType.positive ? Colors.green : Colors.red;
-    final Color iconColor = palette.shade700;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Behavior Details'),
@@ -38,7 +37,7 @@ class BehaviorDetailView extends StatelessWidget {
               },
               icon: Icon(
                 Icons.edit_outlined,
-                color: iconColor,
+                color: Colors.black,
               ),
             ),
         ],
@@ -159,7 +158,7 @@ class BehaviorDetailView extends StatelessWidget {
                         },
                         icon: Icon(
                           Icons.edit_outlined,
-                          color: iconColor,
+                          color: Colors.white,
                         ),
                         label: const Text('Edit behavior'),
                       ),
