@@ -84,10 +84,6 @@ class TeacherCoursesView extends StatelessWidget {
                                       await Future<void>.delayed(Duration.zero);
                                       controller.openForm(course: course);
                                     },
-                                    onDelete: () async {
-                                      await controller.deleteCourse(course.id);
-                                      Get.back();
-                                    },
                                   ),
                                 );
                               },
