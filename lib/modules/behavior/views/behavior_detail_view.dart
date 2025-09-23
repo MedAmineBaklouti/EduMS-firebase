@@ -23,17 +23,23 @@ class BehaviorDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final MaterialColor palette =
+        behavior.type == BehaviorType.positive ? Colors.green : Colors.red;
+    final Color iconColor = palette.shade700;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Behavior Details'),
         actions: [
           if (onEdit != null)
             IconButton(
-              tooltip: 'Edit record',
+              tooltip: 'Edit behavior',
               onPressed: () async {
                 await onEdit?.call();
               },
-              icon: const Icon(Icons.edit_outlined),
+              icon: Icon(
+                Icons.edit_outlined,
+                color: iconColor,
+              ),
             ),
         ],
       ),
@@ -151,8 +157,11 @@ class BehaviorDetailView extends StatelessWidget {
                         onPressed: () async {
                           await onEdit?.call();
                         },
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Edit record'),
+                        icon: Icon(
+                          Icons.edit_outlined,
+                          color: iconColor,
+                        ),
+                        label: const Text('Edit behavior'),
                       ),
                     if (onDelete != null)
                       OutlinedButton.icon(
