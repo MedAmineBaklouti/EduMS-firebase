@@ -10,13 +10,12 @@ class BehaviorTypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final MaterialColor palette =
-        type == BehaviorType.positive ? Colors.green : Colors.red;
+    final theme = Theme.of(context);
     final icon = type == BehaviorType.positive
         ? Icons.thumb_up_alt_outlined
         : Icons.report_outlined;
-    final background = palette.shade50;
-    final textColor = palette.shade700;
+    final background = theme.colorScheme.primary.withOpacity(0.1);
+    final textColor = theme.colorScheme.primary;
     return Chip(
       visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
       avatar: Icon(
