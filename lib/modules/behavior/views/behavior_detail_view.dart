@@ -11,12 +11,10 @@ class BehaviorDetailView extends StatelessWidget {
     super.key,
     required this.behavior,
     this.onEdit,
-    this.onDelete,
   });
 
   final BehaviorModel behavior;
   final Future<void> Function()? onEdit;
-  final Future<void> Function()? onDelete;
 
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy • h:mm a');
 
@@ -138,64 +136,6 @@ class BehaviorDetailView extends StatelessWidget {
                   style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
                 ),
               ),
-              if (onEdit != null || onDelete != null) ...[
-                const SizedBox(height: 32),
-                Text(
-                  'Actions',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    if (onEdit != null)
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          await onEdit?.call();
-                        },
-                        icon: Icon(
-                          Icons.edit_outlined,
-                          color: Colors.white,
-                        ),
-                        label: const Text('Edit behavior'),
-                      ),
-                    if (onDelete != null)
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text('Delete behavior'),
-                                content: const Text(
-                                  'Are you sure you want to delete this behavior record?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.of(context).pop(true),
-                                    child: const Text('Delete'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                          if (confirmed == true) {
-                            await onDelete?.call();
-                          }
-                        },
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Delete record'),
-                      ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),

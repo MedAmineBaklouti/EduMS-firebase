@@ -103,10 +103,6 @@ class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
                                         await Get.to(
                                             () => const TeacherBehaviorFormView());
                                       },
-                                      onDelete: () async {
-                                        await controller.removeBehavior(behavior);
-                                        Get.back();
-                                      },
                                     ),
                                   );
                                 },
@@ -301,28 +297,36 @@ class _TeacherBehaviorFilters extends StatelessWidget {
 }
 
 Future<bool> _confirmDelete(BuildContext context) async {
-  return await showDialog<bool>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Delete behavior'),
-            content: const Text(
-              'Are you sure you want to delete this behavior record?',
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      final dialogTheme = Theme.of(dialogContext);
+      return AlertDialog(
+        title: const Text('Delete behavior'),
+        content: const Text(
+          'Are you sure you want to delete this behavior record?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: dialogTheme.colorScheme.onSurfaceVariant),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          );
-        },
-      ) ??
-      false;
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              'Delete',
+              style: TextStyle(color: dialogTheme.colorScheme.error),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+  return result ?? false;
 }
 
 class _BehaviorCard extends StatelessWidget {
