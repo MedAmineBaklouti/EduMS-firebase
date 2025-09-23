@@ -78,6 +78,12 @@ class ParentBehaviorController extends GetxController {
     _applyFilters();
   }
 
+  void clearFilters() {
+    childFilter.value = null;
+    typeFilter.value = null;
+    _applyFilters();
+  }
+
   void _applyFilters() {
     final filtered = _allBehaviors.where((behavior) {
       final matchesChild =

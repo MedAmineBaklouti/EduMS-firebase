@@ -83,123 +83,224 @@ class _AdminBehaviorFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<AdminBehaviorController>();
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: GetBuilder<AdminBehaviorController>(
-        builder: (controller) {
-          return ModuleCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Filter records',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter behaviors',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Obx(() {
+                final hasFilters =
+                    (controller.classFilter.value ?? '').isNotEmpty ||
+                        (controller.teacherFilter.value ?? '').isNotEmpty ||
+                        controller.typeFilter.value != null;
+                return TextButton.icon(
+                  onPressed: hasFilters ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final chips = <Widget>[];
+            final classId = controller.classFilter.value;
+            if (classId != null && classId.isNotEmpty) {
+              final className = controller.className(classId) ?? 'Class';
+              chips.add(
+                _buildActiveFilterChip(
+                  context,
+                  label: 'Class: $className',
+                  onRemoved: () => controller.setClassFilter(null),
+                ),
+              );
+            }
+            final teacherId = controller.teacherFilter.value;
+            if (teacherId != null && teacherId.isNotEmpty) {
+              final teacherName = controller.teacherName(teacherId) ?? 'Teacher';
+              chips.add(
+                _buildActiveFilterChip(
+                  context,
+                  label: 'Teacher: $teacherName',
+                  onRemoved: () => controller.setTeacherFilter(null),
+                ),
+              );
+            }
+            final type = controller.typeFilter.value;
+            if (type != null) {
+              chips.add(
+                _buildActiveFilterChip(
+                  context,
+                  label: 'Type: ${_behaviorTypeLabel(type)}',
+                  onRemoved: () => controller.setTypeFilter(null),
+                ),
+              );
+            }
+            if (chips.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: chips,
+              ),
+            );
+          }),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const spacing = 12.0;
+              final maxWidth = constraints.maxWidth;
+              double itemWidth;
+              if (maxWidth >= 900) {
+                itemWidth = (maxWidth - (2 * spacing)) / 3;
+              } else if (maxWidth >= 600) {
+                itemWidth = (maxWidth - spacing) / 2;
+              } else {
+                itemWidth = maxWidth;
+              }
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  SizedBox(
+                    width: itemWidth,
+                    child: Obx(() {
+                      final classes = controller.classes;
+                      final selected = controller.classFilter.value;
+                      final value =
+                          selected == null || selected.isEmpty ? null : selected;
+                      return DropdownButtonFormField<String?>(
+                        value: value,
+                        decoration: const InputDecoration(
+                          labelText: 'Class',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('All classes'),
+                          ),
+                          ...classes.map(
+                            (item) => DropdownMenuItem<String?>(
+                              value: item.id,
+                              child: Text(item.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: controller.setClassFilter,
+                      );
+                    }),
                   ),
-                ),
-                const SizedBox(height: 16),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 640;
-                    final fieldWidth = isWide ? constraints.maxWidth / 3 - 8 : double.infinity;
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        SizedBox(
-                          width: fieldWidth,
-                          child: Obx(() {
-                            final classes = controller.classes;
-                            final classFilter = controller.classFilter.value;
-                            return DropdownButtonFormField<String?>(
-                              value: classFilter,
-                              decoration: const InputDecoration(
-                                labelText: 'Class',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Text('All classes'),
-                                ),
-                                ...classes.map(
-                                  (item) => DropdownMenuItem<String?>(
-                                    value: item.id,
-                                    child: Text(item.name),
-                                  ),
-                                ),
-                              ],
-                              onChanged: controller.setClassFilter,
-                            );
-                          }),
+                  SizedBox(
+                    width: itemWidth,
+                    child: Obx(() {
+                      final teachers = controller.teachers;
+                      final selected = controller.teacherFilter.value;
+                      final value =
+                          selected == null || selected.isEmpty ? null : selected;
+                      return DropdownButtonFormField<String?>(
+                        value: value,
+                        decoration: const InputDecoration(
+                          labelText: 'Teacher',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(
-                          width: fieldWidth,
-                          child: Obx(() {
-                            final teachers = controller.teachers;
-                            final teacherFilter = controller.teacherFilter.value;
-                            return DropdownButtonFormField<String?>(
-                              value: teacherFilter,
-                              decoration: const InputDecoration(
-                                labelText: 'Teacher',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Text('All teachers'),
-                                ),
-                                ...teachers.map(
-                                  (item) => DropdownMenuItem<String?>(
-                                    value: item.id,
-                                    child: Text(item.name),
-                                  ),
-                                ),
-                              ],
-                              onChanged: controller.setTeacherFilter,
-                            );
-                          }),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('All teachers'),
+                          ),
+                          ...teachers.map(
+                            (item) => DropdownMenuItem<String?>(
+                              value: item.id,
+                              child: Text(item.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: controller.setTeacherFilter,
+                      );
+                    }),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: Obx(() {
+                      final type = controller.typeFilter.value;
+                      return DropdownButtonFormField<BehaviorType?>(
+                        value: type,
+                        decoration: const InputDecoration(
+                          labelText: 'Type',
+                          border: OutlineInputBorder(),
                         ),
-                        SizedBox(
-                          width: fieldWidth,
-                          child: Obx(() {
-                            final typeFilter = controller.typeFilter.value;
-                            return DropdownButtonFormField<BehaviorType?>(
-                              value: typeFilter,
-                              decoration: const InputDecoration(
-                                labelText: 'Type',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: const [
-                                DropdownMenuItem<BehaviorType?>(
-                                  value: null,
-                                  child: Text('All types'),
-                                ),
-                                DropdownMenuItem<BehaviorType?>(
-                                  value: BehaviorType.positive,
-                                  child: Text('Positive'),
-                                ),
-                                DropdownMenuItem<BehaviorType?>(
-                                  value: BehaviorType.negative,
-                                  child: Text('Negative'),
-                                ),
-                              ],
-                              onChanged: controller.setTypeFilter,
-                            );
-                          }),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          );
-        },
+                        items: const [
+                          DropdownMenuItem<BehaviorType?>(
+                            value: null,
+                            child: Text('All types'),
+                          ),
+                          DropdownMenuItem<BehaviorType?>(
+                            value: BehaviorType.positive,
+                            child: Text('Positive'),
+                          ),
+                          DropdownMenuItem<BehaviorType?>(
+                            value: BehaviorType.negative,
+                            child: Text('Negative'),
+                          ),
+                        ],
+                        onChanged: controller.setTypeFilter,
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildActiveFilterChip(
+    BuildContext context, {
+    required String label,
+    required VoidCallback onRemoved,
+  }) {
+    final theme = Theme.of(context);
+    return Chip(
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
+      ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  String _behaviorTypeLabel(BehaviorType type) {
+    switch (type) {
+      case BehaviorType.positive:
+        return 'Positive';
+      case BehaviorType.negative:
+        return 'Negative';
+    }
   }
 }
 

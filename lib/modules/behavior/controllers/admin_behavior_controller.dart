@@ -82,6 +82,13 @@ class AdminBehaviorController extends GetxController {
     _applyFilters();
   }
 
+  void clearFilters() {
+    classFilter.value = null;
+    teacherFilter.value = null;
+    typeFilter.value = null;
+    _applyFilters();
+  }
+
   void _applyFilters() {
     final filtered = _allBehaviors.where((behavior) {
       final matchesClass =

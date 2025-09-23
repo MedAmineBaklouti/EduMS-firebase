@@ -83,30 +83,88 @@ class _ParentBehaviorFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<ParentBehaviorController>();
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: GetBuilder<ParentBehaviorController>(
-        builder: (controller) {
-          return ModuleCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Filters',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter behaviors',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 16),
-                Obx(() {
+              ),
+              Obx(() {
+                final hasFilters =
+                    (controller.childFilter.value ?? '').isNotEmpty ||
+                        controller.typeFilter.value != null;
+                return TextButton.icon(
+                  onPressed: hasFilters ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final chips = <Widget>[];
+            final childId = controller.childFilter.value;
+            if (childId != null && childId.isNotEmpty) {
+              String? childName;
+              for (final child in controller.children) {
+                if (child.id == childId) {
+                  childName = child.name;
+                  break;
+                }
+              }
+              chips.add(
+                _buildActiveFilterChip(
+                  context,
+                  label: 'Child: ${childName ?? 'Child'}',
+                  onRemoved: () => controller.setChildFilter(null),
+                ),
+              );
+            }
+            final type = controller.typeFilter.value;
+            if (type != null) {
+              chips.add(
+                _buildActiveFilterChip(
+                  context,
+                  label: 'Type: ${_behaviorTypeLabel(type)}',
+                  onRemoved: () => controller.setTypeFilter(null),
+                ),
+              );
+            }
+            if (chips.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: chips,
+              ),
+            );
+          }),
+          Row(
+            children: [
+              Expanded(
+                child: Obx(() {
                   final children = controller.children;
-                  final childFilter = controller.childFilter.value;
+                  final selected = controller.childFilter.value;
+                  final value =
+                      selected == null || selected.isEmpty ? null : selected;
                   return DropdownButtonFormField<String?>(
-                    value: childFilter,
+                    value: value,
                     decoration: const InputDecoration(
-                      labelText: 'Filter by child',
+                      labelText: 'Child',
                       border: OutlineInputBorder(),
                     ),
                     items: [
@@ -124,13 +182,15 @@ class _ParentBehaviorFilters extends StatelessWidget {
                     onChanged: controller.setChildFilter,
                   );
                 }),
-                const SizedBox(height: 12),
-                Obx(() {
-                  final typeFilter = controller.typeFilter.value;
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Obx(() {
+                  final type = controller.typeFilter.value;
                   return DropdownButtonFormField<BehaviorType?>(
-                    value: typeFilter,
+                    value: type,
                     decoration: const InputDecoration(
-                      labelText: 'Filter by type',
+                      labelText: 'Type',
                       border: OutlineInputBorder(),
                     ),
                     items: const [
@@ -150,12 +210,45 @@ class _ParentBehaviorFilters extends StatelessWidget {
                     onChanged: controller.setTypeFilter,
                   );
                 }),
-              ],
-            ),
-          );
-        },
+              ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildActiveFilterChip(
+    BuildContext context, {
+    required String label,
+    required VoidCallback onRemoved,
+  }) {
+    final theme = Theme.of(context);
+    return Chip(
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
+      ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  String _behaviorTypeLabel(BehaviorType type) {
+    switch (type) {
+      case BehaviorType.positive:
+        return 'Positive';
+      case BehaviorType.negative:
+        return 'Negative';
+    }
   }
 }
 
