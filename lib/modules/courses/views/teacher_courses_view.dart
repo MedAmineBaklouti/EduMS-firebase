@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../data/models/course_model.dart';
 import '../controllers/teacher_courses_controller.dart';
 import 'course_detail_view.dart';
+import '../../common/widgets/swipe_action_background.dart';
 
 class TeacherCoursesView extends StatelessWidget {
   final TeacherCoursesController controller =
@@ -49,9 +50,18 @@ class TeacherCoursesView extends StatelessWidget {
                           final course = controller.courses[index];
                           return Dismissible(
                             key: ValueKey(course.id),
-                            background: _buildEditBackground(context),
-                            secondaryBackground:
-                                _buildDeleteBackground(context),
+                            background: SwipeActionBackground(
+                              alignment: Alignment.centerLeft,
+                              color: theme.colorScheme.primary,
+                              icon: Icons.edit_outlined,
+                              label: 'Edit',
+                            ),
+                            secondaryBackground: SwipeActionBackground(
+                              alignment: Alignment.centerRight,
+                              color: theme.colorScheme.error,
+                              icon: Icons.delete_outline,
+                              label: 'Delete',
+                            ),
                             confirmDismiss: (direction) async {
                               if (direction == DismissDirection.startToEnd) {
                                 controller.openForm(course: course);
@@ -63,7 +73,25 @@ class TeacherCoursesView extends StatelessWidget {
                               }
                               return confirmed ?? false;
                             },
-                            child: _CourseListTile(course: course),
+                            child: _CourseListTile(
+                              course: course,
+                              onTap: () {
+                                Get.to(
+                                  () => CourseDetailView(
+                                    course: course,
+                                    onEdit: () async {
+                                      Get.back();
+                                      await Future<void>.delayed(Duration.zero);
+                                      controller.openForm(course: course);
+                                    },
+                                    onDelete: () async {
+                                      await controller.deleteCourse(course.id);
+                                      Get.back();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         },
                       ),
@@ -233,40 +261,6 @@ class TeacherCoursesView extends StatelessWidget {
     );
   }
 
-  Widget _buildEditBackground(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Icon(
-        Icons.edit_outlined,
-        color: theme.colorScheme.primary,
-        size: 28,
-      ),
-    );
-  }
-
-  Widget _buildDeleteBackground(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.error.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Icon(
-        Icons.delete_outline,
-        color: theme.colorScheme.error,
-        size: 28,
-      ),
-    );
-  }
-
   Future<bool?> _confirmDelete(BuildContext context) {
     final theme = Theme.of(context);
     return showDialog<bool>(
@@ -297,8 +291,9 @@ class TeacherCoursesView extends StatelessWidget {
 
 class _CourseListTile extends StatelessWidget {
   final CourseModel course;
+  final VoidCallback onTap;
 
-  const _CourseListTile({required this.course});
+  const _CourseListTile({required this.course, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -310,7 +305,7 @@ class _CourseListTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => Get.to(() => CourseDetailView(course: course)),
+        onTap: onTap,
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),

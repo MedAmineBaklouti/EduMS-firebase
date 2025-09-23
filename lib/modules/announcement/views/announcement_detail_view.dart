@@ -10,11 +10,15 @@ import '../../../data/models/announcement_model.dart';
 class AnnouncementDetailView extends StatelessWidget {
   final AnnouncementModel announcement;
   final bool isAdmin;
+  final Future<void> Function()? onEdit;
+  final Future<void> Function()? onDelete;
 
   AnnouncementDetailView({
     super.key,
     required this.announcement,
     this.isAdmin = false,
+    this.onEdit,
+    this.onDelete,
   });
 
   final DateFormat _dateFormat = DateFormat('EEEE, MMM d, yyyy • h:mm a');
@@ -33,6 +37,14 @@ class AnnouncementDetailView extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
+          if (isAdmin && onEdit != null)
+            IconButton(
+              tooltip: 'Edit announcement',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () async {
+                await onEdit?.call();
+              },
+            ),
           if (isAdmin)
             IconButton(
               tooltip: 'Download PDF',
@@ -63,6 +75,61 @@ class AnnouncementDetailView extends StatelessWidget {
                 ),
               ),
             ),
+            if (isAdmin && (onEdit != null || onDelete != null)) ...[
+              const SizedBox(height: 32),
+              Text(
+                'Actions',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  if (onEdit != null)
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await onEdit?.call();
+                      },
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('Edit announcement'),
+                    ),
+                  if (onDelete != null)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Delete announcement'),
+                              content: const Text(
+                                'Are you sure you want to delete this announcement?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (confirmed == true) {
+                          await onDelete?.call();
+                        }
+                      },
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Delete announcement'),
+                    ),
+                ],
+              ),
+            ],
             if (isAdmin) ...[
               const SizedBox(height: 32),
               _buildAdminToolsCard(context),
