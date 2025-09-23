@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 
+import '../../../core/services/database_service.dart';
 import '../../../data/models/behavior_model.dart';
 import '../../../data/models/school_class_model.dart';
 import '../../../data/models/teacher_model.dart';
 
 class AdminBehaviorController extends GetxController {
+  final DatabaseService _db = Get.find();
+
   final RxList<BehaviorModel> _allBehaviors = <BehaviorModel>[].obs;
   final RxList<BehaviorModel> behaviors = <BehaviorModel>[].obs;
 
@@ -16,6 +21,28 @@ class AdminBehaviorController extends GetxController {
   final RxnString teacherFilter = RxnString();
   final Rxn<BehaviorType> typeFilter = Rxn<BehaviorType>();
   final RxBool isLoading = false.obs;
+
+  StreamSubscription? _classesSubscription;
+  StreamSubscription? _teachersSubscription;
+  StreamSubscription? _behaviorsSubscription;
+
+  bool _classesLoaded = false;
+  bool _teachersLoaded = false;
+  bool _behaviorsLoaded = false;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _initialize();
+  }
+
+  @override
+  void onClose() {
+    _classesSubscription?.cancel();
+    _teachersSubscription?.cancel();
+    _behaviorsSubscription?.cancel();
+    super.onClose();
+  }
 
   void setClasses(List<SchoolClassModel> items) {
     classes.assignAll(items);
@@ -79,5 +106,53 @@ class AdminBehaviorController extends GetxController {
 
   String? teacherName(String teacherId) {
     return teachers.firstWhereOrNull((item) => item.id == teacherId)?.name;
+  }
+
+  Future<void> refreshData() async {
+    final classSnapshot = await _db.firestore.collection('classes').get();
+    setClasses(
+      classSnapshot.docs.map(SchoolClassModel.fromDoc).toList(),
+    );
+
+    final teacherSnapshot = await _db.firestore.collection('teachers').get();
+    setTeachers(
+      teacherSnapshot.docs.map(TeacherModel.fromDoc).toList(),
+    );
+
+    final behaviorSnapshot = await _db.firestore.collection('behaviors').get();
+    setBehaviors(
+      behaviorSnapshot.docs.map(BehaviorModel.fromDoc).toList(),
+    );
+  }
+
+  void _initialize() {
+    isLoading.value = true;
+
+    _classesSubscription =
+        _db.firestore.collection('classes').snapshots().listen((snapshot) {
+      setClasses(snapshot.docs.map(SchoolClassModel.fromDoc).toList());
+      _classesLoaded = true;
+      _maybeFinishLoading();
+    });
+
+    _teachersSubscription =
+        _db.firestore.collection('teachers').snapshots().listen((snapshot) {
+      setTeachers(snapshot.docs.map(TeacherModel.fromDoc).toList());
+      _teachersLoaded = true;
+      _maybeFinishLoading();
+    });
+
+    _behaviorsSubscription =
+        _db.firestore.collection('behaviors').snapshots().listen((snapshot) {
+      setBehaviors(snapshot.docs.map(BehaviorModel.fromDoc).toList());
+      _behaviorsLoaded = true;
+      _maybeFinishLoading();
+    });
+  }
+
+  void _maybeFinishLoading() {
+    if (_classesLoaded && _teachersLoaded && _behaviorsLoaded) {
+      isLoading.value = false;
+    }
   }
 }
