@@ -95,17 +95,13 @@ class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
                                 dateFormat: dateFormat,
                                 onTap: () {
                                   Get.to(
-                                    () => BehaviorDetailView(
+                                  () => BehaviorDetailView(
                                       behavior: behavior,
                                       onEdit: () async {
                                         Get.back();
                                         controller.startEdit(behavior);
                                         await Get.to(
                                             () => const TeacherBehaviorFormView());
-                                      },
-                                      onDelete: () async {
-                                        await controller.removeBehavior(behavior);
-                                        Get.back();
                                       },
                                     ),
                                   );
