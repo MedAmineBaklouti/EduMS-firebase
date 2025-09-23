@@ -167,7 +167,8 @@ class BehaviorDetailView extends StatelessWidget {
                         onPressed: () async {
                           final confirmed = await showDialog<bool>(
                             context: context,
-                            builder: (context) {
+                            builder: (dialogContext) {
+                              final theme = Theme.of(dialogContext);
                               return AlertDialog(
                                 title: const Text('Delete behavior'),
                                 content: const Text(
@@ -175,12 +176,24 @@ class BehaviorDetailView extends StatelessWidget {
                                 ),
                                 actions: [
                                   TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
-                                    child: const Text('Cancel'),
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(false),
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
                                   ),
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.of(context).pop(true),
-                                    child: const Text('Delete'),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(true),
+                                    child: Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.error,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               );
