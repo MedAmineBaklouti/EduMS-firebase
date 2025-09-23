@@ -168,16 +168,6 @@ class TeacherHomeworkController extends GetxController {
             editing?.completionByChildId ?? <String, bool>{},
       );
       await docRef.set(homework.toMap());
-      if (editing == null) {
-        _allHomeworks.add(homework);
-      } else {
-        final index =
-            _allHomeworks.indexWhere((item) => item.id == editing!.id);
-        if (index != -1) {
-          _allHomeworks[index] = homework;
-        }
-      }
-      _applyFilters();
       startCreate();
       return true;
     } finally {

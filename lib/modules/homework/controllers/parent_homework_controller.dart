@@ -1,10 +1,39 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/database_service.dart';
 import '../../../data/models/child_model.dart';
 import '../../../data/models/homework_model.dart';
 
 class ParentHomeworkController extends GetxController {
+  final DatabaseService _db = Get.find();
+  final AuthService _auth = Get.find();
+
+  final List<HomeworkModel> _rawHomeworks = <HomeworkModel>[];
+  final Set<String> _classIds = <String>{};
+
+  StreamSubscription? _childrenSubscription;
+  StreamSubscription? _homeworksSubscription;
+
+  bool _childrenLoaded = false;
+  bool _homeworksLoaded = false;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _initialize();
+  }
+
+  @override
+  void onClose() {
+    _childrenSubscription?.cancel();
+    _homeworksSubscription?.cancel();
+    super.onClose();
+  }
+
   final RxList<HomeworkModel> _allHomeworks = <HomeworkModel>[].obs;
   final RxList<HomeworkModel> homeworks = <HomeworkModel>[].obs;
   final RxList<ChildModel> children = <ChildModel>[].obs;
@@ -39,12 +68,29 @@ class ParentHomeworkController extends GetxController {
             null) {
       childFilter.value = null;
     }
-    _applyFilters();
+    _classIds
+      ..clear()
+      ..addAll(
+        items
+            .map((child) => child.classId)
+            .where((classId) => classId.isNotEmpty),
+      );
+    if (children.length == 1 &&
+        (childFilter.value == null || childFilter.value!.isEmpty)) {
+      childFilter.value = children.first.id;
+    }
+    _childrenLoaded = true;
+    _updateVisibleHomeworks();
+    _maybeFinishLoading();
   }
 
   void setHomeworks(List<HomeworkModel> items) {
-    _allHomeworks.assignAll(items);
-    _applyFilters();
+    _rawHomeworks
+      ..clear()
+      ..addAll(items);
+    _homeworksLoaded = true;
+    _updateVisibleHomeworks();
+    _maybeFinishLoading();
   }
 
   void setChildFilter(String? childId) {
@@ -55,6 +101,21 @@ class ParentHomeworkController extends GetxController {
   void setCompletionFilter(bool? value) {
     completionFilter.value = value;
     _applyFilters();
+  }
+
+  Future<void> refreshData() async {
+    final parentId = _auth.currentUser?.uid;
+    if (parentId == null) {
+      return;
+    }
+    final childrenSnapshot = await _db.firestore
+        .collection('children')
+        .where('parentId', isEqualTo: parentId)
+        .get();
+    setChildren(childrenSnapshot.docs.map(ChildModel.fromDoc).toList());
+
+    final homeworkSnapshot = await _db.firestore.collection('homeworks').get();
+    setHomeworks(homeworkSnapshot.docs.map(HomeworkModel.fromDoc).toList());
   }
 
   void _applyFilters() {
@@ -88,6 +149,47 @@ class ParentHomeworkController extends GetxController {
     if (index != -1) {
       _allHomeworks[index] = updatedHomework;
       _applyFilters();
+    }
+  }
+
+  void _initialize() {
+    final parentId = _auth.currentUser?.uid;
+    if (parentId == null) {
+      isLoading.value = false;
+      return;
+    }
+    isLoading.value = true;
+
+    _childrenSubscription = _db.firestore
+        .collection('children')
+        .where('parentId', isEqualTo: parentId)
+        .snapshots()
+        .listen((snapshot) {
+      setChildren(snapshot.docs.map(ChildModel.fromDoc).toList());
+    });
+
+    _homeworksSubscription =
+        _db.firestore.collection('homeworks').snapshots().listen((snapshot) {
+      setHomeworks(snapshot.docs.map(HomeworkModel.fromDoc).toList());
+    });
+  }
+
+  void _updateVisibleHomeworks() {
+    if (_classIds.isEmpty) {
+      _allHomeworks.clear();
+      _applyFilters();
+      return;
+    }
+    final relevant = _rawHomeworks
+        .where((homework) => _classIds.contains(homework.classId))
+        .toList();
+    _allHomeworks.assignAll(relevant);
+    _applyFilters();
+  }
+
+  void _maybeFinishLoading() {
+    if (_childrenLoaded && _homeworksLoaded) {
+      isLoading.value = false;
     }
   }
 }

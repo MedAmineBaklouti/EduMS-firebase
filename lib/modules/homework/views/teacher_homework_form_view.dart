@@ -22,6 +22,7 @@ class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {
         final selectedClass = controller.selectedClass.value;
         final dueDate = controller.dueDate.value;
         final isSaving = controller.isSaving.value;
+        final isEditing = controller.editing != null;
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -89,32 +90,31 @@ class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {
                 ),
               ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  OutlinedButton(
-                    onPressed: isSaving
-                        ? null
-                        : () {
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final success = await controller.saveHomework();
+                          if (success) {
                             Get.back();
-                          },
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              final success = await controller.saveHomework();
-                              if (success) {
-                                Get.back();
-                              }
-                            },
-                      icon: const Icon(Icons.save),
-                      label: Text(isSaving ? 'Saving...' : 'Save'),
-                    ),
-                  ),
-                ],
+                          }
+                        },
+                  icon: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          isEditing ? Icons.save_outlined : Icons.send_rounded,
+                          color: Colors.white,
+                        ),
+                  label: Text(isSaving ? 'Saving...' : 'Save'),
+                ),
               ),
             ],
           ),
