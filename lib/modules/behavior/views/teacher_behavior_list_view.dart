@@ -134,89 +134,169 @@ class _TeacherBehaviorFilters extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: ModuleCard(
-        padding: const EdgeInsets.all(20),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth > 640;
-            final fieldWidth = isWide ? constraints.maxWidth / 2 - 8 : double.infinity;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Filter behaviors',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 640;
+          final fieldWidth =
+              isWide ? constraints.maxWidth / 2 - 8 : double.infinity;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Filter behaviors',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    SizedBox(
-                      width: fieldWidth,
-                      child: Obx(() {
-                        final classes = controller.classes;
-                        final classFilter = controller.classFilter.value;
-                        return DropdownButtonFormField<String?>(
-                          value: classFilter,
-                          decoration: const InputDecoration(
-                            labelText: 'Filter by class',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: [
-                            const DropdownMenuItem<String?>(
-                              value: null,
-                              child: Text('All classes'),
-                            ),
-                            ...classes.map(
-                              (item) => DropdownMenuItem<String?>(
-                                value: item.id,
-                                child: Text(item.name),
-                              ),
-                            ),
-                          ],
-                          onChanged: controller.setClassFilter,
-                        );
-                      }),
+                  Obx(() {
+                    final hasFilters =
+                        (controller.classFilter.value ?? '').isNotEmpty ||
+                            controller.typeFilter.value != null;
+                    return TextButton.icon(
+                      onPressed: hasFilters ? controller.clearFilters : null,
+                      icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                      label: const Text('Clear'),
+                    );
+                  }),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Obx(() {
+                final chips = <Widget>[];
+                final classFilter = controller.classFilter.value;
+                if (classFilter != null && classFilter.isNotEmpty) {
+                  chips.add(
+                    _buildActiveFilterChip(
+                      context,
+                      label: 'Class: ${controller.classNameFor(classFilter)}',
+                      onRemoved: () => controller.setClassFilter(null),
                     ),
-                    SizedBox(
-                      width: fieldWidth,
-                      child: Obx(() {
-                        final typeFilter = controller.typeFilter.value;
-                        return DropdownButtonFormField<BehaviorType?>(
-                          value: typeFilter,
-                          decoration: const InputDecoration(
-                            labelText: 'Filter by type',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: const [
-                            DropdownMenuItem<BehaviorType?>(
-                              value: null,
-                              child: Text('All types'),
-                            ),
-                            DropdownMenuItem<BehaviorType?>(
-                              value: BehaviorType.positive,
-                              child: Text('Positive'),
-                            ),
-                            DropdownMenuItem<BehaviorType?>(
-                              value: BehaviorType.negative,
-                              child: Text('Negative'),
-                            ),
-                          ],
-                          onChanged: controller.setTypeFilter,
-                        );
-                      }),
+                  );
+                }
+                final typeFilter = controller.typeFilter.value;
+                if (typeFilter != null) {
+                  chips.add(
+                    _buildActiveFilterChip(
+                      context,
+                      label: 'Type: ${_behaviorTypeLabel(typeFilter)}',
+                      onRemoved: () => controller.setTypeFilter(null),
                     ),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
+                  );
+                }
+                if (chips.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: chips,
+                  ),
+                );
+              }),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: fieldWidth,
+                    child: Obx(() {
+                      final classes = controller.classes;
+                      final classFilter = controller.classFilter.value;
+                      return DropdownButtonFormField<String?>(
+                        value: classFilter,
+                        decoration: const InputDecoration(
+                          labelText: 'Filter by class',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('All classes'),
+                          ),
+                          ...classes.map(
+                            (item) => DropdownMenuItem<String?>(
+                              value: item.id,
+                              child: Text(item.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: controller.setClassFilter,
+                      );
+                    }),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: Obx(() {
+                      final typeFilter = controller.typeFilter.value;
+                      return DropdownButtonFormField<BehaviorType?>(
+                        value: typeFilter,
+                        decoration: const InputDecoration(
+                          labelText: 'Filter by type',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem<BehaviorType?>(
+                            value: null,
+                            child: Text('All types'),
+                          ),
+                          DropdownMenuItem<BehaviorType?>(
+                            value: BehaviorType.positive,
+                            child: Text('Positive'),
+                          ),
+                          DropdownMenuItem<BehaviorType?>(
+                            value: BehaviorType.negative,
+                            child: Text('Negative'),
+                          ),
+                        ],
+                        onChanged: controller.setTypeFilter,
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  Widget _buildActiveFilterChip(
+    BuildContext context, {
+    required String label,
+    required VoidCallback onRemoved,
+  }) {
+    final theme = Theme.of(context);
+    return Chip(
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
+      ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  String _behaviorTypeLabel(BehaviorType type) {
+    switch (type) {
+      case BehaviorType.positive:
+        return 'Positive';
+      case BehaviorType.negative:
+        return 'Negative';
+    }
   }
 }
 

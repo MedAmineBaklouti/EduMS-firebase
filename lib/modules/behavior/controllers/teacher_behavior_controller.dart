@@ -127,6 +127,12 @@ class TeacherBehaviorController extends GetxController {
     _applyFilters();
   }
 
+  void clearFilters() {
+    classFilter.value = null;
+    typeFilter.value = null;
+    _applyFilters();
+  }
+
   void _applyFilters() {
     final filtered = _allBehaviors.where((behavior) {
       final matchesClass =
@@ -139,6 +145,15 @@ class TeacherBehaviorController extends GetxController {
     }).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     behaviors.assignAll(filtered);
+  }
+
+  String classNameFor(String id) {
+    for (final schoolClass in classes) {
+      if (schoolClass.id == id) {
+        return schoolClass.name;
+      }
+    }
+    return 'Class';
   }
 
   void startCreate() {
