@@ -1,11 +1,29 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/database_service.dart';
 import '../../../data/models/attendance_record_model.dart';
 import '../../../data/models/child_model.dart';
 import '../../../data/models/school_class_model.dart';
+import '../../../data/models/teacher_model.dart';
 
 class TeacherAttendanceController extends GetxController {
+  final DatabaseService _db = Get.find();
+  final AuthService _auth = Get.find();
+
+  StreamSubscription? _teacherSubscription;
+  StreamSubscription? _classesSubscription;
+  StreamSubscription? _sessionsSubscription;
+  final Map<String, StreamSubscription> _childrenSubscriptions =
+      <String, StreamSubscription>{};
+
+  bool _teacherLoaded = false;
+  bool _classesLoaded = false;
+  bool _sessionsLoaded = false;
+
   final RxList<SchoolClassModel> classes = <SchoolClassModel>[].obs;
   final Rxn<SchoolClassModel> selectedClass = Rxn<SchoolClassModel>();
   final Rx<DateTime> selectedDate = DateTime.now().obs;
@@ -24,16 +42,47 @@ class TeacherAttendanceController extends GetxController {
   final Map<String, List<ChildModel>> _childrenByClass =
       <String, List<ChildModel>>{};
 
+  final Rxn<TeacherModel> teacher = Rxn<TeacherModel>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    _initialize();
+  }
+
+  @override
+  void onClose() {
+    for (final subscription in _childrenSubscriptions.values) {
+      subscription.cancel();
+    }
+    _childrenSubscriptions.clear();
+    _teacherSubscription?.cancel();
+    _classesSubscription?.cancel();
+    _sessionsSubscription?.cancel();
+    super.onClose();
+  }
+
   void setClasses(List<SchoolClassModel> items) {
-    classes.assignAll(items);
+    classes.assignAll(
+      List<SchoolClassModel>.from(items)
+        ..sort((a, b) => a.name.compareTo(b.name)),
+    );
     if (selectedClass.value != null) {
       final id = selectedClass.value!.id;
       selectedClass.value = classes.firstWhereOrNull((item) => item.id == id);
+      if (selectedClass.value == null && classes.isNotEmpty) {
+        selectClass(classes.first);
+      }
+    } else if (classes.isNotEmpty) {
+      selectClass(classes.first);
+    } else {
+      selectClass(null);
     }
   }
 
   void setSessions(List<AttendanceSessionModel> items) {
-    _sessions.assignAll(items);
+    _sessions.assignAll(List<AttendanceSessionModel>.from(items)
+      ..sort((a, b) => b.date.compareTo(a.date)));
     _refreshSessionList();
     _restoreCurrentSession();
   }
@@ -49,6 +98,7 @@ class TeacherAttendanceController extends GetxController {
 
   void selectClass(SchoolClassModel? schoolClass) {
     selectedClass.value = schoolClass;
+    _refreshSessionList();
     if (!_restoreCurrentSession()) {
       final children =
           schoolClass == null ? <ChildModel>[] : _childrenByClass[schoolClass.id];
@@ -111,10 +161,19 @@ class TeacherAttendanceController extends GetxController {
 
   Future<bool> submitAttendance() async {
     final classModel = selectedClass.value;
+    final teacherModel = teacher.value;
     if (classModel == null) {
       Get.snackbar(
         'Select a class',
         'Choose a class before submitting attendance.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+    if (teacherModel == null) {
+      Get.snackbar(
+        'Profile incomplete',
+        'Unable to determine the authenticated teacher.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return false;
@@ -133,12 +192,16 @@ class TeacherAttendanceController extends GetxController {
         id: '${classModel.id}-${selectedDate.value.toIso8601String()}',
         classId: classModel.id,
         className: classModel.name,
-        teacherId: '',
-        teacherName: '',
+        teacherId: teacherModel.id,
+        teacherName: teacherModel.name,
         date: selectedDate.value,
         records: List<ChildAttendanceEntry>.from(currentEntries),
         submittedAt: DateTime.now(),
       );
+      await _db.firestore
+          .collection('attendanceSessions')
+          .doc(session.id)
+          .set(session.toMap());
       final existingIndex = _sessions.indexWhere((item) =>
           item.classId == session.classId &&
           _isSameDay(item.date, session.date));
@@ -178,19 +241,107 @@ class TeacherAttendanceController extends GetxController {
 
   void _refreshSessionList() {
     final classId = selectedClass.value?.id;
+    final sorted = List<AttendanceSessionModel>.from(_sessions)
+      ..sort((a, b) => b.date.compareTo(a.date));
     if (classId == null) {
-      sessions.assignAll(_sessions);
-    } else {
-      sessions.assignAll(
-        _sessions
-            .where((session) => session.classId == classId)
-            .toList()
-          ..sort((a, b) => b.date.compareTo(a.date)),
-      );
+      sessions.assignAll(sorted);
+      return;
     }
+    sessions.assignAll(sorted.where((session) => session.classId == classId));
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Future<void> _initialize() async {
+    try {
+      final teacherId = _auth.currentUser?.uid;
+      if (teacherId == null) {
+        Get.snackbar(
+          'Authentication required',
+          'Unable to determine the authenticated teacher.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+      isLoading.value = true;
+
+      _teacherSubscription = _db.firestore
+          .collection('teachers')
+          .doc(teacherId)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists) {
+          teacher.value = TeacherModel.fromDoc(snapshot);
+        }
+        _teacherLoaded = true;
+        _maybeFinishLoading();
+      });
+
+      _classesSubscription = _db.firestore
+          .collection('classes')
+          .snapshots()
+          .listen((snapshot) {
+        final teacherClasses = snapshot.docs
+            .map(SchoolClassModel.fromDoc)
+            .where((item) => item.teacherSubjects.values.contains(teacherId))
+            .toList();
+        setClasses(teacherClasses);
+        _syncChildrenListeners(teacherClasses);
+        _classesLoaded = true;
+        _maybeFinishLoading();
+      });
+
+      _sessionsSubscription = _db.firestore
+          .collection('attendanceSessions')
+          .where('teacherId', isEqualTo: teacherId)
+          .snapshots()
+          .listen((snapshot) {
+        setSessions(snapshot.docs.map(AttendanceSessionModel.fromDoc).toList());
+        _sessionsLoaded = true;
+        _maybeFinishLoading();
+      });
+    } catch (error) {
+      isLoading.value = false;
+      Get.snackbar(
+        'Load failed',
+        'Unable to load attendance data: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void _syncChildrenListeners(List<SchoolClassModel> teacherClasses) {
+    final classIds = teacherClasses.map((item) => item.id).toSet();
+    final existing = _childrenSubscriptions.keys.toSet();
+
+    for (final removedId in existing.difference(classIds)) {
+      _childrenSubscriptions.remove(removedId)?.cancel();
+      _childrenByClass.remove(removedId);
+    }
+
+    for (final schoolClass in teacherClasses) {
+      if (_childrenSubscriptions.containsKey(schoolClass.id)) {
+        continue;
+      }
+      final subscription = _db.firestore
+          .collection('children')
+          .where('classId', isEqualTo: schoolClass.id)
+          .snapshots()
+          .listen((snapshot) {
+        registerChildren(
+          schoolClass.id,
+          snapshot.docs.map(ChildModel.fromDoc).toList(),
+        );
+      });
+      _childrenSubscriptions[schoolClass.id] = subscription;
+    }
+  }
+
+  void _maybeFinishLoading() {
+    if (_teacherLoaded && _classesLoaded && _sessionsLoaded) {
+      isLoading.value = false;
+    }
   }
 }
