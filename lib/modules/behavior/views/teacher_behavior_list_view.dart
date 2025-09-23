@@ -3,8 +3,13 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/behavior_model.dart';
+import '../../common/widgets/module_card.dart';
+import '../../common/widgets/module_empty_state.dart';
+import '../../common/widgets/module_page_container.dart';
 import '../controllers/teacher_behavior_controller.dart';
 import '../widgets/behavior_type_chip.dart';
+import '../../common/widgets/swipe_action_background.dart';
+import 'behavior_detail_view.dart';
 import 'teacher_behavior_form_view.dart';
 
 class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
@@ -16,91 +21,104 @@ class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Student Behaviors'),
+        centerTitle: true,
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           controller.startCreate();
           Get.to(() => const TeacherBehaviorFormView());
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('New record'),
       ),
-      body: Column(
-        children: [
-          _TeacherBehaviorFilters(controller: controller),
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final items = controller.behaviors;
-              return RefreshIndicator(
-                onRefresh: controller.refreshData,
-                child: items.isEmpty
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 48,
-                        ),
-                        children: const [
-                          _EmptyBehaviorState(
-                            message:
-                                'No behaviors have been recorded yet. Use the button below to add your first entry.',
+      body: ModulePageContainer(
+        child: Column(
+          children: [
+            _TeacherBehaviorFilters(controller: controller),
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final items = controller.behaviors;
+                return RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: items.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.emoji_people_outlined,
+                              title: 'No behaviors recorded yet',
+                              message:
+                                  'Tap the “New record” button to capture your first classroom observation.',
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
                           ),
-                        ],
-                      )
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(16),
-                        itemCount: items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final behavior = items[index];
-                          return Dismissible(
-                            key: ValueKey(behavior.id),
-                            background: Container(
-                              color: Colors.blue,
-                              alignment: Alignment.centerLeft,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child:
-                                  const Icon(Icons.edit, color: Colors.white),
-                            ),
-                            secondaryBackground: Container(
-                              color: Colors.red,
-                              alignment: Alignment.centerRight,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child:
-                                  const Icon(Icons.delete, color: Colors.white),
-                            ),
-                            confirmDismiss: (direction) async {
-                              if (direction == DismissDirection.startToEnd) {
-                                controller.startEdit(behavior);
-                                await Get.to(
-                                    () => const TeacherBehaviorFormView());
-                                return false;
-                              }
-                              return _confirmDelete(context);
-                            },
-                            onDismissed: (_) {
-                              controller.removeBehavior(behavior);
-                            },
-                            child: _BehaviorCard(
-                              behavior: behavior,
-                              dateFormat: dateFormat,
-                              onTap: () {
-                                controller.startEdit(behavior);
-                                Get.to(() => const TeacherBehaviorFormView());
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final behavior = items[index];
+                            return Dismissible(
+                              key: ValueKey(behavior.id),
+                              background: SwipeActionBackground(
+                                alignment: Alignment.centerLeft,
+                                color: Theme.of(context).colorScheme.primary,
+                                icon: Icons.edit_outlined,
+                                label: 'Edit',
+                              ),
+                              secondaryBackground: SwipeActionBackground(
+                                alignment: Alignment.centerRight,
+                                color: Theme.of(context).colorScheme.error,
+                                icon: Icons.delete_outline,
+                                label: 'Delete',
+                              ),
+                              confirmDismiss: (direction) async {
+                                if (direction == DismissDirection.startToEnd) {
+                                  controller.startEdit(behavior);
+                                  await Get.to(() => const TeacherBehaviorFormView());
+                                  return false;
+                                }
+                                return _confirmDelete(context);
                               },
-                            ),
-                          );
-                        },
-                      ),
-              );
-            }),
-          ),
-        ],
+                              onDismissed: (_) {
+                                controller.removeBehavior(behavior);
+                              },
+                              child: _BehaviorCard(
+                                behavior: behavior,
+                                dateFormat: dateFormat,
+                                onTap: () {
+                                  Get.to(
+                                    () => BehaviorDetailView(
+                                      behavior: behavior,
+                                      onEdit: () async {
+                                        Get.back();
+                                        controller.startEdit(behavior);
+                                        await Get.to(
+                                            () => const TeacherBehaviorFormView());
+                                      },
+                                      onDelete: () async {
+                                        await controller.removeBehavior(behavior);
+                                        Get.back();
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -113,67 +131,91 @@ class _TeacherBehaviorFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Obx(() {
-        final classes = controller.classes;
-        final classFilter = controller.classFilter.value;
-        final typeFilter = controller.typeFilter.value;
-        return Wrap(
-          runSpacing: 12,
-          spacing: 12,
-          children: [
-            SizedBox(
-              width: 220,
-              child: DropdownButtonFormField<String?>(
-                value: classFilter,
-                decoration: const InputDecoration(
-                  labelText: 'Filter by class',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('All classes'),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: ModuleCard(
+        padding: const EdgeInsets.all(20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 640;
+            final fieldWidth = isWide ? constraints.maxWidth / 2 - 8 : double.infinity;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Filter behaviors',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  ...classes.map(
-                    (item) => DropdownMenuItem<String?>(
-                      value: item.id,
-                      child: Text(item.name),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    SizedBox(
+                      width: fieldWidth,
+                      child: Obx(() {
+                        final classes = controller.classes;
+                        final classFilter = controller.classFilter.value;
+                        return DropdownButtonFormField<String?>(
+                          value: classFilter,
+                          decoration: const InputDecoration(
+                            labelText: 'Filter by class',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('All classes'),
+                            ),
+                            ...classes.map(
+                              (item) => DropdownMenuItem<String?>(
+                                value: item.id,
+                                child: Text(item.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: controller.setClassFilter,
+                        );
+                      }),
                     ),
-                  ),
-                ],
-                onChanged: controller.setClassFilter,
-              ),
-            ),
-            SizedBox(
-              width: 220,
-              child: DropdownButtonFormField<BehaviorType?>(
-                value: typeFilter,
-                decoration: const InputDecoration(
-                  labelText: 'Filter by type',
-                  border: OutlineInputBorder(),
+                    SizedBox(
+                      width: fieldWidth,
+                      child: Obx(() {
+                        final typeFilter = controller.typeFilter.value;
+                        return DropdownButtonFormField<BehaviorType?>(
+                          value: typeFilter,
+                          decoration: const InputDecoration(
+                            labelText: 'Filter by type',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem<BehaviorType?>(
+                              value: null,
+                              child: Text('All types'),
+                            ),
+                            DropdownMenuItem<BehaviorType?>(
+                              value: BehaviorType.positive,
+                              child: Text('Positive'),
+                            ),
+                            DropdownMenuItem<BehaviorType?>(
+                              value: BehaviorType.negative,
+                              child: Text('Negative'),
+                            ),
+                          ],
+                          onChanged: controller.setTypeFilter,
+                        );
+                      }),
+                    ),
+                  ],
                 ),
-                items: const [
-                  DropdownMenuItem<BehaviorType?>(
-                    value: null,
-                    child: Text('All types'),
-                  ),
-                  DropdownMenuItem<BehaviorType?>(
-                    value: BehaviorType.positive,
-                    child: Text('Positive'),
-                  ),
-                  DropdownMenuItem<BehaviorType?>(
-                    value: BehaviorType.negative,
-                    child: Text('Negative'),
-                  ),
-                ],
-                onChanged: controller.setTypeFilter,
-              ),
-            ),
-          ],
-        );
-      }),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -220,105 +262,74 @@ class _BehaviorCard extends StatelessWidget {
     final trimmedName = behavior.childName.trim();
     final avatarText =
         trimmedName.isNotEmpty ? trimmedName[0].toUpperCase() : '?';
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return ModuleCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    child: Text(
-                      avatarText,
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                child: Text(
+                  avatarText,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      behavior.childName,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          behavior.childName,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          behavior.className,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 6),
+                    Text(
+                      behavior.className,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  BehaviorTypeChip(type: behavior.type),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
+              BehaviorTypeChip(type: behavior.type),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            behavior.description.isEmpty
+                ? 'No description provided.'
+                : behavior.description,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              const Icon(Icons.schedule, size: 16),
+              const SizedBox(width: 4),
               Text(
-                behavior.description.isEmpty
-                    ? 'No description provided.'
-                    : behavior.description,
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  'Recorded ${dateFormat.format(behavior.createdAt)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
+                'Recorded ${dateFormat.format(behavior.createdAt)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _EmptyBehaviorState extends StatelessWidget {
-  const _EmptyBehaviorState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.emoji_people_outlined,
-          size: 64,
-          color: theme.colorScheme.outline,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          message,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.outline,
-          ),
-        ),
-      ],
-    );
-  }
-}
