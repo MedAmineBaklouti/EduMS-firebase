@@ -157,13 +157,13 @@ class _TeacherClassList extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          if (!isToday)
-                            OutlinedButton.icon(
-                              onPressed: () =>
-                                  controller.setDate(DateTime.now()),
-                              icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text('Clear date'),
-                            ),
+                          OutlinedButton.icon(
+                            onPressed: isToday
+                                ? null
+                                : () => controller.setDate(DateTime.now()),
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: const Text('Clear date'),
+                          ),
                           TextButton.icon(
                             onPressed: () async {
                               final picked = await showDatePicker(

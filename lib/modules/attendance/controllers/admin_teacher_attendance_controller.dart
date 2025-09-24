@@ -384,7 +384,7 @@ class AdminTeacherAttendanceController extends GetxController {
         teacherName: teacher.name,
         subjectId: teacher.subjectId,
         date: DateTime(day.year, day.month, day.day),
-        status: AttendanceStatus.pending,
+        status: AttendanceStatus.absent,
         note: '',
       );
     }).toList()

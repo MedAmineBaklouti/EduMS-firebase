@@ -25,6 +25,7 @@ class ParentAttendanceView extends GetView<ParentAttendanceController> {
       body: ModulePageContainer(
         child: Column(
           children: [
+            _ParentAttendanceOverviewCard(dateFormat: dateFormat),
             const _ParentAttendanceFilters(),
             Expanded(
               child: Obx(() {
@@ -183,6 +184,97 @@ class _ParentChildSummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ParentAttendanceOverviewCard extends StatelessWidget {
+  const _ParentAttendanceOverviewCard({required this.dateFormat});
+
+  final DateFormat dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<ParentAttendanceController>();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: Obx(() {
+        final selectedDate = controller.dateFilter.value;
+        final now = DateTime.now();
+        final initialDate = selectedDate ?? now;
+        final dateLabel =
+            selectedDate == null ? 'All recent dates' : dateFormat.format(selectedDate);
+        return ModuleCard(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Attendance overview',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          dateLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: selectedDate == null
+                            ? null
+                            : () => controller.setDateFilter(null),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Clear date'),
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: initialDate,
+                            firstDate: DateTime(initialDate.year - 1),
+                            lastDate: DateTime(initialDate.year + 1),
+                          );
+                          controller.setDateFilter(picked);
+                        },
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: Text(selectedDate == null ? 'Select date' : 'Change date'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                selectedDate == null
+                    ? 'View attendance updates for the most recent submissions.'
+                    : 'Showing attendance records submitted on $dateLabel.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

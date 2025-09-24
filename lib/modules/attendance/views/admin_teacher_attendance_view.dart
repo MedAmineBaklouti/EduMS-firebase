@@ -127,7 +127,7 @@ class _AttendanceHeader extends StatelessWidget {
       final absentCount = entries
           .where((entry) => entry.status == AttendanceStatus.absent)
           .length;
-      final pendingCount = entries
+      final unmarkedCount = entries
           .where((entry) => entry.status == AttendanceStatus.pending)
           .length;
       final total = entries.length;
@@ -211,19 +211,20 @@ class _AttendanceHeader extends StatelessWidget {
                       iconColor: Colors.green.shade600,
                       label: '$presentCount present',
                     ),
-                  if (pendingCount > 0)
-                    _AttendanceStatusChip(
-                      icon: Icons.hourglass_empty,
-                      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-                      iconColor: theme.colorScheme.primary,
-                      label: '$pendingCount pending',
-                    ),
                   if (absentCount > 0)
                     _AttendanceStatusChip(
                       icon: Icons.cancel_outlined,
                       backgroundColor: theme.colorScheme.error.withOpacity(0.12),
                       iconColor: theme.colorScheme.error,
                       label: '$absentCount absent',
+                    ),
+                  if (unmarkedCount > 0)
+                    _AttendanceStatusChip(
+                      icon: Icons.more_time_outlined,
+                      backgroundColor:
+                          theme.colorScheme.outline.withOpacity(0.12),
+                      iconColor: theme.colorScheme.outline,
+                      label: '$unmarkedCount not marked',
                     ),
                 ],
               ),
@@ -397,7 +398,6 @@ class _TeacherAttendanceTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isPresent = entry.status == AttendanceStatus.present;
     final isAbsent = entry.status == AttendanceStatus.absent;
-    final isPending = entry.status == AttendanceStatus.pending;
     Color statusColor;
     IconData statusIcon;
     String statusText;
@@ -410,9 +410,9 @@ class _TeacherAttendanceTile extends StatelessWidget {
       statusIcon = Icons.cancel_outlined;
       statusText = 'Marked absent';
     } else {
-      statusColor = theme.colorScheme.primary;
-      statusIcon = Icons.hourglass_empty;
-      statusText = 'Pending';
+      statusColor = theme.colorScheme.outline;
+      statusIcon = Icons.more_time_outlined;
+      statusText = 'Not marked yet';
     }
     final classesLabel = classNames.isEmpty
         ? 'No class assigned'
@@ -473,9 +473,15 @@ class _TeacherAttendanceTile extends StatelessWidget {
                   ],
                 ),
               ),
-              _StatusSelector(
-                status: entry.status,
-                onChanged: onStatusChanged,
+              const SizedBox(width: 12),
+              Flexible(
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: _PresenceToggle(
+                    status: entry.status,
+                    onChanged: onStatusChanged,
+                  ),
+                ),
               ),
             ],
           ),
@@ -532,8 +538,8 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _StatusSelector extends StatelessWidget {
-  const _StatusSelector({
+class _PresenceToggle extends StatelessWidget {
+  const _PresenceToggle({
     required this.status,
     required this.onChanged,
   });
@@ -544,33 +550,8 @@ class _StatusSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Color _colorForStatus(AttendanceStatus value) {
-      switch (value) {
-        case AttendanceStatus.present:
-          return Colors.green.shade600;
-        case AttendanceStatus.absent:
-          return theme.colorScheme.error;
-        case AttendanceStatus.pending:
-          return theme.colorScheme.primary;
-      }
-    }
-
-    IconData _iconForStatus(AttendanceStatus value) {
-      switch (value) {
-        case AttendanceStatus.present:
-          return Icons.check_circle;
-        case AttendanceStatus.absent:
-          return Icons.cancel_outlined;
-        case AttendanceStatus.pending:
-          return Icons.hourglass_empty;
-      }
-    }
-
-    final statuses = <AttendanceStatus>[
-      AttendanceStatus.present,
-      AttendanceStatus.absent,
-      AttendanceStatus.pending,
-    ];
+    final isPresent = status == AttendanceStatus.present;
+    final isAbsent = status == AttendanceStatus.absent;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -580,51 +561,26 @@ class _StatusSelector extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           alignment: WrapAlignment.end,
-          children: statuses.map((value) {
-            final isSelected = value == status;
-            final statusColor = _colorForStatus(value);
-            final icon = _iconForStatus(value);
-            return ChoiceChip(
-              selected: isSelected,
-              onSelected: (_) => onChanged(value),
-              backgroundColor:
-                  theme.colorScheme.surfaceVariant.withOpacity(0.4),
-              selectedColor: statusColor.withOpacity(0.15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected
-                      ? statusColor
-                      : theme.colorScheme.outline.withOpacity(0.8),
-                ),
-              ),
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 18,
-                    color: isSelected
-                        ? statusColor
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    value.label,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color:
-                          isSelected ? statusColor : theme.colorScheme.onSurface,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+          children: [
+            FilledButton.icon(
+              onPressed: isPresent
+                  ? null
+                  : () => onChanged(AttendanceStatus.present),
+              icon: const Icon(Icons.check_circle, size: 18),
+              label: Text(isPresent ? 'Present' : 'Mark present'),
+            ),
+            OutlinedButton.icon(
+              onPressed: isAbsent
+                  ? null
+                  : () => onChanged(AttendanceStatus.absent),
+              icon: const Icon(Icons.cancel_outlined, size: 18),
+              label: Text(isAbsent ? 'Absent' : 'Mark absent'),
+            ),
+          ],
         ),
         const SizedBox(height: 6),
         Text(
-          'Status: ${status.label}',
+          'Status: ${isPresent ? 'Present' : isAbsent ? 'Absent' : 'Not marked'}',
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
