@@ -459,8 +459,6 @@ class _TeacherClassDetail extends StatelessWidget {
             );
           }),
         ),
-        const SizedBox(height: 12),
-        _PreviousSessionsCard(sessions: controller.sessions),
       ],
     );
   }
@@ -561,85 +559,3 @@ class _AttendanceEntryTile extends StatelessWidget {
   }
 }
 
-class _PreviousSessionsCard extends StatelessWidget {
-  const _PreviousSessionsCard({required this.sessions});
-
-  final List<AttendanceSessionModel> sessions;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      child: ModuleCard(
-        child: sessions.isEmpty
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Recent submissions'),
-                  SizedBox(height: 8),
-                  Text('No previous attendance submissions.'),
-                ],
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Recent submissions',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...sessions.take(4).map((session) {
-                    final presentCount = session.records
-                        .where((record) =>
-                            record.status == AttendanceStatus.present)
-                        .length;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.event_available_outlined,
-                            size: 20,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  DateFormat.yMMMMd().format(session.date),
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${presentCount}/${session.records.length} present',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                  if (sessions.length > 4)
-                    Text(
-                      '+${sessions.length - 4} more',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
-      ),
-    );
-  }
-}
