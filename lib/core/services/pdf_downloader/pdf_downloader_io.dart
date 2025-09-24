@@ -1,12 +1,75 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:file_selector/file_selector.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 Future<String?> savePdf(Uint8List bytes, String fileName) async {
-  final directory = await _resolveDownloadDirectory();
   final sanitizedName = fileName.trim().isEmpty ? 'document.pdf' : fileName;
-  final file = File('${directory.path}/$sanitizedName');
+
+  if (Platform.isAndroid && !await _ensureStoragePermission()) {
+    return null;
+  }
+
+  final targetPath = await _resolveSavePath(sanitizedName);
+  if (targetPath == null) {
+    return null;
+  }
+
+  final file = File(targetPath);
+  await file.parent.create(recursive: true);
   await file.writeAsBytes(bytes, flush: true);
   return file.path;
+}
+
+Future<String?> _resolveSavePath(String sanitizedName) async {
+  try {
+    final savePath = await getSavePath(
+      suggestedName: sanitizedName,
+      acceptedTypeGroups: const [
+        XTypeGroup(
+          label: 'PDF',
+          extensions: ['pdf'],
+          mimeTypes: ['application/pdf'],
+        ),
+      ],
+    );
+
+    if (savePath == null || savePath.trim().isEmpty) {
+      return null;
+    }
+
+    return savePath.toLowerCase().endsWith('.pdf') ? savePath : '$savePath.pdf';
+  } on UnimplementedError {
+    final directory = await _resolveDownloadDirectory();
+    return '${directory.path}/$sanitizedName';
+  } catch (_) {
+    final directory = await _resolveDownloadDirectory();
+    return '${directory.path}/$sanitizedName';
+  }
+}
+
+Future<bool> _ensureStoragePermission() async {
+  final storageStatus = await Permission.storage.status;
+  if (storageStatus.isGranted) {
+    return true;
+  }
+
+  if (storageStatus.isPermanentlyDenied) {
+    return false;
+  }
+
+  final requested = await Permission.storage.request();
+  if (requested.isGranted) {
+    return true;
+  }
+
+  if (await Permission.manageExternalStorage.isGranted) {
+    return true;
+  }
+
+  final manageStatus = await Permission.manageExternalStorage.request();
+  return manageStatus.isGranted;
 }
 
 Future<Directory> _resolveDownloadDirectory() async {
