@@ -464,7 +464,7 @@ class ParentAttendanceController extends GetxController {
         'Download complete',
         savedPath != null
             ? 'Saved to $savedPath'
-            : 'The PDF download has started.',
+            : 'The PDF was not saved. Please check storage permissions or try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (error) {
