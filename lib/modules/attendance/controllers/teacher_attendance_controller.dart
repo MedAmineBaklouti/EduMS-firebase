@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/services/pdf_downloader/pdf_downloader.dart';
 import '../../../data/models/attendance_record_model.dart';
 import '../../../data/models/child_model.dart';
 import '../../../data/models/school_class_model.dart';
@@ -232,10 +236,82 @@ class TeacherAttendanceController extends GetxController {
     }
     isExporting.value = true;
     try {
-      await Future<void>.delayed(const Duration(seconds: 1));
+      final date = session?.date ?? selectedDate.value;
+      final className = session?.className ?? selectedClass.value?.name ?? '';
+      final teacherName =
+          session?.teacherName ?? teacher.value?.name ?? 'Unknown teacher';
+      final presentCount = records
+          .where((record) => record.status == AttendanceStatus.present)
+          .length;
+
+      final doc = pw.Document();
+      final dateLabel = DateFormat.yMMMMd().format(date);
+      doc.addPage(
+        pw.MultiPage(
+          build: (pw.Context context) => [
+            pw.Header(
+              level: 0,
+              child: pw.Text(
+                'Attendance – $dateLabel',
+                style: pw.TextStyle(
+                  fontSize: 22,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.Text(
+              'Class: ${className.isNotEmpty ? className : 'Class not specified'}',
+              style: const pw.TextStyle(fontSize: 14),
+            ),
+            pw.Text(
+              'Teacher: ${teacherName.isNotEmpty ? teacherName : 'Unknown teacher'}',
+              style: const pw.TextStyle(fontSize: 14),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              '$presentCount of ${records.length} students marked present.',
+              style: const pw.TextStyle(fontSize: 12),
+            ),
+            pw.SizedBox(height: 16),
+            pw.Table.fromTextArray(
+              headers: const ['Student', 'Status'],
+              data: records
+                  .map((entry) => [entry.childName, entry.status.label])
+                  .toList(),
+              headerStyle: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.black,
+              ),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+              cellStyle: const pw.TextStyle(fontSize: 11),
+              cellAlignment: pw.Alignment.centerLeft,
+              columnWidths: {
+                0: const pw.FlexColumnWidth(2.5),
+                1: const pw.FlexColumnWidth(1),
+              },
+            ),
+          ],
+        ),
+      );
+
+      final sanitizedClass =
+          _sanitizeFileName(className.isEmpty ? 'class' : className);
+      final fileName =
+          'attendance-${sanitizedClass.isEmpty ? 'class' : sanitizedClass}-${DateFormat('yyyyMMdd').format(date)}.pdf';
+      final bytes = await doc.save();
+      final savedPath = await savePdf(bytes, fileName);
+      Get.closeCurrentSnackbar();
       Get.snackbar(
-        'Export ready',
-        'Attendance PDF generated successfully.',
+        'Download complete',
+        savedPath != null
+            ? 'Saved to $savedPath'
+            : 'The PDF download has started.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (error) {
+      Get.snackbar(
+        'Export failed',
+        'Unable to create the PDF: $error',
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -366,5 +442,14 @@ class TeacherAttendanceController extends GetxController {
     if (_teacherLoaded && _classesLoaded && _sessionsLoaded) {
       isLoading.value = false;
     }
+  }
+
+  String _sanitizeFileName(String value) {
+    final normalized = value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    return normalized;
   }
 }
