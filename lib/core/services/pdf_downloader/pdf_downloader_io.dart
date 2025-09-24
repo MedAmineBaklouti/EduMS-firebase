@@ -29,21 +29,23 @@ Future<String?> _resolveSavePath(String sanitizedName) async {
       ? sanitizedName
       : '$sanitizedName.pdf';
 
-  try {
-    final directoryPath = await getDirectoryPath();
+  if (!Platform.isAndroid) {
+    try {
+      final directoryPath = await getDirectoryPath();
 
-    if (directoryPath != null && directoryPath.trim().isNotEmpty) {
-      return p.join(directoryPath, resolvedName);
+      if (directoryPath != null && directoryPath.trim().isNotEmpty) {
+        return p.join(directoryPath, resolvedName);
+      }
+    } on PlatformException {
+      // Fall through to the manual resolution logic when the platform channel
+      // fails to provide a directory picker (common on some desktop platforms).
+    } on UnimplementedError {
+      final directory = await _resolveDownloadDirectory();
+      return p.join(directory.path, resolvedName);
+    } catch (_) {
+      final directory = await _resolveDownloadDirectory();
+      return p.join(directory.path, resolvedName);
     }
-  } on PlatformException {
-    // Fall through to the manual resolution logic when the platform channel
-    // fails to provide a directory picker (common on some Android devices).
-  } on UnimplementedError {
-    final directory = await _resolveDownloadDirectory();
-    return p.join(directory.path, resolvedName);
-  } catch (_) {
-    final directory = await _resolveDownloadDirectory();
-    return p.join(directory.path, resolvedName);
   }
 
   final directory = await _resolveDownloadDirectory();
