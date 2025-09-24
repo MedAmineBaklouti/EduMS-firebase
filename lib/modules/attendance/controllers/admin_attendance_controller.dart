@@ -551,3 +551,4 @@ class AdminAttendanceController extends GetxController {
       isLoading.value = false;
     }
   }
+}
