@@ -10,6 +10,8 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../../core/services/database_service.dart';
 import '../../../core/services/pdf_downloader/pdf_downloader.dart';
 import '../../../data/models/attendance_record_model.dart';
+import '../../../data/models/school_class_model.dart';
+import '../../../data/models/subject_model.dart';
 import '../../../data/models/teacher_model.dart';
 
 class AdminTeacherAttendanceController extends GetxController {
@@ -17,19 +19,29 @@ class AdminTeacherAttendanceController extends GetxController {
 
   StreamSubscription? _teachersSubscription;
   StreamSubscription? _attendanceSubscription;
+  StreamSubscription? _classesSubscription;
+  StreamSubscription? _subjectsSubscription;
 
   final RxBool isLoading = true.obs;
   final RxBool isSaving = false.obs;
   final RxBool isExporting = false.obs;
 
   final RxList<TeacherModel> teachers = <TeacherModel>[].obs;
+  final RxList<SchoolClassModel> classes = <SchoolClassModel>[].obs;
+  final RxList<SubjectModel> subjects = <SubjectModel>[].obs;
   final RxList<TeacherAttendanceRecord> _records = <TeacherAttendanceRecord>[].obs;
   final RxList<TeacherAttendanceRecord> currentEntries = <TeacherAttendanceRecord>[].obs;
 
   final Rx<DateTime> selectedDate = DateTime.now().obs;
+  final RxnString classFilter = RxnString();
+  final RxnString subjectFilter = RxnString();
 
   bool _teachersLoaded = false;
   bool _attendanceLoaded = false;
+  bool _classesLoaded = false;
+  bool _subjectsLoaded = false;
+
+  final Map<String, Set<String>> _teacherClassMap = <String, Set<String>>{};
 
   @override
   void onInit() {
@@ -41,6 +53,8 @@ class AdminTeacherAttendanceController extends GetxController {
   void onClose() {
     _teachersSubscription?.cancel();
     _attendanceSubscription?.cancel();
+    _classesSubscription?.cancel();
+    _subjectsSubscription?.cancel();
     super.onClose();
   }
 
@@ -61,6 +75,105 @@ class AdminTeacherAttendanceController extends GetxController {
           : AttendanceStatus.present,
     );
     currentEntries[index] = updated;
+  }
+
+  void clearFilters() {
+    classFilter.value = null;
+    subjectFilter.value = null;
+    _rebuildEntries();
+  }
+
+  void setClassFilter(String? classId) {
+    classFilter.value = classId == null || classId.isEmpty ? null : classId;
+    _rebuildEntries();
+  }
+
+  void setSubjectFilter(String? subjectId) {
+    subjectFilter.value = subjectId == null || subjectId.isEmpty ? null : subjectId;
+    _rebuildEntries();
+  }
+
+  String? className(String classId) {
+    return classes.firstWhereOrNull((item) => item.id == classId)?.name;
+  }
+
+  String? subjectName(String subjectId) {
+    return subjects.firstWhereOrNull((item) => item.id == subjectId)?.name;
+  }
+
+  String subjectLabelForTeacher(String teacherId) {
+    final teacher = teachers.firstWhereOrNull((item) => item.id == teacherId);
+    if (teacher == null || teacher.subjectId.isEmpty) {
+      return 'Subject';
+    }
+    final subject = subjectName(teacher.subjectId);
+    return subject == null || subject.isEmpty ? 'Subject' : subject;
+  }
+
+  List<String> classNamesForTeacher(String teacherId) {
+    final classIds = _teacherClassMap[teacherId];
+    if (classIds == null || classIds.isEmpty) {
+      return const <String>[];
+    }
+    final names = classIds
+        .map((id) => className(id))
+        .whereType<String>()
+        .where((name) => name.isNotEmpty)
+        .toList()
+      ..sort((a, b) => a.compareTo(b));
+    return names;
+  }
+
+  String subjectLabelForRecord(TeacherAttendanceRecord record) {
+    if (record.subjectId.isNotEmpty) {
+      final subject = subjectName(record.subjectId);
+      if (subject != null && subject.isNotEmpty) {
+        return subject;
+      }
+    }
+    return subjectLabelForTeacher(record.teacherId);
+  }
+
+  void setTeachers(List<TeacherModel> items) {
+    final sorted = List<TeacherModel>.from(items)
+      ..sort((a, b) => a.name.compareTo(b.name));
+    teachers.assignAll(sorted);
+    _teachersLoaded = true;
+    _rebuildEntries();
+    _maybeFinishLoading();
+  }
+
+  void setClasses(List<SchoolClassModel> items) {
+    final sorted = List<SchoolClassModel>.from(items)
+      ..sort((a, b) => a.name.compareTo(b.name));
+    classes.assignAll(sorted);
+    _rebuildTeacherAssignments();
+    final selected = classFilter.value;
+    if (selected != null && selected.isNotEmpty) {
+      final exists = classes.firstWhereOrNull((item) => item.id == selected);
+      if (exists == null) {
+        classFilter.value = null;
+      }
+    }
+    _classesLoaded = true;
+    _rebuildEntries();
+    _maybeFinishLoading();
+  }
+
+  void setSubjects(List<SubjectModel> items) {
+    final sorted = List<SubjectModel>.from(items)
+      ..sort((a, b) => a.name.compareTo(b.name));
+    subjects.assignAll(sorted);
+    final selected = subjectFilter.value;
+    if (selected != null && selected.isNotEmpty) {
+      final exists = subjects.firstWhereOrNull((item) => item.id == selected);
+      if (exists == null) {
+        subjectFilter.value = null;
+      }
+    }
+    _subjectsLoaded = true;
+    _rebuildEntries();
+    _maybeFinishLoading();
   }
 
   Future<void> saveAttendance() async {
@@ -117,6 +230,7 @@ class AdminTeacherAttendanceController extends GetxController {
           .map(
             (entry) => [
               entry.teacherName,
+              subjectLabelForRecord(entry),
               entry.status.label,
               entry.note.isEmpty ? '-' : entry.note,
             ],
@@ -138,7 +252,7 @@ class AdminTeacherAttendanceController extends GetxController {
             ),
             pw.SizedBox(height: 12),
             pw.Table.fromTextArray(
-              headers: const ['Teacher', 'Status', 'Note'],
+              headers: const ['Teacher', 'Subject', 'Status', 'Note'],
               data: tableData,
               headerStyle: pw.TextStyle(
                 fontWeight: pw.FontWeight.bold,
@@ -150,9 +264,10 @@ class AdminTeacherAttendanceController extends GetxController {
               cellStyle: const pw.TextStyle(fontSize: 11),
               cellAlignment: pw.Alignment.centerLeft,
               columnWidths: {
-                0: const pw.FlexColumnWidth(2.5),
-                1: const pw.FlexColumnWidth(1),
-                2: const pw.FlexColumnWidth(2),
+                0: const pw.FlexColumnWidth(2.3),
+                1: const pw.FlexColumnWidth(1.6),
+                2: const pw.FlexColumnWidth(1.1),
+                3: const pw.FlexColumnWidth(2),
               },
             ),
           ],
@@ -188,12 +303,21 @@ class AdminTeacherAttendanceController extends GetxController {
           .collection('teachers')
           .snapshots()
           .listen((snapshot) {
-        final items = snapshot.docs.map(TeacherModel.fromDoc).toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
-        teachers.assignAll(items);
-        _teachersLoaded = true;
-        _rebuildEntries();
-        _maybeFinishLoading();
+        setTeachers(snapshot.docs.map(TeacherModel.fromDoc).toList());
+      });
+
+      _classesSubscription = _db.firestore
+          .collection('classes')
+          .snapshots()
+          .listen((snapshot) {
+        setClasses(snapshot.docs.map(SchoolClassModel.fromDoc).toList());
+      });
+
+      _subjectsSubscription = _db.firestore
+          .collection('subjects')
+          .snapshots()
+          .listen((snapshot) {
+        setSubjects(snapshot.docs.map(SubjectModel.fromDoc).toList());
       });
 
       _attendanceSubscription = _db.firestore
@@ -217,21 +341,47 @@ class AdminTeacherAttendanceController extends GetxController {
     }
   }
 
+  void _rebuildTeacherAssignments() {
+    _teacherClassMap.clear();
+    for (final schoolClass in classes) {
+      for (final entry in schoolClass.teacherSubjects.entries) {
+        final teacherId = entry.value;
+        if (teacherId.isEmpty) {
+          continue;
+        }
+        _teacherClassMap.putIfAbsent(teacherId, () => <String>{}).add(schoolClass.id);
+      }
+    }
+  }
+
   void _rebuildEntries() {
     if (teachers.isEmpty) {
       currentEntries.clear();
       return;
     }
     final day = selectedDate.value;
-    final dayRecords = _records
-        .where((record) => _isSameDay(record.date, day))
-        .toList();
+    final classId = classFilter.value;
+    final subjectId = subjectFilter.value;
+    final dayRecords =
+        _records.where((record) => _isSameDay(record.date, day)).toList();
 
-    final entries = teachers.map((teacher) {
+    final filteredTeachers = teachers.where((teacher) {
+      final matchesSubject =
+          subjectId == null || subjectId.isEmpty || teacher.subjectId == subjectId;
+      final assignedClasses = _teacherClassMap[teacher.id] ?? <String>{};
+      final matchesClass = classId == null || classId.isEmpty
+          ? true
+          : assignedClasses.contains(classId);
+      return matchesSubject && matchesClass;
+    }).toList();
+
+    final entries = filteredTeachers.map((teacher) {
       final existing =
           dayRecords.firstWhereOrNull((record) => record.teacherId == teacher.id);
       if (existing != null) {
         return existing.copyWith(
+          teacherName: teacher.name,
+          subjectId: teacher.subjectId,
           date: DateTime(day.year, day.month, day.day),
         );
       }
@@ -239,17 +389,19 @@ class AdminTeacherAttendanceController extends GetxController {
         id: _composeRecordId(teacher.id, day),
         teacherId: teacher.id,
         teacherName: teacher.name,
+        subjectId: teacher.subjectId,
         date: DateTime(day.year, day.month, day.day),
         status: AttendanceStatus.absent,
         note: '',
       );
-    }).toList();
+    }).toList()
+      ..sort((a, b) => a.teacherName.compareTo(b.teacherName));
 
     currentEntries.assignAll(entries);
   }
 
   void _maybeFinishLoading() {
-    if (_teachersLoaded && _attendanceLoaded) {
+    if (_teachersLoaded && _attendanceLoaded && _classesLoaded && _subjectsLoaded) {
       isLoading.value = false;
     }
   }
