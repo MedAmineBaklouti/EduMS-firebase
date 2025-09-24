@@ -51,21 +51,23 @@ Future<bool> _ensureStoragePermission() async {
     return true;
   }
 
+  // Trigger the system permission prompt when the storage access has not yet
+  // been granted. Returning `false` here simply stops the download flow
+  // without redirecting the user to the system settings screen.
+  if (storageStatus.isDenied || storageStatus.isRestricted) {
+    final requested = await Permission.storage.request();
+    return requested.isGranted;
+  }
+
+  // When the permission has been permanently denied the OS no longer shows
+  // the system prompt. Requesting it again simply returns the same status,
+  // which is preferable to forcing a navigation to the app details page.
   if (storageStatus.isPermanentlyDenied) {
-    return false;
+    final requested = await Permission.storage.request();
+    return requested.isGranted;
   }
 
-  final requested = await Permission.storage.request();
-  if (requested.isGranted) {
-    return true;
-  }
-
-  if (await Permission.manageExternalStorage.isGranted) {
-    return true;
-  }
-
-  final manageStatus = await Permission.manageExternalStorage.request();
-  return manageStatus.isGranted;
+  return false;
 }
 
 Future<Directory> _resolveDownloadDirectory() async {
