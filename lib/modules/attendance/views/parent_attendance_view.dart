@@ -9,6 +9,7 @@ import '../../common/widgets/module_page_container.dart';
 import '../controllers/parent_attendance_controller.dart';
 import '../models/child_attendance_summary.dart';
 import 'parent_child_attendance_detail_view.dart';
+import 'widgets/attendance_date_card.dart';
 
 class ParentAttendanceView extends GetView<ParentAttendanceController> {
   const ParentAttendanceView({super.key});
@@ -26,6 +27,7 @@ class ParentAttendanceView extends GetView<ParentAttendanceController> {
         child: Column(
           children: [
             const _ParentAttendanceFilters(),
+            _ParentAttendanceOverview(dateFormat: dateFormat),
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
@@ -70,6 +72,73 @@ class ParentAttendanceView extends GetView<ParentAttendanceController> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ParentAttendanceOverview extends StatelessWidget {
+  const _ParentAttendanceOverview({required this.dateFormat});
+
+  final DateFormat dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<ParentAttendanceController>();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Obx(() {
+        final childId = controller.childFilter.value;
+        final date = controller.dateFilter.value;
+        final childModel = controller.children
+            .firstWhereOrNull((child) => child.id == childId);
+        final hasSingleChild = controller.children.length == 1;
+        final defaultChildName = controller.children.isNotEmpty
+            ? controller.children.first.name
+            : 'All children';
+        final resolvedChildName = (childId == null || childId.isEmpty)
+            ? (hasSingleChild ? defaultChildName : 'All children')
+            : (childModel?.name ?? 'Child');
+        final trimmedChildName = resolvedChildName.trim();
+        final childLabel = trimmedChildName.isEmpty
+            ? ((childId == null || childId.isEmpty)
+                ? 'All children'
+                : 'Child')
+            : trimmedChildName;
+        final dateLabel = date == null ? 'All dates' : dateFormat.format(date);
+        final summariesCount = controller.childSummaries.length;
+        final sessionsCount = controller.sessions.length;
+        final summariesLabel = summariesCount == 1 ? 'child' : 'children';
+        final sessionsLabel = sessionsCount == 1 ? 'session' : 'sessions';
+
+        return AttendanceDateCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Attendance overview',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$childLabel • $dateLabel',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Showing $summariesCount $summariesLabel across $sessionsCount $sessionsLabel.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
