@@ -86,8 +86,11 @@ class TeacherAttendanceController extends GetxController {
   }
 
   void setSessions(List<AttendanceSessionModel> items) {
-    _sessions.assignAll(List<AttendanceSessionModel>.from(items)
-      ..sort((a, b) => b.date.compareTo(a.date)));
+    final normalized = items
+        .map((session) => session.copyWith(date: _normalizeDate(session.date)))
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    _sessions.assignAll(normalized);
     _refreshSessionList();
     _restoreCurrentSession();
   }
@@ -112,7 +115,8 @@ class TeacherAttendanceController extends GetxController {
   }
 
   void setDate(DateTime date) {
-    selectedDate.value = date;
+    final normalized = _normalizeDate(date);
+    selectedDate.value = normalized;
     if (!_restoreCurrentSession()) {
       final children = selectedClass.value == null
           ? <ChildModel>[]
@@ -127,13 +131,17 @@ class TeacherAttendanceController extends GetxController {
       currentEntries.clear();
       return false;
     }
+    final normalizedDate = _normalizeDate(selectedDate.value);
     final session = _sessions.firstWhereOrNull((item) =>
-        item.classId == classId && _isSameDay(item.date, selectedDate.value));
+        item.classId == classId && _isSameDay(item.date, normalizedDate));
     if (session == null) {
       currentEntries.clear();
       return false;
     }
     currentEntries.assignAll(session.records);
+    if (!_isSameDay(selectedDate.value, session.date)) {
+      selectedDate.value = _normalizeDate(session.date);
+    }
     return true;
   }
 
@@ -195,13 +203,18 @@ class TeacherAttendanceController extends GetxController {
     }
     isSaving.value = true;
     try {
+      final normalizedDate = _normalizeDate(selectedDate.value);
+      final existingSession = _sessions.firstWhereOrNull((item) =>
+          item.classId == classModel.id && _isSameDay(item.date, normalizedDate));
+      final sessionId = existingSession?.id ??
+          _buildSessionId(classModel.id, normalizedDate);
       final session = AttendanceSessionModel(
-        id: '${classModel.id}-${selectedDate.value.toIso8601String()}',
+        id: sessionId,
         classId: classModel.id,
         className: classModel.name,
         teacherId: teacherModel.id,
         teacherName: teacherModel.name,
-        date: selectedDate.value,
+        date: normalizedDate,
         records: List<ChildAttendanceEntry>.from(currentEntries),
         submittedAt: DateTime.now(),
       );
@@ -209,11 +222,12 @@ class TeacherAttendanceController extends GetxController {
           .collection('attendanceSessions')
           .doc(session.id)
           .set(session.toMap());
-      final existingIndex = _sessions.indexWhere((item) =>
-          item.classId == session.classId &&
-          _isSameDay(item.date, session.date));
-      if (existingIndex != -1) {
-        _sessions[existingIndex] = session;
+      if (existingSession != null) {
+        final existingIndex =
+            _sessions.indexWhere((item) => item.id == existingSession.id);
+        if (existingIndex != -1) {
+          _sessions[existingIndex] = session;
+        }
       } else {
         _sessions.add(session);
       }
@@ -344,8 +358,9 @@ class TeacherAttendanceController extends GetxController {
 
   AttendanceSessionModel? sessionForClassOnDate(
       String classId, DateTime date) {
+    final normalized = _normalizeDate(date);
     return _sessions.firstWhereOrNull(
-      (item) => item.classId == classId && _isSameDay(item.date, date),
+      (item) => item.classId == classId && _isSameDay(item.date, normalized),
     );
   }
 
@@ -364,6 +379,7 @@ class TeacherAttendanceController extends GetxController {
         );
         return;
       }
+      selectedDate.value = _normalizeDate(selectedDate.value);
       isLoading.value = true;
 
       _teacherSubscription = _db.firestore
@@ -442,6 +458,18 @@ class TeacherAttendanceController extends GetxController {
     if (_teacherLoaded && _classesLoaded && _sessionsLoaded) {
       isLoading.value = false;
     }
+  }
+
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  String _buildSessionId(String classId, DateTime date) {
+    final normalized = _normalizeDate(date);
+    final year = normalized.year.toString().padLeft(4, '0');
+    final month = normalized.month.toString().padLeft(2, '0');
+    final day = normalized.day.toString().padLeft(2, '0');
+    return '$classId-$year$month$day';
   }
 
   String _sanitizeFileName(String value) {
