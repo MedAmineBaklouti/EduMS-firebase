@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 
 Future<String?> savePdf(Uint8List bytes, String fileName) async {
@@ -23,29 +24,24 @@ Future<String?> savePdf(Uint8List bytes, String fileName) async {
 }
 
 Future<String?> _resolveSavePath(String sanitizedName) async {
-  try {
-    final savePath = await getSavePath(
-      suggestedName: sanitizedName,
-      acceptedTypeGroups: const [
-        XTypeGroup(
-          label: 'PDF',
-          extensions: ['pdf'],
-          mimeTypes: ['application/pdf'],
-        ),
-      ],
-    );
+  final resolvedName = sanitizedName.toLowerCase().endsWith('.pdf')
+      ? sanitizedName
+      : '$sanitizedName.pdf';
 
-    if (savePath == null || savePath.trim().isEmpty) {
+  try {
+    final directoryPath = await getDirectoryPath();
+
+    if (directoryPath == null || directoryPath.trim().isEmpty) {
       return null;
     }
 
-    return savePath.toLowerCase().endsWith('.pdf') ? savePath : '$savePath.pdf';
+    return p.join(directoryPath, resolvedName);
   } on UnimplementedError {
     final directory = await _resolveDownloadDirectory();
-    return '${directory.path}/$sanitizedName';
+    return p.join(directory.path, resolvedName);
   } catch (_) {
     final directory = await _resolveDownloadDirectory();
-    return '${directory.path}/$sanitizedName';
+    return p.join(directory.path, resolvedName);
   }
 }
 
