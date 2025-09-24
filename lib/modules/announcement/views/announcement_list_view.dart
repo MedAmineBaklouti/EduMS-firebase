@@ -112,7 +112,6 @@ class AnnouncementListView extends StatelessWidget {
     AnnouncementModel ann, {
     bool highlightForAdmin = false,
     Future<void> Function()? onEdit,
-    Future<void> Function()? onDelete,
   }) {
     final theme = Theme.of(context);
     final dateText = _dateFormat.format(ann.createdAt);
@@ -131,7 +130,6 @@ class AnnouncementListView extends StatelessWidget {
             announcement: ann,
             isAdmin: isAdmin,
             onEdit: onEdit,
-            onDelete: onDelete,
           ),
         ),
         child: Ink(
@@ -281,10 +279,6 @@ class AnnouncementListView extends StatelessWidget {
           Get.back();
           await Future<void>.delayed(Duration.zero);
           controller.openForm(announcement: ann);
-        },
-        onDelete: () async {
-          await controller.deleteAnnouncement(ann.id);
-          Get.back();
         },
       ),
     );
