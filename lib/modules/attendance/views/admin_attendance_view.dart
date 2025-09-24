@@ -7,6 +7,7 @@ import '../../common/widgets/module_card.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../controllers/admin_attendance_controller.dart';
+import 'admin_child_attendance_detail_view.dart';
 
 class AdminAttendanceView extends GetView<AdminAttendanceController> {
   const AdminAttendanceView({super.key});
@@ -25,54 +26,140 @@ class AdminAttendanceView extends GetView<AdminAttendanceController> {
             const _AdminAttendanceFilters(),
             Expanded(
               child: Obx(() {
-                final sessions = controller.classSessions;
-                if (sessions.isEmpty) {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final summaries = controller.childSummaries;
+                if (summaries.isEmpty) {
                   return ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
                     children: const [
                       ModuleEmptyState(
                         icon: Icons.school_outlined,
-                        title: 'No student attendance records',
+                        title: 'No attendance data found',
                         message:
-                            'Adjust the filters above to review attendance submissions for specific classes.',
+                            'Adjust the filters above to review attendance submissions for students.',
                       ),
                     ],
                   );
                 }
+                final shortDateFormat = DateFormat.yMMMd();
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                   physics: const BouncingScrollPhysics(),
-                  itemCount: sessions.length,
+                  itemCount: summaries.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
-                    final session = sessions[index];
-                    final presentCount = session.records
-                        .where((record) => record.status == AttendanceStatus.present)
-                        .length;
+                    final summary = summaries[index];
+                    final latestEntry = summary.subjectEntries.isEmpty
+                        ? null
+                        : summary.subjectEntries.first;
+                    final latestDateLabel = latestEntry == null
+                        ? null
+                        : shortDateFormat.format(latestEntry.date);
+                    final presentCount = summary.presentCount;
+                    final absentCount = summary.absentCount;
+                    final pendingCount = summary.pendingCount;
+                    final totalSubjects = summary.totalSubjects;
+                    final avatarText = summary.childName.isNotEmpty
+                        ? summary.childName[0].toUpperCase()
+                        : '?';
+                    final theme = Theme.of(context);
                     return ModuleCard(
+                      onTap: () => Get.to(
+                        () => AdminChildAttendanceDetailView(summary: summary),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${session.className} • ${session.teacherName}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 26,
+                                backgroundColor:
+                                    theme.colorScheme.primary.withOpacity(0.12),
+                                child: Text(
+                                  avatarText,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      summary.childName,
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      summary.className,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '$totalSubjects subject${totalSubjects == 1 ? '' : 's'} tracked',
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                    if (latestDateLabel != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Latest entry: $latestDateLabel',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            dateFormat.format(session.date),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (presentCount > 0)
+                                _AttendanceSummaryPill(
+                                  backgroundColor: Colors.green.shade50,
+                                  iconColor: Colors.green.shade600,
+                                  icon: Icons.check_circle,
+                                  label: '$presentCount present',
                                 ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '$presentCount/${session.records.length} present',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                              if (absentCount > 0)
+                                _AttendanceSummaryPill(
+                                  backgroundColor:
+                                      theme.colorScheme.error.withOpacity(0.12),
+                                  iconColor: theme.colorScheme.error,
+                                  icon: Icons.cancel_outlined,
+                                  label: '$absentCount absent',
                                 ),
+                              if (pendingCount > 0)
+                                _AttendanceSummaryPill(
+                                  backgroundColor:
+                                      theme.colorScheme.primary.withOpacity(0.12),
+                                  iconColor: theme.colorScheme.primary,
+                                  icon: Icons.hourglass_empty,
+                                  label: '$pendingCount pending',
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -104,7 +191,6 @@ class _AdminAttendanceFilters extends StatelessWidget {
           Obx(() {
             final hasFilters =
                 (controller.classFilter.value ?? '').isNotEmpty ||
-                    (controller.teacherFilter.value ?? '').isNotEmpty ||
                     controller.dateFilter.value != null;
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -135,15 +221,6 @@ class _AdminAttendanceFilters extends StatelessWidget {
                 ),
               );
             }
-            final teacherId = controller.teacherFilter.value;
-            if (teacherId != null && teacherId.isNotEmpty) {
-              chips.add(
-                _ActiveFilterChip(
-                  label: 'Teacher: ${controller.teacherName(teacherId)}',
-                  onRemoved: () => controller.setTeacherFilter(null),
-                ),
-              );
-            }
             final date = controller.dateFilter.value;
             if (date != null) {
               chips.add(
@@ -167,9 +244,9 @@ class _AdminAttendanceFilters extends StatelessWidget {
           }),
           LayoutBuilder(
             builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 720;
+              final isWide = constraints.maxWidth > 640;
               final fieldWidth = isWide
-                  ? constraints.maxWidth / 3 - 8
+                  ? constraints.maxWidth / 2 - 8
                   : double.infinity;
               return Wrap(
                 spacing: 12,
@@ -180,7 +257,7 @@ class _AdminAttendanceFilters extends StatelessWidget {
                     child: Obx(() {
                       final classes = controller.classes;
                       final value = controller.classFilter.value;
-                      return DropdownButtonFormField<String?> (
+                      return DropdownButtonFormField<String?>(
                         value: value,
                         decoration: const InputDecoration(
                           labelText: 'Class',
@@ -200,34 +277,6 @@ class _AdminAttendanceFilters extends StatelessWidget {
                           ),
                         ],
                         onChanged: controller.setClassFilter,
-                      );
-                    }),
-                  ),
-                  SizedBox(
-                    width: fieldWidth,
-                    child: Obx(() {
-                      final teachers = controller.teachers;
-                      final value = controller.teacherFilter.value;
-                      return DropdownButtonFormField<String?>(
-                        value: value,
-                        decoration: const InputDecoration(
-                          labelText: 'Teacher',
-                          border: OutlineInputBorder(),
-                        ),
-                        hint: const Text('All teachers'),
-                        items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('All teachers'),
-                          ),
-                          ...teachers.map(
-                            (item) => DropdownMenuItem<String?>(
-                              value: item.id,
-                              child: Text(item.name),
-                            ),
-                          ),
-                        ],
-                        onChanged: controller.setTeacherFilter,
                       );
                     }),
                   ),
@@ -259,7 +308,11 @@ class _AdminAttendanceFilters extends StatelessWidget {
                             selectedDate == null
                                 ? 'Any date'
                                 : dateFormat.format(selectedDate),
-                            style: theme.textTheme.bodyMedium,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: selectedDate == null
+                                  ? theme.colorScheme.onSurfaceVariant
+                                  : theme.textTheme.bodyMedium?.color,
+                            ),
                           ),
                         ),
                       );
@@ -268,6 +321,46 @@ class _AdminAttendanceFilters extends StatelessWidget {
                 ],
               );
             },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttendanceSummaryPill extends StatelessWidget {
+  const _AttendanceSummaryPill({
+    required this.backgroundColor,
+    required this.iconColor,
+    required this.icon,
+    required this.label,
+  });
+
+  final Color backgroundColor;
+  final Color iconColor;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: iconColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: iconColor,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

@@ -141,6 +141,7 @@ class TeacherAttendanceRecord {
   final String id;
   final String teacherId;
   final String teacherName;
+  final String subjectId;
   final DateTime date;
   final AttendanceStatus status;
   final String note;
@@ -149,6 +150,7 @@ class TeacherAttendanceRecord {
     required this.id,
     required this.teacherId,
     required this.teacherName,
+    required this.subjectId,
     required this.date,
     required this.status,
     required this.note,
@@ -160,6 +162,7 @@ class TeacherAttendanceRecord {
       id: doc.id,
       teacherId: data['teacherId'] as String? ?? '',
       teacherName: data['teacherName'] as String? ?? '',
+      subjectId: data['subjectId'] as String? ?? '',
       date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
       status: AttendanceStatusParser.fromString(data['status'] as String?),
       note: data['note'] as String? ?? '',
@@ -170,6 +173,7 @@ class TeacherAttendanceRecord {
     return <String, dynamic>{
       'teacherId': teacherId,
       'teacherName': teacherName,
+      'subjectId': subjectId,
       'date': Timestamp.fromDate(date),
       'status': status.name,
       'note': note,
@@ -180,6 +184,7 @@ class TeacherAttendanceRecord {
     String? id,
     String? teacherId,
     String? teacherName,
+    String? subjectId,
     DateTime? date,
     AttendanceStatus? status,
     String? note,
@@ -188,6 +193,7 @@ class TeacherAttendanceRecord {
       id: id ?? this.id,
       teacherId: teacherId ?? this.teacherId,
       teacherName: teacherName ?? this.teacherName,
+      subjectId: subjectId ?? this.subjectId,
       date: date ?? this.date,
       status: status ?? this.status,
       note: note ?? this.note,
