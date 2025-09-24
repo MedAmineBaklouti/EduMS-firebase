@@ -116,7 +116,10 @@ class AdminAttendanceController extends GetxController {
   }
 
   void setClassSessions(List<AttendanceSessionModel> sessions) {
-    _allClassSessions.assignAll(sessions);
+    final normalized = sessions
+        .map((session) => session.copyWith(date: _normalizeDate(session.date)))
+        .toList();
+    _allClassSessions.assignAll(normalized);
     _applySessionFilters();
     _sessionsLoaded = true;
     _maybeFinishLoading();
@@ -147,15 +150,51 @@ class AdminAttendanceController extends GetxController {
   }
 
   void _buildChildSummaries() {
-    if (classSessions.isEmpty) {
+    final filterClassId = classFilter.value;
+    final targetDate = dateFilter.value;
+    final summaries = <String, _ChildSummaryBuilder>{};
+    final classesById = {for (final item in classes) item.id: item};
+    final childrenById = {for (final child in children) child.id: child};
+    final teachersById = {for (final teacher in teachers) teacher.id: teacher};
+    final subjectsById = {for (final subject in subjects) subject.id: subject};
+
+    final classScope = <String>{};
+    if (filterClassId != null && filterClassId.isNotEmpty) {
+      classScope.add(filterClassId);
+    }
+    for (final session in classSessions) {
+      classScope.add(session.classId);
+    }
+    if (classScope.isEmpty) {
       childSummaries.clear();
       return;
     }
-    final summaries = <String, _ChildSummaryBuilder>{};
-    final childrenById = {for (final child in children) child.id: child};
-    final classesById = {for (final item in classes) item.id: item};
+
+    for (final classId in classScope) {
+      final classModel = classesById[classId];
+      if (classModel == null) continue;
+      final classChildren =
+          children.where((child) => child.classId == classId).toList();
+      for (final child in classChildren) {
+        if (child.id.isEmpty) continue;
+        final resolvedName =
+            child.name.trim().isEmpty ? 'Student' : child.name.trim();
+        final builder = summaries.putIfAbsent(child.id, () {
+          return _ChildSummaryBuilder(
+            childId: child.id,
+            childName: resolvedName,
+            classId: classId,
+            className: classModel.name,
+          );
+        });
+        builder.childName = resolvedName;
+        builder.classId = classId;
+        builder.className = classModel.name;
+      }
+    }
 
     for (final session in classSessions) {
+      final normalizedDate = _normalizeDate(session.date);
       final participants = <String, String>{};
       final classChildren =
           children.where((child) => child.classId == session.classId);
@@ -206,24 +245,112 @@ class AdminAttendanceController extends GetxController {
 
         final record = session.records
             .firstWhereOrNull((item) => item.childId == childId);
-        final teacher = teachers
-            .firstWhereOrNull((item) => item.id == session.teacherId);
-        final subjectLabel = teacher == null || teacher.subjectId.isEmpty
-            ? session.teacherName
-            : (subjectName(teacher.subjectId) ?? session.teacherName);
+        final teacherModel = teachersById[session.teacherId];
+        final subjectId = teacherModel?.subjectId ?? '';
+        final subjectModel =
+            subjectId.isEmpty ? null : subjectsById[subjectId];
+        final subjectLabel = (subjectModel?.name ?? '').trim().isNotEmpty
+            ? subjectModel!.name.trim()
+            : session.teacherName;
+        final teacherName = (teacherModel?.name ?? '').trim().isNotEmpty
+            ? teacherModel!.name.trim()
+            : session.teacherName;
         final bool isPending = !session.isSubmitted || record == null;
 
         builder.entries.add(
           ChildSubjectAttendance(
             sessionId: session.id,
+            subjectId: subjectId,
+            teacherId: session.teacherId,
             subjectLabel:
-                subjectLabel.trim().isEmpty ? session.teacherName : subjectLabel,
-            teacherName: session.teacherName,
-            date: session.date,
+                subjectLabel.isEmpty ? session.teacherName : subjectLabel,
+            teacherName: teacherName.isEmpty ? session.teacherName : teacherName,
+            date: normalizedDate,
             isSubmitted: !isPending,
             status: isPending ? null : record!.status,
           ),
         );
+      }
+    }
+
+    for (final classId in classScope) {
+      final classModel = classesById[classId];
+      if (classModel == null) continue;
+      if (classModel.teacherSubjects.isEmpty) {
+        continue;
+      }
+      final classChildren =
+          children.where((child) => child.classId == classId).toList();
+      if (classChildren.isEmpty) {
+        continue;
+      }
+      final placeholderDate =
+          _normalizeDate(targetDate ?? DateTime.now());
+
+      for (final child in classChildren) {
+        if (child.id.isEmpty) continue;
+        final resolvedName =
+            child.name.trim().isEmpty ? 'Student' : child.name.trim();
+        final builder = summaries.putIfAbsent(child.id, () {
+          return _ChildSummaryBuilder(
+            childId: child.id,
+            childName: resolvedName,
+            classId: classId,
+            className: classModel.name,
+          );
+        });
+        builder.childName = resolvedName;
+        builder.classId = classId;
+        builder.className = classModel.name;
+
+        for (final subjectEntry in classModel.teacherSubjects.entries) {
+          final subjectId = subjectEntry.key;
+          final teacherId = subjectEntry.value;
+          if (subjectId.isEmpty && teacherId.isEmpty) {
+            continue;
+          }
+          final teacherModel =
+              teacherId.isEmpty ? null : teachersById[teacherId];
+          final subjectModel =
+              subjectId.isEmpty ? null : subjectsById[subjectId];
+          final subjectName = (subjectModel?.name ?? '').trim();
+          final teacherDisplayName = (teacherModel?.name ?? '').trim();
+          final resolvedSubjectLabel = subjectName.isNotEmpty
+              ? subjectName
+              : (teacherDisplayName.isNotEmpty
+                  ? teacherDisplayName
+                  : 'Subject');
+          final resolvedTeacherName = teacherDisplayName.isNotEmpty
+              ? teacherDisplayName
+              : (teacherId.isEmpty ? 'Unassigned teacher' : 'Unknown teacher');
+
+          final hasEntry = builder.entries.any((existing) {
+            final matchesSubject = subjectId.isNotEmpty
+                ? existing.subjectId == subjectId
+                : (existing.subjectId.isEmpty &&
+                    existing.teacherId == teacherId);
+            if (!matchesSubject) {
+              return false;
+            }
+            return _isSameDay(existing.date, placeholderDate);
+          });
+
+          if (!hasEntry) {
+            builder.entries.add(
+              ChildSubjectAttendance(
+                sessionId:
+                    'pending-${child.id}-${subjectId.isNotEmpty ? subjectId : teacherId}-${_formatDateKey(placeholderDate)}',
+                subjectId: subjectId,
+                teacherId: teacherId,
+                subjectLabel: resolvedSubjectLabel,
+                teacherName: resolvedTeacherName,
+                date: placeholderDate,
+                isSubmitted: false,
+                status: null,
+              ),
+            );
+          }
+        }
       }
     }
 
@@ -239,6 +366,18 @@ class AdminAttendanceController extends GetxController {
         return a.childName.toLowerCase().compareTo(b.childName.toLowerCase());
       });
     childSummaries.assignAll(results);
+  }
+
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  String _formatDateKey(DateTime date) {
+    final normalized = _normalizeDate(date);
+    final year = normalized.year.toString().padLeft(4, '0');
+    final month = normalized.month.toString().padLeft(2, '0');
+    final day = normalized.day.toString().padLeft(2, '0');
+    return '$year$month$day';
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -339,6 +478,8 @@ class ChildAttendanceSummary {
 class ChildSubjectAttendance {
   const ChildSubjectAttendance({
     required this.sessionId,
+    this.subjectId = '',
+    this.teacherId = '',
     required this.subjectLabel,
     required this.teacherName,
     required this.date,
@@ -347,6 +488,8 @@ class ChildSubjectAttendance {
   });
 
   final String sessionId;
+  final String subjectId;
+  final String teacherId;
   final String subjectLabel;
   final String teacherName;
   final DateTime date;
