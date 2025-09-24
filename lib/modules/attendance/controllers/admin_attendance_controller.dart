@@ -2,13 +2,18 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import '../../../core/services/database_service.dart';
+import '../../../core/services/pdf_downloader/pdf_downloader.dart';
 import '../../../data/models/attendance_record_model.dart';
 import '../../../data/models/child_model.dart';
 import '../../../data/models/school_class_model.dart';
 import '../../../data/models/subject_model.dart';
 import '../../../data/models/teacher_model.dart';
+import '../models/child_attendance_summary.dart';
 
 class AdminAttendanceController extends GetxController {
   final DatabaseService _db = Get.find();
@@ -56,6 +61,7 @@ class AdminAttendanceController extends GetxController {
   final RxnString classFilter = RxnString();
   final Rx<DateTime?> dateFilter = Rx<DateTime?>(null);
   final RxBool isLoading = false.obs;
+  final RxnString exportingChildId = RxnString();
 
   void clearFilters() {
     classFilter.value = null;
@@ -152,7 +158,7 @@ class AdminAttendanceController extends GetxController {
   void _buildChildSummaries() {
     final filterClassId = classFilter.value;
     final targetDate = dateFilter.value;
-    final summaries = <String, _ChildSummaryBuilder>{};
+    final summaries = <String, ChildAttendanceSummaryBuilder>{};
     final classesById = {for (final item in classes) item.id: item};
     final childrenById = {for (final child in children) child.id: child};
     final teachersById = {for (final teacher in teachers) teacher.id: teacher};
@@ -180,7 +186,7 @@ class AdminAttendanceController extends GetxController {
         final resolvedName =
             child.name.trim().isEmpty ? 'Student' : child.name.trim();
         final builder = summaries.putIfAbsent(child.id, () {
-          return _ChildSummaryBuilder(
+          return ChildAttendanceSummaryBuilder(
             childId: child.id,
             childName: resolvedName,
             classId: classId,
@@ -230,7 +236,7 @@ class AdminAttendanceController extends GetxController {
             ? classesById[resolvedClassId]?.name ?? session.className
             : session.className;
         final builder = summaries.putIfAbsent(childId, () {
-          return _ChildSummaryBuilder(
+          return ChildAttendanceSummaryBuilder(
             childId: childId,
             childName: resolvedName,
             classId: resolvedClassId,
@@ -257,7 +263,7 @@ class AdminAttendanceController extends GetxController {
             : session.teacherName;
         final bool isPending = !session.isSubmitted || record == null;
 
-        builder.entries.add(
+        builder.addOrUpdateEntry(
           ChildSubjectAttendance(
             sessionId: session.id,
             subjectId: subjectId,
@@ -268,6 +274,7 @@ class AdminAttendanceController extends GetxController {
             date: normalizedDate,
             isSubmitted: !isPending,
             status: isPending ? null : record!.status,
+            submittedAt: session.submittedAt,
           ),
         );
       }
@@ -292,7 +299,7 @@ class AdminAttendanceController extends GetxController {
         final resolvedName =
             child.name.trim().isEmpty ? 'Student' : child.name.trim();
         final builder = summaries.putIfAbsent(child.id, () {
-          return _ChildSummaryBuilder(
+          return ChildAttendanceSummaryBuilder(
             childId: child.id,
             childName: resolvedName,
             classId: classId,
@@ -324,32 +331,19 @@ class AdminAttendanceController extends GetxController {
               ? teacherDisplayName
               : (teacherId.isEmpty ? 'Unassigned teacher' : 'Unknown teacher');
 
-          final hasEntry = builder.entries.any((existing) {
-            final matchesSubject = subjectId.isNotEmpty
-                ? existing.subjectId == subjectId
-                : (existing.subjectId.isEmpty &&
-                    existing.teacherId == teacherId);
-            if (!matchesSubject) {
-              return false;
-            }
-            return _isSameDay(existing.date, placeholderDate);
-          });
-
-          if (!hasEntry) {
-            builder.entries.add(
-              ChildSubjectAttendance(
-                sessionId:
-                    'pending-${child.id}-${subjectId.isNotEmpty ? subjectId : teacherId}-${_formatDateKey(placeholderDate)}',
-                subjectId: subjectId,
-                teacherId: teacherId,
-                subjectLabel: resolvedSubjectLabel,
-                teacherName: resolvedTeacherName,
-                date: placeholderDate,
-                isSubmitted: false,
-                status: null,
-              ),
-            );
-          }
+          builder.addOrUpdateEntry(
+            ChildSubjectAttendance(
+              sessionId:
+                  'pending-${child.id}-${subjectId.isNotEmpty ? subjectId : teacherId}-${_formatDateKey(placeholderDate)}',
+              subjectId: subjectId,
+              teacherId: teacherId,
+              subjectLabel: resolvedSubjectLabel,
+              teacherName: resolvedTeacherName,
+              date: placeholderDate,
+              isSubmitted: false,
+              status: null,
+            ),
+          );
         }
       }
     }
@@ -368,6 +362,110 @@ class AdminAttendanceController extends GetxController {
     childSummaries.assignAll(results);
   }
 
+  Future<void> exportChildAttendanceAsPdf(
+      ChildAttendanceSummary summary) async {
+    if (summary.subjectEntries.isEmpty) {
+      Get.snackbar(
+        'Nothing to export',
+        'No attendance records are available for ${summary.childName}.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    if (exportingChildId.value != null) {
+      return;
+    }
+
+    exportingChildId.value = summary.childId;
+    try {
+      final doc = pw.Document();
+      final dateFormatter = DateFormat.yMMMd();
+      final now = DateTime.now();
+      final tableData = summary.subjectEntries.map((entry) {
+        final statusLabel =
+            entry.isSubmitted && entry.status != null ? entry.status!.label : 'Pending';
+        return [
+          dateFormatter.format(entry.date),
+          entry.subjectLabel,
+          entry.teacherName,
+          statusLabel,
+        ];
+      }).toList();
+
+      doc.addPage(
+        pw.MultiPage(
+          build: (context) => [
+            pw.Header(
+              level: 0,
+              child: pw.Text(
+                'Attendance – ${summary.childName}',
+                style: pw.TextStyle(
+                  fontSize: 22,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.Text(
+              'Class: ${summary.className.isNotEmpty ? summary.className : 'Class'}',
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text('Generated on ${DateFormat.yMMMMd().format(now)}'),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              '${summary.presentCount} present • ${summary.absentCount} absent • ${summary.pendingCount} pending',
+              style: const pw.TextStyle(fontSize: 12),
+            ),
+            pw.SizedBox(height: 16),
+            pw.Table.fromTextArray(
+              headers: const ['Date', 'Subject', 'Teacher', 'Status'],
+              data: tableData,
+              headerStyle: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.black,
+              ),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+              cellStyle: const pw.TextStyle(fontSize: 11),
+              cellAlignment: pw.Alignment.centerLeft,
+              columnWidths: {
+                0: const pw.FlexColumnWidth(1.2),
+                1: const pw.FlexColumnWidth(2.2),
+                2: const pw.FlexColumnWidth(1.8),
+                3: const pw.FlexColumnWidth(1.1),
+              },
+            ),
+          ],
+        ),
+      );
+
+      final sanitizedChild =
+          _sanitizeFileName(summary.childName.isEmpty ? 'student' : summary.childName);
+      final sanitizedClass =
+          _sanitizeFileName(summary.className.isEmpty ? 'class' : summary.className);
+      final dateStamp = DateFormat('yyyyMMdd').format(now);
+      final fileName =
+          'attendance-${sanitizedChild.isEmpty ? 'student' : sanitizedChild}-${sanitizedClass.isEmpty ? 'class' : sanitizedClass}-$dateStamp.pdf';
+      final bytes = await doc.save();
+      final savedPath = await savePdf(bytes, fileName);
+      Get.closeCurrentSnackbar();
+      Get.snackbar(
+        'Download complete',
+        savedPath != null
+            ? 'Saved to $savedPath'
+            : 'The PDF download has started.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (error) {
+      Get.snackbar(
+        'Export failed',
+        'Unable to create the PDF: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      exportingChildId.value = null;
+    }
+  }
+
   DateTime _normalizeDate(DateTime date) {
     return DateTime(date.year, date.month, date.day);
   }
@@ -382,6 +480,15 @@ class AdminAttendanceController extends GetxController {
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String _sanitizeFileName(String value) {
+    final normalized = value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    return normalized;
   }
 
   void _initialize() {
@@ -444,80 +551,3 @@ class AdminAttendanceController extends GetxController {
       isLoading.value = false;
     }
   }
-}
-
-class ChildAttendanceSummary {
-  ChildAttendanceSummary({
-    required this.childId,
-    required this.childName,
-    required this.classId,
-    required this.className,
-    required List<ChildSubjectAttendance> subjectEntries,
-  }) : subjectEntries = List<ChildSubjectAttendance>.unmodifiable(
-          subjectEntries..sort((a, b) => b.date.compareTo(a.date)),
-        );
-
-  final String childId;
-  final String childName;
-  final String classId;
-  final String className;
-  final List<ChildSubjectAttendance> subjectEntries;
-
-  int get presentCount =>
-      subjectEntries.where((entry) => entry.status == AttendanceStatus.present).length;
-
-  int get absentCount =>
-      subjectEntries.where((entry) => entry.status == AttendanceStatus.absent).length;
-
-  int get pendingCount =>
-      subjectEntries.where((entry) => entry.status == null || !entry.isSubmitted).length;
-
-  int get totalSubjects => subjectEntries.length;
-}
-
-class ChildSubjectAttendance {
-  const ChildSubjectAttendance({
-    required this.sessionId,
-    this.subjectId = '',
-    this.teacherId = '',
-    required this.subjectLabel,
-    required this.teacherName,
-    required this.date,
-    required this.isSubmitted,
-    this.status,
-  });
-
-  final String sessionId;
-  final String subjectId;
-  final String teacherId;
-  final String subjectLabel;
-  final String teacherName;
-  final DateTime date;
-  final bool isSubmitted;
-  final AttendanceStatus? status;
-}
-
-class _ChildSummaryBuilder {
-  _ChildSummaryBuilder({
-    required this.childId,
-    required this.childName,
-    required this.classId,
-    required this.className,
-  });
-
-  final String childId;
-  String childName;
-  String classId;
-  String className;
-  final List<ChildSubjectAttendance> entries = <ChildSubjectAttendance>[];
-
-  ChildAttendanceSummary build() {
-    return ChildAttendanceSummary(
-      childId: childId,
-      childName: childName,
-      classId: classId,
-      className: className,
-      subjectEntries: List<ChildSubjectAttendance>.from(entries),
-    );
-  }
-}
