@@ -8,6 +8,7 @@ import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../controllers/admin_attendance_controller.dart';
 import 'admin_child_attendance_detail_view.dart';
+import 'widgets/attendance_date_card.dart';
 
 class AdminAttendanceView extends GetView<AdminAttendanceController> {
   const AdminAttendanceView({super.key});
@@ -307,8 +308,7 @@ class _StudentAttendanceDateCard extends StatelessWidget {
             : dateFormat.format(selectedDate);
         final summaries = controller.childSummaries;
         final totalStudents = summaries.length;
-        return ModuleCard(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        return AttendanceDateCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

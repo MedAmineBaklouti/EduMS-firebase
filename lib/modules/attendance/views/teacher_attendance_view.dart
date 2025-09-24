@@ -4,9 +4,10 @@ import 'package:intl/intl.dart';
 
 import '../../../data/models/attendance_record_model.dart';
 import '../../../data/models/school_class_model.dart';
-import '../../common/widgets/module_card.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
+import 'widgets/attendance_date_card.dart';
+import '../../common/widgets/module_card.dart';
 import '../controllers/teacher_attendance_controller.dart';
 
 class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
@@ -124,8 +125,7 @@ class _TeacherClassList extends StatelessWidget {
           final dateLabel = dateFormat.format(selectedDate);
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: ModuleCard(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            child: AttendanceDateCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
