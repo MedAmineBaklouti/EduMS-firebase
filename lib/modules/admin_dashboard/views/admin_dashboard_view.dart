@@ -38,10 +38,17 @@ class AdminDashboard extends StatelessWidget {
         ),
         DashboardCard(
           icon: Icons.calendar_today,
-          title: 'Attendance',
-          subtitle: 'Student presence',
+          title: 'Student Attendance',
+          subtitle: 'Track classroom presence',
           color: Colors.orange,
           onTap: () => Get.toNamed(AppPages.ADMIN_ATTENDANCE),
+        ),
+        DashboardCard(
+          icon: Icons.fact_check_outlined,
+          title: 'Teacher Attendance',
+          subtitle: 'Monitor staff check-ins',
+          color: Colors.deepOrange,
+          onTap: () => Get.toNamed(AppPages.ADMIN_TEACHER_ATTENDANCE),
         ),
         DashboardCard(
           icon: Icons.emoji_people,

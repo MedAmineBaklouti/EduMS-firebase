@@ -5,6 +5,7 @@ import '../../modules/admin_dashboard/views/admin_control_view.dart';
 import '../../modules/admin_dashboard/views/admin_dashboard_view.dart';
 import '../../modules/announcement/views/announcement_list_view.dart';
 import '../../modules/attendance/views/admin_attendance_view.dart';
+import '../../modules/attendance/views/admin_teacher_attendance_view.dart';
 import '../../modules/attendance/views/parent_attendance_view.dart';
 import '../../modules/attendance/views/teacher_attendance_view.dart';
 import '../../modules/auth/views/login_view.dart';
@@ -41,6 +42,7 @@ abstract class AppPages {
   static const TEACHER_HOMEWORK = '/teacher/homework';
   static const PARENT_HOMEWORK = '/parent/homework';
   static const ADMIN_ATTENDANCE = '/admin/attendance';
+  static const ADMIN_TEACHER_ATTENDANCE = '/admin/attendance/teachers';
   static const TEACHER_ATTENDANCE = '/teacher/attendance';
   static const PARENT_ATTENDANCE = '/parent/attendance';
   static const ADMIN_BEHAVIOR = '/admin/behavior';
@@ -77,6 +79,9 @@ abstract class AppPages {
         name: TEACHER_HOMEWORK, page: () => const TeacherHomeworkListView()),
     GetPage(name: PARENT_HOMEWORK, page: () => const ParentHomeworkListView()),
     GetPage(name: ADMIN_ATTENDANCE, page: () => const AdminAttendanceView()),
+    GetPage(
+        name: ADMIN_TEACHER_ATTENDANCE,
+        page: () => const AdminTeacherAttendanceView()),
     GetPage(
         name: TEACHER_ATTENDANCE, page: () => const TeacherAttendanceView()),
     GetPage(

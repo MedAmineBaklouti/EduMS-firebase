@@ -14,12 +14,10 @@ class AdminAttendanceController extends GetxController {
   StreamSubscription? _classesSubscription;
   StreamSubscription? _teachersSubscription;
   StreamSubscription? _sessionsSubscription;
-  StreamSubscription? _teacherAttendanceSubscription;
 
   bool _classesLoaded = false;
   bool _teachersLoaded = false;
   bool _sessionsLoaded = false;
-  bool _teacherAttendanceLoaded = false;
 
   @override
   void onInit() {
@@ -32,14 +30,8 @@ class AdminAttendanceController extends GetxController {
     _classesSubscription?.cancel();
     _teachersSubscription?.cancel();
     _sessionsSubscription?.cancel();
-    _teacherAttendanceSubscription?.cancel();
     super.onClose();
   }
-
-  final RxList<TeacherAttendanceRecord> _allTeacherRecords =
-      <TeacherAttendanceRecord>[].obs;
-  final RxList<TeacherAttendanceRecord> teacherRecords =
-      <TeacherAttendanceRecord>[].obs;
 
   final RxList<AttendanceSessionModel> _allClassSessions =
       <AttendanceSessionModel>[].obs;
@@ -58,7 +50,6 @@ class AdminAttendanceController extends GetxController {
     classFilter.value = null;
     teacherFilter.value = null;
     dateFilter.value = null;
-    _applyTeacherFilters();
     _applySessionFilters();
   }
 
@@ -95,16 +86,8 @@ class AdminAttendanceController extends GetxController {
             null) {
       teacherFilter.value = null;
     }
-    _applyTeacherFilters();
     _applySessionFilters();
     _teachersLoaded = true;
-    _maybeFinishLoading();
-  }
-
-  void setTeacherRecords(List<TeacherAttendanceRecord> records) {
-    _allTeacherRecords.assignAll(records);
-    _applyTeacherFilters();
-    _teacherAttendanceLoaded = true;
     _maybeFinishLoading();
   }
 
@@ -122,27 +105,12 @@ class AdminAttendanceController extends GetxController {
 
   void setTeacherFilter(String? teacherId) {
     teacherFilter.value = teacherId;
-    _applyTeacherFilters();
     _applySessionFilters();
   }
 
   void setDateFilter(DateTime? date) {
     dateFilter.value = date;
-    _applyTeacherFilters();
     _applySessionFilters();
-  }
-
-  void _applyTeacherFilters() {
-    final teacherId = teacherFilter.value;
-    final date = dateFilter.value;
-    final filtered = _allTeacherRecords.where((record) {
-      final matchesTeacher =
-          teacherId == null || teacherId.isEmpty || record.teacherId == teacherId;
-      final matchesDate = date == null ? true : _isSameDay(record.date, date);
-      return matchesTeacher && matchesDate;
-    }).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
-    teacherRecords.assignAll(filtered);
   }
 
   void _applySessionFilters() {
@@ -192,14 +160,6 @@ class AdminAttendanceController extends GetxController {
         );
       });
 
-      _teacherAttendanceSubscription = _db.firestore
-          .collection('teacherAttendanceRecords')
-          .snapshots()
-          .listen((snapshot) {
-        setTeacherRecords(
-          snapshot.docs.map(TeacherAttendanceRecord.fromDoc).toList(),
-        );
-      });
     } catch (error) {
       isLoading.value = false;
       Get.snackbar(
@@ -211,10 +171,7 @@ class AdminAttendanceController extends GetxController {
   }
 
   void _maybeFinishLoading() {
-    if (_classesLoaded &&
-        _teachersLoaded &&
-        _sessionsLoaded &&
-        _teacherAttendanceLoaded) {
+    if (_classesLoaded && _teachersLoaded && _sessionsLoaded) {
       isLoading.value = false;
     }
   }

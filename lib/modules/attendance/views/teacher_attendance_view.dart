@@ -184,41 +184,46 @@ class _TeacherClassList extends StatelessWidget {
                         .length;
                 final statusColor = hasSession ? Colors.green : Colors.orange;
                 final statusLabel = hasSession
-                    ? 'Submitted • $presentCount/${session!.records.length} present'
-                    : 'Pending submission';
+                    ? '$presentCount/${session!.records.length} present'
+                    : 'Awaiting submission';
                 return ModuleCard(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        schoolClass.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$childCount student${childCount == 1 ? '' : 's'}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  schoolClass.name,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$childCount student${childCount == 1 ? '' : 's'}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _StatusPill(label: statusLabel, color: statusColor),
+                        ],
                       ),
                       const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          statusLabel,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: statusColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      Text(
+                        hasSession
+                            ? 'Submitted on ${dateFormat.format(session!.date)}.'
+                            : 'No submission recorded for ${dateFormat.format(selectedDate)}.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -226,9 +231,14 @@ class _TeacherClassList extends StatelessWidget {
                         spacing: 12,
                         runSpacing: 12,
                         children: [
-                          ElevatedButton.icon(
+                          FilledButton.icon(
                             onPressed: () => controller.selectClass(schoolClass),
-                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            icon: Icon(
+                              hasSession
+                                  ? Icons.visibility_outlined
+                                  : Icons.fact_check_outlined,
+                              size: 18,
+                            ),
                             label: Text(
                               hasSession
                                   ? 'Review attendance'
@@ -259,7 +269,7 @@ class _TeacherClassList extends StatelessWidget {
                                 label: Text(
                                   isExporting
                                       ? 'Preparing...'
-                                      : 'Download PDF',
+                                      : 'Export PDF',
                                 ),
                               );
                             }),
@@ -295,25 +305,24 @@ class _TeacherClassDetail extends StatelessWidget {
       children: [
         Obx(() {
           final selectedDate = controller.selectedDate.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
+          final entries = controller.currentEntries;
+          final presentCount = entries
+              .where((entry) => entry.status == AttendanceStatus.present)
+              .length;
+          final total = entries.length;
+          return ModuleCard(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  classModel.name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      dateFormat.format(selectedDate),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                    Expanded(
+                      child: Text(
+                        classModel.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     TextButton.icon(
@@ -333,9 +342,25 @@ class _TeacherClassDetail extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  dateFormat.format(selectedDate),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Text(
-                  'Students are marked absent by default. Tap the button next to each name to mark them present.',
+                  total == 0
+                      ? 'No students registered for this class.'
+                      : '$presentCount of $total student${total == 1 ? '' : 's'} marked present.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Use the switches below to mark each student present or absent before saving.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -344,6 +369,7 @@ class _TeacherClassDetail extends StatelessWidget {
             ),
           );
         }),
+        const SizedBox(height: 12),
         Expanded(
           child: Obx(() {
             final entries = controller.currentEntries;
@@ -391,6 +417,32 @@ class _TeacherClassDetail extends StatelessWidget {
   }
 }
 
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
 class _AttendanceEntryTile extends StatelessWidget {
   const _AttendanceEntryTile({required this.entry, required this.onToggle});
 
@@ -403,7 +455,9 @@ class _AttendanceEntryTile extends StatelessWidget {
     final isPresent = entry.status == AttendanceStatus.present;
     final statusColor = isPresent ? Colors.green : theme.colorScheme.error;
     return ModuleCard(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
@@ -415,7 +469,7 @@ class _AttendanceEntryTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     Icon(
@@ -436,15 +490,21 @@ class _AttendanceEntryTile extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: onToggle,
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isPresent ? theme.colorScheme.error : Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(isPresent ? 'Mark absent' : 'Mark present'),
+          const SizedBox(width: 16),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Switch.adaptive(
+                value: isPresent,
+                onChanged: (_) => onToggle(),
+                activeColor: Colors.green,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isPresent ? 'Present' : 'Absent',
+                style: theme.textTheme.labelSmall,
+              ),
+            ],
           ),
         ],
       ),

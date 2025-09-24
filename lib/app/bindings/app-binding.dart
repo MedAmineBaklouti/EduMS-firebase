@@ -6,6 +6,7 @@ import '../../core/services/database_service.dart';
 import '../../modules/admin_dashboard/controllers/admin_controller.dart';
 import '../../modules/admin_dashboard/controllers/admin_control_controller.dart';
 import '../../modules/attendance/controllers/admin_attendance_controller.dart';
+import '../../modules/attendance/controllers/admin_teacher_attendance_controller.dart';
 import '../../modules/attendance/controllers/parent_attendance_controller.dart';
 import '../../modules/attendance/controllers/teacher_attendance_controller.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
@@ -51,6 +52,7 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => AdminController(), fenix: true);
     Get.lazyPut(() => AdminControlController(), fenix: true);
     Get.lazyPut(() => AdminAttendanceController(), fenix: true);
+    Get.lazyPut(() => AdminTeacherAttendanceController(), fenix: true);
     Get.lazyPut(() => AdminBehaviorController(), fenix: true);
     Get.lazyPut(() => AdminHomeworkController(), fenix: true);
     Get.lazyPut(() => AdminPickupController(), fenix: true);
