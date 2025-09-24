@@ -63,18 +63,13 @@ class AdminTeacherAttendanceController extends GetxController {
     _rebuildEntries();
   }
 
-  void toggleStatus(String teacherId) {
+  void updateStatus(String teacherId, AttendanceStatus status) {
     final index = currentEntries.indexWhere((entry) => entry.teacherId == teacherId);
     if (index == -1) {
       return;
     }
     final entry = currentEntries[index];
-    final updated = entry.copyWith(
-      status: entry.status == AttendanceStatus.present
-          ? AttendanceStatus.absent
-          : AttendanceStatus.present,
-    );
-    currentEntries[index] = updated;
+    currentEntries[index] = entry.copyWith(status: status);
   }
 
   void clearFilters() {
@@ -232,7 +227,6 @@ class AdminTeacherAttendanceController extends GetxController {
               entry.teacherName,
               subjectLabelForRecord(entry),
               entry.status.label,
-              entry.note.isEmpty ? '-' : entry.note,
             ],
           )
           .toList();
@@ -252,7 +246,7 @@ class AdminTeacherAttendanceController extends GetxController {
             ),
             pw.SizedBox(height: 12),
             pw.Table.fromTextArray(
-              headers: const ['Teacher', 'Subject', 'Status', 'Note'],
+              headers: const ['Teacher', 'Subject', 'Status'],
               data: tableData,
               headerStyle: pw.TextStyle(
                 fontWeight: pw.FontWeight.bold,
@@ -264,10 +258,9 @@ class AdminTeacherAttendanceController extends GetxController {
               cellStyle: const pw.TextStyle(fontSize: 11),
               cellAlignment: pw.Alignment.centerLeft,
               columnWidths: {
-                0: const pw.FlexColumnWidth(2.3),
-                1: const pw.FlexColumnWidth(1.6),
-                2: const pw.FlexColumnWidth(1.1),
-                3: const pw.FlexColumnWidth(2),
+                0: const pw.FlexColumnWidth(2.4),
+                1: const pw.FlexColumnWidth(1.8),
+                2: const pw.FlexColumnWidth(1.2),
               },
             ),
           ],
@@ -391,7 +384,7 @@ class AdminTeacherAttendanceController extends GetxController {
         teacherName: teacher.name,
         subjectId: teacher.subjectId,
         date: DateTime(day.year, day.month, day.day),
-        status: AttendanceStatus.absent,
+        status: AttendanceStatus.pending,
         note: '',
       );
     }).toList()

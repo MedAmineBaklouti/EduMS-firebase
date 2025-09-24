@@ -49,8 +49,12 @@ class ChildAttendanceSummary {
   int get absentCount =>
       subjectEntries.where((entry) => entry.status == AttendanceStatus.absent).length;
 
-  int get pendingCount =>
-      subjectEntries.where((entry) => entry.status == null || !entry.isSubmitted).length;
+  int get pendingCount => subjectEntries
+      .where((entry) =>
+          entry.status == null ||
+          entry.status == AttendanceStatus.pending ||
+          !entry.isSubmitted)
+      .length;
 
   int get totalSubjects => subjectEntries.length;
 }

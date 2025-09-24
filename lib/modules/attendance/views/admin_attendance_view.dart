@@ -24,6 +24,7 @@ class AdminAttendanceView extends GetView<AdminAttendanceController> {
         child: Column(
           children: [
             const _AdminAttendanceFilters(),
+            _StudentAttendanceDateCard(dateFormat: dateFormat),
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
@@ -248,44 +249,105 @@ class _AdminAttendanceFilters extends StatelessWidget {
               final fieldWidth = isWide
                   ? constraints.maxWidth / 2 - 8
                   : double.infinity;
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: fieldWidth,
-                    child: Obx(() {
-                      final classes = controller.classes;
-                      final value = controller.classFilter.value;
-                      return DropdownButtonFormField<String?>(
-                        value: value,
-                        decoration: const InputDecoration(
-                          labelText: 'Class',
-                          border: OutlineInputBorder(),
+              return SizedBox(
+                width: fieldWidth,
+                child: Obx(() {
+                  final classes = controller.classes;
+                  final value = controller.classFilter.value;
+                  return DropdownButtonFormField<String?>(
+                    value: value,
+                    decoration: const InputDecoration(
+                      labelText: 'Class',
+                      border: OutlineInputBorder(),
+                    ),
+                    hint: const Text('All classes'),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('All classes'),
+                      ),
+                      ...classes.map(
+                        (item) => DropdownMenuItem<String?>(
+                          value: item.id,
+                          child: Text(item.name),
                         ),
-                        hint: const Text('All classes'),
-                        items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('All classes'),
+                      ),
+                    ],
+                    onChanged: controller.setClassFilter,
+                  );
+                }),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StudentAttendanceDateCard extends StatelessWidget {
+  const _StudentAttendanceDateCard({required this.dateFormat});
+
+  final DateFormat dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<AdminAttendanceController>();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Obx(() {
+        final selectedDate = controller.dateFilter.value;
+        final classId = controller.classFilter.value;
+        final classLabel = (classId == null || classId.isEmpty)
+            ? 'All classes'
+            : controller.className(classId);
+        final dateLabel = selectedDate == null
+            ? 'All dates'
+            : dateFormat.format(selectedDate);
+        final summaries = controller.childSummaries;
+        final totalStudents = summaries.length;
+        return ModuleCard(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Attendance overview',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                          ...classes.map(
-                            (item) => DropdownMenuItem<String?>(
-                              value: item.id,
-                              child: Text(item.name),
-                            ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$classLabel • $dateLabel',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
-                        ],
-                        onChanged: controller.setClassFilter,
-                      );
-                    }),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(
-                    width: fieldWidth,
-                    child: Obx(() {
-                      final selectedDate = controller.dateFilter.value;
-                      return GestureDetector(
-                        onTap: () async {
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (selectedDate != null)
+                        OutlinedButton.icon(
+                          onPressed: () => controller.setDateFilter(null),
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: const Text('Clear date'),
+                        ),
+                      TextButton.icon(
+                        onPressed: () async {
                           final now = DateTime.now();
                           final initialDate = selectedDate ?? now;
                           final picked = await showDatePicker(
@@ -294,36 +356,38 @@ class _AdminAttendanceFilters extends StatelessWidget {
                             firstDate: DateTime(now.year - 1),
                             lastDate: DateTime(now.year + 1),
                           );
-                          controller.setDateFilter(picked);
+                          if (picked != null) {
+                            controller.setDateFilter(DateTime(
+                              picked.year,
+                              picked.month,
+                              picked.day,
+                            ));
+                          }
                         },
-                        child: InputDecorator(
-                          decoration: const InputDecoration(
-                            labelText: 'Date',
-                            border: OutlineInputBorder(),
-                            suffixIcon:
-                                Icon(Icons.calendar_today, size: 18),
-                          ),
-                          isEmpty: selectedDate == null,
-                          child: Text(
-                            selectedDate == null
-                                ? 'Any date'
-                                : dateFormat.format(selectedDate),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: selectedDate == null
-                                  ? theme.colorScheme.onSurfaceVariant
-                                  : theme.textTheme.bodyMedium?.color,
-                            ),
-                          ),
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: Text(
+                          selectedDate == null
+                              ? 'Select date'
+                              : 'Change date',
                         ),
-                      );
-                    }),
+                      ),
+                    ],
                   ),
                 ],
-              );
-            },
+              ),
+              const SizedBox(height: 12),
+              Text(
+                totalStudents == 0
+                    ? 'No students match the selected filters.'
+                    : 'Review attendance records for $totalStudents student${totalStudents == 1 ? '' : 's'}.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }),
     );
   }
 }

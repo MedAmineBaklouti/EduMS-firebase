@@ -57,8 +57,10 @@ class AdminTeacherAttendanceView
         child: Column(
           children: [
             const _AdminTeacherAttendanceFilters(),
-            _AttendanceHeader(dateFormat: dateFormat),
-            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: _AttendanceHeader(dateFormat: dateFormat),
+            ),
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
@@ -93,7 +95,8 @@ class AdminTeacherAttendanceView
                       entry: entry,
                       subjectLabel: subjectLabel,
                       classNames: classesLabel,
-                      onToggle: () => controller.toggleStatus(entry.teacherId),
+                      onStatusChanged: (status) =>
+                          controller.updateStatus(entry.teacherId, status),
                     );
                   },
                 );
@@ -121,55 +124,110 @@ class _AttendanceHeader extends StatelessWidget {
       final presentCount = entries
           .where((entry) => entry.status == AttendanceStatus.present)
           .length;
+      final absentCount = entries
+          .where((entry) => entry.status == AttendanceStatus.absent)
+          .length;
+      final pendingCount = entries
+          .where((entry) => entry.status == AttendanceStatus.pending)
+          .length;
       final total = entries.length;
+      final dateLabel = dateFormat.format(date);
       return ModuleCard(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    'Attendance for ${dateFormat.format(date)}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Attendance overview',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Review ${total == 0 ? 'teacher attendance' : '$total teacher${total == 1 ? '' : 's'}'} for $dateLabel.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: date,
-                      firstDate: DateTime(date.year - 1),
-                      lastDate: DateTime(date.year + 1),
-                    );
-                    if (picked != null) {
-                      controller.setDate(picked);
-                    }
-                  },
-                  icon: const Icon(Icons.calendar_today, size: 18),
-                  label: const Text('Change date'),
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => controller.setDate(DateTime.now()),
+                      icon: const Icon(Icons.today, size: 18),
+                      label: const Text('Today'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: date,
+                          firstDate: DateTime(date.year - 1),
+                          lastDate: DateTime(date.year + 1),
+                        );
+                        if (picked != null) {
+                          controller.setDate(picked);
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today, size: 18),
+                      label: const Text('Change date'),
+                    ),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               total == 0
-                  ? 'No teachers to mark on this day.'
-                  : '$presentCount of $total teacher${total == 1 ? '' : 's'} marked present.',
+                  ? 'No teachers are scheduled for this day.'
+                  : 'Update each teacher status before saving the attendance list.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Toggle the switch next to each teacher to mark them present or absent before saving.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            if (total > 0) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (presentCount > 0)
+                    _AttendanceStatusChip(
+                      icon: Icons.check_circle,
+                      backgroundColor: Colors.green.shade50,
+                      iconColor: Colors.green.shade600,
+                      label: '$presentCount present',
+                    ),
+                  if (pendingCount > 0)
+                    _AttendanceStatusChip(
+                      icon: Icons.hourglass_empty,
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                      iconColor: theme.colorScheme.primary,
+                      label: '$pendingCount pending',
+                    ),
+                  if (absentCount > 0)
+                    _AttendanceStatusChip(
+                      icon: Icons.cancel_outlined,
+                      backgroundColor: theme.colorScheme.error.withOpacity(0.12),
+                      iconColor: theme.colorScheme.error,
+                      label: '$absentCount absent',
+                    ),
+                ],
               ),
-            ),
+            ],
           ],
         ),
       );
@@ -326,20 +384,36 @@ class _TeacherAttendanceTile extends StatelessWidget {
     required this.entry,
     required this.subjectLabel,
     required this.classNames,
-    required this.onToggle,
+    required this.onStatusChanged,
   });
 
   final TeacherAttendanceRecord entry;
   final String subjectLabel;
   final List<String> classNames;
-  final VoidCallback onToggle;
+  final ValueChanged<AttendanceStatus> onStatusChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPresent = entry.status == AttendanceStatus.present;
-    final statusColor =
-        isPresent ? Colors.green.shade600 : theme.colorScheme.error;
+    final isAbsent = entry.status == AttendanceStatus.absent;
+    final isPending = entry.status == AttendanceStatus.pending;
+    Color statusColor;
+    IconData statusIcon;
+    String statusText;
+    if (isPresent) {
+      statusColor = Colors.green.shade600;
+      statusIcon = Icons.check_circle;
+      statusText = 'Marked present';
+    } else if (isAbsent) {
+      statusColor = theme.colorScheme.error;
+      statusIcon = Icons.cancel_outlined;
+      statusText = 'Marked absent';
+    } else {
+      statusColor = theme.colorScheme.primary;
+      statusIcon = Icons.hourglass_empty;
+      statusText = 'Pending';
+    }
     final classesLabel = classNames.isEmpty
         ? 'No class assigned'
         : classNames.join(', ');
@@ -399,21 +473,9 @@ class _TeacherAttendanceTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Switch.adaptive(
-                    value: isPresent,
-                    onChanged: (_) => onToggle(),
-                    activeColor: Colors.green,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isPresent ? 'Present' : 'Absent',
-                    style: theme.textTheme.labelSmall,
-                  ),
-                ],
+              _StatusDropdown(
+                status: entry.status,
+                onChanged: onStatusChanged,
               ),
             ],
           ),
@@ -427,14 +489,10 @@ class _TeacherAttendanceTile extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  isPresent ? Icons.check_circle : Icons.cancel_outlined,
-                  color: statusColor,
-                  size: 18,
-                ),
+                Icon(statusIcon, color: statusColor, size: 18),
                 const SizedBox(width: 6),
                 Text(
-                  isPresent ? 'Marked present' : 'Marked absent',
+                  statusText,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: statusColor,
                     fontWeight: FontWeight.w600,
@@ -469,6 +527,105 @@ class _FilterChip extends StatelessWidget {
       labelStyle: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.primary,
         fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _StatusDropdown extends StatelessWidget {
+  const _StatusDropdown({
+    required this.status,
+    required this.onChanged,
+  });
+
+  final AttendanceStatus status;
+  final ValueChanged<AttendanceStatus> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        DropdownButtonHideUnderline(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: DropdownButton<AttendanceStatus>(
+                value: status,
+                borderRadius: BorderRadius.circular(16),
+                icon: const Icon(Icons.expand_more),
+                onChanged: (value) {
+                  if (value != null) {
+                    onChanged(value);
+                  }
+                },
+                items: const [
+                  AttendanceStatus.pending,
+                  AttendanceStatus.present,
+                  AttendanceStatus.absent,
+                ]
+                    .map(
+                      (status) => DropdownMenuItem<AttendanceStatus>(
+                        value: status,
+                        child: Text(status.label),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          status.label,
+          style: theme.textTheme.labelSmall,
+        ),
+      ],
+    );
+  }
+}
+
+class _AttendanceStatusChip extends StatelessWidget {
+  const _AttendanceStatusChip({
+    required this.icon,
+    required this.backgroundColor,
+    required this.iconColor,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color backgroundColor;
+  final Color iconColor;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: iconColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: iconColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

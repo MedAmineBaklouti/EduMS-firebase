@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum AttendanceStatus { present, absent }
+enum AttendanceStatus { present, absent, pending }
 
 extension AttendanceStatusParser on AttendanceStatus {
   static AttendanceStatus fromString(String? value) {
     return AttendanceStatus.values.firstWhere(
       (status) => status.name == value,
-      orElse: () => AttendanceStatus.present,
+      orElse: () => AttendanceStatus.pending,
     );
   }
 
@@ -16,6 +16,8 @@ extension AttendanceStatusParser on AttendanceStatus {
         return 'Present';
       case AttendanceStatus.absent:
         return 'Absent';
+      case AttendanceStatus.pending:
+        return 'Pending';
     }
   }
 }
