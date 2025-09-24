@@ -135,15 +135,6 @@ class _ParentChildSummaryCard extends StatelessWidget {
                       '${summary.totalSubjects} subject${summary.totalSubjects == 1 ? '' : 's'} tracked',
                       style: theme.textTheme.bodySmall,
                     ),
-                    if (latestDateLabel != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Latest entry: $latestDateLabel',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -158,6 +149,14 @@ class _ParentChildSummaryCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              if (latestDateLabel != null)
+                _AttendanceSummaryPill(
+                  backgroundColor:
+                      theme.colorScheme.secondary.withOpacity(0.12),
+                  iconColor: theme.colorScheme.secondary,
+                  icon: Icons.event,
+                  label: 'Latest: $latestDateLabel',
+                ),
               if (presentCount > 0)
                 _AttendanceSummaryPill(
                   backgroundColor: Colors.green.shade50,
