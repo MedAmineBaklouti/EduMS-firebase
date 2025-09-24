@@ -283,9 +283,9 @@ class _ParentAttendanceFilters extends StatelessWidget {
           const SizedBox(height: 12),
           Obx(() {
             final selectedDate = controller.dateFilter.value;
-            return GestureDetector(
+            final now = DateTime.now();
+            return ModuleCard(
               onTap: () async {
-                final now = DateTime.now();
                 final initialDate = selectedDate ?? now;
                 final picked = await showDatePicker(
                   context: context,
@@ -295,23 +295,60 @@ class _ParentAttendanceFilters extends StatelessWidget {
                 );
                 controller.setDateFilter(picked);
               },
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today, size: 18),
-                ),
-                isEmpty: selectedDate == null,
-                child: Text(
-                  selectedDate == null
-                      ? 'Any date'
-                      : dateFormat.format(selectedDate),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: selectedDate == null
-                        ? theme.colorScheme.onSurfaceVariant
-                        : theme.textTheme.bodyMedium?.color,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.calendar_today,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Date',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          selectedDate == null
+                              ? 'Any date'
+                              : dateFormat.format(selectedDate),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: selectedDate == null
+                                ? theme.colorScheme.onSurfaceVariant
+                                : theme.textTheme.titleMedium?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (selectedDate != null)
+                    IconButton(
+                      tooltip: 'Clear date',
+                      onPressed: () => controller.setDateFilter(null),
+                      icon: const Icon(Icons.close),
+                    )
+                  else
+                    Icon(
+                      Icons.chevron_right,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                ],
               ),
             );
           }),
