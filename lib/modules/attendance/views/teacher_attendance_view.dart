@@ -124,7 +124,7 @@ class _TeacherClassList extends StatelessWidget {
             child: ModuleCard(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
@@ -134,20 +134,32 @@ class _TeacherClassList extends StatelessWidget {
                       ),
                     ),
                   ),
-                  TextButton.icon(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(selectedDate.year - 1),
-                        lastDate: DateTime(selectedDate.year + 1),
-                      );
-                      if (picked != null) {
-                        controller.setDate(picked);
-                      }
-                    },
-                    icon: const Icon(Icons.calendar_today, size: 18),
-                    label: const Text('Change date'),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => controller.setDate(DateTime.now()),
+                        icon: const Icon(Icons.today, size: 18),
+                        label: const Text('Today'),
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(selectedDate.year - 1),
+                            lastDate: DateTime(selectedDate.year + 1),
+                          );
+                          if (picked != null) {
+                            controller.setDate(picked);
+                          }
+                        },
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: const Text('Change date'),
+                      ),
+                    ],
                   ),
                 ],
               ),
