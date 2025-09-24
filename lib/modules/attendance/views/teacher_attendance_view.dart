@@ -22,7 +22,10 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
         leading: Obx(() {
           final selectedClass = controller.selectedClass.value;
           if (selectedClass == null) {
-            return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Get.back<void>(),
+            );
           }
           return IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -116,36 +119,41 @@ class _TeacherClassList extends StatelessWidget {
       children: [
         Obx(() {
           final selectedDate = controller.selectedDate.value;
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Attendance for ${dateFormat.format(selectedDate)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: ModuleCard(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Attendance for ${dateFormat.format(selectedDate)}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(selectedDate.year - 1),
+                        lastDate: DateTime(selectedDate.year + 1),
+                      );
+                      if (picked != null) {
+                        controller.setDate(picked);
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today, size: 18),
+                    label: const Text('Change date'),
+                  ),
+                ],
               ),
-              TextButton.icon(
-                onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(selectedDate.year - 1),
-                    lastDate: DateTime(selectedDate.year + 1),
-                  );
-                  if (picked != null) {
-                    controller.setDate(picked);
-                  }
-                },
-                icon: const Icon(Icons.calendar_today, size: 18),
-                label: const Text('Change date'),
-              ),
-            ],
+            ),
           );
         }),
-        const SizedBox(height: 12),
         Expanded(
           child: Obx(() {
             final classes = controller.classes;
