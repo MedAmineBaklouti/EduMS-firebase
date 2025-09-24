@@ -9,6 +9,7 @@ import '../../common/widgets/module_page_container.dart';
 import '../controllers/parent_attendance_controller.dart';
 import '../models/child_attendance_summary.dart';
 import 'parent_child_attendance_detail_view.dart';
+import 'widgets/attendance_date_card.dart';
 
 class ParentAttendanceView extends GetView<ParentAttendanceController> {
   const ParentAttendanceView({super.key});
@@ -283,71 +284,100 @@ class _ParentAttendanceFilters extends StatelessWidget {
           const SizedBox(height: 12),
           Obx(() {
             final selectedDate = controller.dateFilter.value;
+            final childId = controller.childFilter.value;
+            final child = childId == null || childId.isEmpty
+                ? null
+                : controller.children
+                    .firstWhereOrNull((element) => element.id == childId);
             final now = DateTime.now();
-            return ModuleCard(
-              onTap: () async {
-                final initialDate = selectedDate ?? now;
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: initialDate,
-                  firstDate: DateTime(now.year - 1),
-                  lastDate: DateTime(now.year + 1),
-                );
-                controller.setDateFilter(picked);
-              },
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-              child: Row(
+            final hasDate = selectedDate != null;
+            final dateLabel = hasDate
+                ? dateFormat.format(selectedDate!)
+                : 'All dates';
+            final rawChildName = child?.name ?? '';
+            final normalizedChildName = rawChildName.trim();
+            final hasNamedChild = normalizedChildName.isNotEmpty;
+            final childLabel = child == null
+                ? 'All children'
+                : hasNamedChild
+                    ? normalizedChildName
+                    : 'Selected child';
+            final messageChild = child == null
+                ? 'all children'
+                : hasNamedChild
+                    ? normalizedChildName
+                    : 'your child';
+            final overviewLabel = '$childLabel • $dateLabel';
+            final description = hasDate
+                ? 'Showing attendance updates for $messageChild on $dateLabel.'
+                : 'Showing attendance updates for $messageChild across all dates.';
+            return AttendanceDateCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.calendar_today,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Date',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Attendance overview',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              overviewLabel,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          selectedDate == null
-                              ? 'Any date'
-                              : dateFormat.format(selectedDate),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: selectedDate == null
-                                ? theme.colorScheme.onSurfaceVariant
-                                : theme.textTheme.titleMedium?.color,
+                      ),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (hasDate)
+                            OutlinedButton.icon(
+                              onPressed: () => controller.setDateFilter(null),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text('Clear date'),
+                            ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final initialDate = selectedDate ?? now;
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: initialDate,
+                                firstDate: DateTime(now.year - 1),
+                                lastDate: DateTime(now.year + 1),
+                              );
+                              if (picked != null) {
+                                controller.setDateFilter(picked);
+                              }
+                            },
+                            icon: const Icon(Icons.calendar_today, size: 18),
+                            label: Text(
+                              hasDate ? 'Change date' : 'Select date',
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
-                  if (selectedDate != null)
-                    IconButton(
-                      tooltip: 'Clear date',
-                      onPressed: () => controller.setDateFilter(null),
-                      icon: const Icon(Icons.close),
-                    )
-                  else
-                    Icon(
-                      Icons.chevron_right,
+                  const SizedBox(height: 12),
+                  Text(
+                    description,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
+                  ),
                 ],
               ),
             );
