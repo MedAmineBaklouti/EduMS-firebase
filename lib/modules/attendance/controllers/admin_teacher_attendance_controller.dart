@@ -182,18 +182,26 @@ class AdminTeacherAttendanceController extends GetxController {
     }
     isSaving.value = true;
     try {
+      final entries = currentEntries.toList();
       final batch = _db.firestore.batch();
       final day = selectedDate.value;
-      for (final entry in currentEntries) {
+      for (final entry in entries) {
         final normalized = entry.copyWith(date: day);
         final docRef =
             _db.firestore.collection('teacherAttendanceRecords').doc(normalized.id);
         batch.set(docRef, normalized.toMap());
       }
       await batch.commit();
+      final presentCount = entries
+          .where((entry) => entry.status == AttendanceStatus.present)
+          .length;
+      final absentCount = entries
+          .where((entry) => entry.status == AttendanceStatus.absent)
+          .length;
+      final dateLabel = DateFormat.yMMMd().format(day);
       Get.snackbar(
         'Attendance saved',
-        'Teacher attendance has been recorded.',
+        '$presentCount present and $absentCount absent recorded for $dateLabel.',
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (error) {
