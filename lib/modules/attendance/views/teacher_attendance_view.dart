@@ -119,47 +119,76 @@ class _TeacherClassList extends StatelessWidget {
       children: [
         Obx(() {
           final selectedDate = controller.selectedDate.value;
+          final now = DateTime.now();
+          final isToday = DateUtils.isSameDay(selectedDate, now);
+          final dateLabel = dateFormat.format(selectedDate);
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: ModuleCard(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      'Attendance for ${dateFormat.format(selectedDate)}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: 8,
-                    runSpacing: 8,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () => controller.setDate(DateTime.now()),
-                        icon: const Icon(Icons.today, size: 18),
-                        label: const Text('Today'),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Attendance overview',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              dateLabel,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      TextButton.icon(
-                        onPressed: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime(selectedDate.year - 1),
-                            lastDate: DateTime(selectedDate.year + 1),
-                          );
-                          if (picked != null) {
-                            controller.setDate(picked);
-                          }
-                        },
-                        icon: const Icon(Icons.calendar_today, size: 18),
-                        label: const Text('Change date'),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (!isToday)
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  controller.setDate(DateTime.now()),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text('Clear date'),
+                            ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate,
+                                firstDate: DateTime(selectedDate.year - 1),
+                                lastDate: DateTime(selectedDate.year + 1),
+                              );
+                              if (picked != null) {
+                                controller.setDate(picked);
+                              }
+                            },
+                            icon: const Icon(Icons.calendar_today, size: 18),
+                            label: Text(isToday ? 'Select date' : 'Change date'),
+                          ),
+                        ],
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Choose a date to review and mark attendance for your classes.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
