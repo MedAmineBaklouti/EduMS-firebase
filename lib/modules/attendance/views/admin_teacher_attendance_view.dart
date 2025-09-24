@@ -631,17 +631,6 @@ class _AttendanceToggle extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            if (!isPending) ...[
-              const SizedBox(width: 12),
-              TextButton(
-                onPressed: () => onChanged(AttendanceStatus.pending),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: const Size(0, 32),
-                ),
-                child: const Text('Reset'),
-              ),
-            ],
           ],
         ),
       ],
