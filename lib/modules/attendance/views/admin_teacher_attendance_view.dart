@@ -544,45 +544,90 @@ class _StatusSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    Color _colorForStatus(AttendanceStatus value) {
+      switch (value) {
+        case AttendanceStatus.present:
+          return Colors.green.shade600;
+        case AttendanceStatus.absent:
+          return theme.colorScheme.error;
+        case AttendanceStatus.pending:
+          return theme.colorScheme.primary;
+      }
+    }
+
+    IconData _iconForStatus(AttendanceStatus value) {
+      switch (value) {
+        case AttendanceStatus.present:
+          return Icons.check_circle;
+        case AttendanceStatus.absent:
+          return Icons.cancel_outlined;
+        case AttendanceStatus.pending:
+          return Icons.hourglass_empty;
+      }
+    }
+
     final statuses = <AttendanceStatus>[
-      AttendanceStatus.pending,
       AttendanceStatus.present,
       AttendanceStatus.absent,
+      AttendanceStatus.pending,
     ];
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        ToggleButtons(
-          borderRadius: BorderRadius.circular(20),
-          constraints: const BoxConstraints(minHeight: 40, minWidth: 72),
-          isSelected: statuses.map((value) => value == status).toList(),
-          onPressed: (index) => onChanged(statuses[index]),
-          color: theme.colorScheme.onSurface,
-          selectedColor: theme.colorScheme.primary,
-          fillColor: theme.colorScheme.primary.withOpacity(0.12),
-          borderColor: theme.colorScheme.outline,
-          selectedBorderColor: theme.colorScheme.primary,
-          children: statuses
-              .map(
-                (value) => Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: Text(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.end,
+          children: statuses.map((value) {
+            final isSelected = value == status;
+            final statusColor = _colorForStatus(value);
+            final icon = _iconForStatus(value);
+            return ChoiceChip(
+              selected: isSelected,
+              onSelected: (_) => onChanged(value),
+              backgroundColor:
+                  theme.colorScheme.surfaceVariant.withOpacity(0.4),
+              selectedColor: statusColor.withOpacity(0.15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected
+                      ? statusColor
+                      : theme.colorScheme.outline.withOpacity(0.8),
+                ),
+              ),
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: isSelected
+                        ? statusColor
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
                     value.label,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight:
-                          value == status ? FontWeight.w700 : FontWeight.w500,
+                      color:
+                          isSelected ? statusColor : theme.colorScheme.onSurface,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
-                ),
-              )
-              .toList(),
+                ],
+              ),
+            );
+          }).toList(),
         ),
         const SizedBox(height: 6),
         Text(
-          status.label,
-          style: theme.textTheme.labelSmall,
+          'Status: ${status.label}',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
