@@ -111,83 +111,184 @@ class _AdminPickupFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<AdminPickupController>();
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: GetBuilder<AdminPickupController>(
-        builder: (controller) {
-          return ModuleCard(
-            padding: const EdgeInsets.all(20),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Obx(() {
+            final hasFilters =
+                (controller.classFilter.value ?? '').isNotEmpty ||
+                    controller.stageFilter.value != null;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                SizedBox(
-                  width: 220,
-                  child: Obx(() {
-                    final classFilter = controller.classFilter.value;
-                    final classes = controller.classes;
-                    return DropdownButtonFormField<String?>(
-                      value: classFilter,
-                      decoration: const InputDecoration(
-                        labelText: 'Class',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text('All classes'),
-                        ),
-                        ...classes.map(
-                          (classItem) => DropdownMenuItem<String?>(
-                            value: classItem.id,
-                            child: Text(classItem.name),
-                          ),
-                        ),
-                      ],
-                      onChanged: controller.setClassFilter,
-                    );
-                  }),
+                Text(
+                  'Filter pickup tickets',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                SizedBox(
-                  width: 220,
-                  child: Obx(() {
-                    final stageFilter = controller.stageFilter.value;
-                    return DropdownButtonFormField<PickupStage?>(
-                      value: stageFilter,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem<PickupStage?>(
-                          value: null,
-                          child: Text('All statuses'),
-                        ),
-                        DropdownMenuItem<PickupStage?>(
-                          value: PickupStage.awaitingParent,
-                          child: Text('Awaiting parent'),
-                        ),
-                        DropdownMenuItem<PickupStage?>(
-                          value: PickupStage.awaitingTeacher,
-                          child: Text('Awaiting teacher'),
-                        ),
-                        DropdownMenuItem<PickupStage?>(
-                          value: PickupStage.awaitingAdmin,
-                          child: Text('Awaiting admin'),
-                        ),
-                        DropdownMenuItem<PickupStage?>(
-                          value: PickupStage.completed,
-                          child: Text('Completed'),
-                        ),
-                      ],
-                      onChanged: controller.setStageFilter,
-                    );
-                  }),
+                TextButton.icon(
+                  onPressed: hasFilters ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
                 ),
               ],
-            ),
-          );
-        },
+            );
+          }),
+          const SizedBox(height: 12),
+          Obx(() {
+            final chips = <Widget>[];
+            final classId = controller.classFilter.value;
+            if (classId != null && classId.isNotEmpty) {
+              chips.add(
+                _ActiveFilterChip(
+                  label: 'Class: ${controller.className(classId)}',
+                  onRemoved: () => controller.setClassFilter(null),
+                ),
+              );
+            }
+            final stage = controller.stageFilter.value;
+            if (stage != null) {
+              chips.add(
+                _ActiveFilterChip(
+                  label: 'Status: ${_stageFilterLabel(stage)}',
+                  onRemoved: () => controller.setStageFilter(null),
+                ),
+              );
+            }
+            if (chips.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: chips,
+              ),
+            );
+          }),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 720;
+              final fieldWidth = isWide
+                  ? constraints.maxWidth / 2 - 8
+                  : double.infinity;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: fieldWidth,
+                    child: Obx(() {
+                      final classes = controller.classes;
+                      final value = controller.classFilter.value;
+                      return DropdownButtonFormField<String?>(
+                        value: value,
+                        decoration: const InputDecoration(
+                          labelText: 'Class',
+                          border: OutlineInputBorder(),
+                        ),
+                        hint: const Text('All classes'),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('All classes'),
+                          ),
+                          ...classes.map(
+                            (item) => DropdownMenuItem<String?>(
+                              value: item.id,
+                              child: Text(item.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: controller.setClassFilter,
+                      );
+                    }),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: Obx(() {
+                      final value = controller.stageFilter.value;
+                      return DropdownButtonFormField<PickupStage?>(
+                        value: value,
+                        decoration: const InputDecoration(
+                          labelText: 'Status',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem<PickupStage?>(
+                            value: null,
+                            child: Text('All statuses'),
+                          ),
+                          DropdownMenuItem<PickupStage?>(
+                            value: PickupStage.awaitingParent,
+                            child: Text('Awaiting parent'),
+                          ),
+                          DropdownMenuItem<PickupStage?>(
+                            value: PickupStage.awaitingTeacher,
+                            child: Text('Awaiting teacher'),
+                          ),
+                          DropdownMenuItem<PickupStage?>(
+                            value: PickupStage.awaitingAdmin,
+                            child: Text('Awaiting admin'),
+                          ),
+                          DropdownMenuItem<PickupStage?>(
+                            value: PickupStage.completed,
+                            child: Text('Completed'),
+                          ),
+                        ],
+                        onChanged: controller.setStageFilter,
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _stageFilterLabel(PickupStage stage) {
+  switch (stage) {
+    case PickupStage.awaitingParent:
+      return 'Awaiting parent';
+    case PickupStage.awaitingTeacher:
+      return 'Awaiting teacher';
+    case PickupStage.awaitingAdmin:
+      return 'Awaiting admin';
+    case PickupStage.completed:
+      return 'Completed';
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Chip(
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 16),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

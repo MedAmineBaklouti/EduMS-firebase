@@ -69,14 +69,15 @@ class TeacherAttendanceController extends GetxController {
     );
     if (selectedClass.value != null) {
       final id = selectedClass.value!.id;
-      selectedClass.value = classes.firstWhereOrNull((item) => item.id == id);
-      if (selectedClass.value == null && classes.isNotEmpty) {
-        selectClass(classes.first);
+      final match = classes.firstWhereOrNull((item) => item.id == id);
+      if (match != null) {
+        selectedClass.value = match;
+      } else {
+        returnToClassList();
       }
-    } else if (classes.isNotEmpty) {
-      selectClass(classes.first);
     } else {
-      selectClass(null);
+      _refreshSessionList();
+      currentEntries.clear();
     }
   }
 
@@ -133,12 +134,14 @@ class TeacherAttendanceController extends GetxController {
   }
 
   void _initializeEntriesFromChildren(List<ChildModel> children) {
-    final entries = children
+    final sortedChildren = List<ChildModel>.from(children)
+      ..sort((a, b) => a.name.compareTo(b.name));
+    final entries = sortedChildren
         .map(
           (child) => ChildAttendanceEntry(
             childId: child.id,
             childName: child.name,
-            status: AttendanceStatus.present,
+            status: AttendanceStatus.absent,
           ),
         )
         .toList();
@@ -217,8 +220,9 @@ class TeacherAttendanceController extends GetxController {
     }
   }
 
-  Future<void> exportAttendanceAsPdf() async {
-    if (currentEntries.isEmpty) {
+  Future<void> exportAttendanceAsPdf({AttendanceSessionModel? session}) async {
+    final records = session?.records ?? currentEntries;
+    if (records.isEmpty) {
       Get.snackbar(
         'Nothing to export',
         'Mark attendance before exporting a PDF.',
@@ -252,6 +256,25 @@ class TeacherAttendanceController extends GetxController {
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  int childCountForClass(String classId) {
+    return _childrenByClass[classId]?.length ?? 0;
+  }
+
+  List<ChildModel> childrenForClass(String classId) {
+    return _childrenByClass[classId] ?? <ChildModel>[];
+  }
+
+  AttendanceSessionModel? sessionForClassOnDate(
+      String classId, DateTime date) {
+    return _sessions.firstWhereOrNull(
+      (item) => item.classId == classId && _isSameDay(item.date, date),
+    );
+  }
+
+  void returnToClassList() {
+    selectClass(null);
   }
 
   Future<void> _initialize() async {
