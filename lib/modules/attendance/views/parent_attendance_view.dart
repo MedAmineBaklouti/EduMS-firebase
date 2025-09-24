@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -121,38 +122,99 @@ class _ParentAttendanceFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<ParentAttendanceController>();
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: GetBuilder<ParentAttendanceController>(
-        builder: (controller) {
-          return ModuleCard(
-            padding: const EdgeInsets.all(20),
-            child: Obx(() {
-              final children = controller.children;
-              final childFilter = controller.childFilter.value;
-              return DropdownButtonFormField<String?>(
-                value: childFilter,
-                decoration: const InputDecoration(
-                  labelText: 'Child',
-                  border: OutlineInputBorder(),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Obx(() {
+            final hasFilter = (controller.childFilter.value ?? '').isNotEmpty;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Filter attendance',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('All children'),
+                TextButton.icon(
+                  onPressed: hasFilter ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(height: 12),
+          Obx(() {
+            final childId = controller.childFilter.value;
+            if (childId == null || childId.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            final child = controller.children
+                .firstWhereOrNull((element) => element.id == childId);
+            final childName = child?.name ?? 'Child';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _ActiveFilterChip(
+                label: 'Child: $childName',
+                onRemoved: controller.clearFilters,
+              ),
+            );
+          }),
+          Obx(() {
+            final children = controller.children;
+            final childFilter = controller.childFilter.value;
+            return DropdownButtonFormField<String?>(
+              value: childFilter,
+              decoration: const InputDecoration(
+                labelText: 'Child',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('All children'),
+                ),
+                ...children.map(
+                  (child) => DropdownMenuItem<String?>(
+                    value: child.id,
+                    child: Text(child.name),
                   ),
-                  ...children.map(
-                    (child) => DropdownMenuItem<String?>(
-                      value: child.id,
-                      child: Text(child.name),
-                    ),
-                  ),
-                ],
-                onChanged: controller.setChildFilter,
-              );
-            }),
-          );
-        },
+                ),
+              ],
+              onChanged: controller.setChildFilter,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Chip(
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 16),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

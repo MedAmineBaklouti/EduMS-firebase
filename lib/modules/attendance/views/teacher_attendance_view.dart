@@ -19,27 +19,46 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
       appBar: AppBar(
         title: const Text('Attendance'),
         centerTitle: true,
-      ),
-      body: ModulePageContainer(
-        child: Obx(() {
-          if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final classes = controller.classes;
+        leading: Obx(() {
           final selectedClass = controller.selectedClass.value;
-          final selectedDate = controller.selectedDate.value;
-          final entries = controller.currentEntries;
-          final isSaving = controller.isSaving.value;
-          final isExporting = controller.isExporting.value;
-          return Column(
-            children: [
-              _TeacherAttendanceFilters(
-                classes: classes,
-                selectedClass: selectedClass,
-                selectedDate: selectedDate,
-                onClassChanged: controller.selectClass,
-                onDateChanged: controller.setDate,
-                onSave: isSaving
+          if (selectedClass == null) {
+            return const SizedBox.shrink();
+          }
+          return IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: controller.returnToClassList,
+          );
+        }),
+        actions: [
+          Obx(() {
+            final selectedClass = controller.selectedClass.value;
+            if (selectedClass == null) {
+              return const SizedBox.shrink();
+            }
+            final isExporting = controller.isExporting.value;
+            return IconButton(
+              tooltip: 'Download PDF',
+              onPressed:
+                  isExporting ? null : () => controller.exportAttendanceAsPdf(),
+              icon: isExporting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.picture_as_pdf_outlined),
+            );
+          }),
+          Obx(() {
+            final selectedClass = controller.selectedClass.value;
+            if (selectedClass == null) {
+              return const SizedBox.shrink();
+            }
+            final isSaving = controller.isSaving.value;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: TextButton(
+                onPressed: isSaving
                     ? null
                     : () async {
                         final success = await controller.submitAttendance();
@@ -49,55 +68,33 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
                             'The attendance list has been stored.',
                             snackPosition: SnackPosition.BOTTOM,
                           );
+                          controller.returnToClassList();
                         }
                       },
-                onExport: isExporting
-                    ? null
-                    : () async {
-                        await controller.exportAttendanceAsPdf();
-                      },
-                isSaving: isSaving,
-                isExporting: isExporting,
-                dateFormat: dateFormat,
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: entries.isEmpty
-                    ? ModuleCard(
-                        child: SizedBox.expand(
-                          child: Center(
-                            child: selectedClass == null
-                                ? const ModuleEmptyState(
-                                    icon: Icons.class_outlined,
-                                    title: 'Select a class to begin',
-                                    message:
-                                        'Choose a class to load the roster and take attendance.',
-                                  )
-                                : const ModuleEmptyState(
-                                    icon: Icons.people_outline,
-                                    title: 'No students registered',
-                                    message:
-                                        'There are no students assigned to this class yet.',
-                                  ),
-                          ),
-                        ),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        itemCount: entries.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final entry = entries[index];
-                          return _AttendanceEntryCard(
-                            entry: entry,
-                            onTap: () => controller.toggleStatus(entry.childId),
-                          );
-                        },
-                      ),
+                    : const Text('Save'),
               ),
-              const SizedBox(height: 12),
-              _PreviousSessionsCard(sessions: controller.sessions),
-            ],
+            );
+          }),
+        ],
+      ),
+      body: ModulePageContainer(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final selectedClass = controller.selectedClass.value;
+          if (selectedClass == null) {
+            return _TeacherClassList(dateFormat: dateFormat);
+          }
+          return _TeacherClassDetail(
+            classModel: selectedClass,
+            dateFormat: dateFormat,
           );
         }),
       ),
@@ -105,112 +102,222 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
   }
 }
 
-class _TeacherAttendanceFilters extends StatelessWidget {
-  const _TeacherAttendanceFilters({
-    required this.classes,
-    required this.selectedClass,
-    required this.selectedDate,
-    required this.onClassChanged,
-    required this.onDateChanged,
-    required this.onSave,
-    required this.onExport,
-    required this.isSaving,
-    required this.isExporting,
-    required this.dateFormat,
-  });
+class _TeacherClassList extends StatelessWidget {
+  const _TeacherClassList({required this.dateFormat});
 
-  final List<SchoolClassModel> classes;
-  final SchoolClassModel? selectedClass;
-  final DateTime selectedDate;
-  final ValueChanged<SchoolClassModel?> onClassChanged;
-  final ValueChanged<DateTime> onDateChanged;
-  final VoidCallback? onSave;
-  final VoidCallback? onExport;
-  final bool isSaving;
-  final bool isExporting;
   final DateFormat dateFormat;
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<TeacherAttendanceController>();
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Obx(() {
+          final selectedDate = controller.selectedDate.value;
+          return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Attendance tools',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  'Attendance for ${dateFormat.format(selectedDate)}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: onExport,
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                    label:
-                        Text(isExporting ? 'Exporting...' : 'Export PDF'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: onSave,
-                    icon: const Icon(Icons.save_outlined, size: 18),
-                    label: Text(isSaving ? 'Saving...' : 'Save'),
-                  ),
-                ],
+              TextButton.icon(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(selectedDate.year - 1),
+                    lastDate: DateTime(selectedDate.year + 1),
+                  );
+                  if (picked != null) {
+                    controller.setDate(picked);
+                  }
+                },
+                icon: const Icon(Icons.calendar_today, size: 18),
+                label: const Text('Change date'),
               ),
             ],
-          ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 720;
-              final fieldWidth = isWide
-                  ? constraints.maxWidth / 2 - 8
-                  : double.infinity;
-              final dropdownItems = classes.isEmpty
-                  ? <DropdownMenuItem<SchoolClassModel?>>[
-                      const DropdownMenuItem<SchoolClassModel?>(
-                        value: null,
-                        enabled: false,
-                        child: Text('No classes available'),
-                      ),
-                    ]
-                  : classes
-                      .map(
-                        (item) => DropdownMenuItem<SchoolClassModel?>(
-                          value: item,
-                          child: Text(item.name),
-                        ),
-                      )
-                      .toList();
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: fieldWidth,
-                    child: DropdownButtonFormField<SchoolClassModel?>(
-                      value: classes.isEmpty ? null : selectedClass,
-                      decoration: const InputDecoration(
-                        labelText: 'Class',
-                        border: OutlineInputBorder(),
-                      ),
-                      hint: const Text('Select a class'),
-                      items: dropdownItems,
-                      onChanged: classes.isEmpty ? null : onClassChanged,
-                    ),
+          );
+        }),
+        const SizedBox(height: 12),
+        Expanded(
+          child: Obx(() {
+            final classes = controller.classes;
+            final selectedDate = controller.selectedDate.value;
+            if (classes.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                children: const [
+                  ModuleEmptyState(
+                    icon: Icons.class_outlined,
+                    title: 'No classes assigned',
+                    message:
+                        'Once your classes are assigned, they will appear here.',
                   ),
-                  SizedBox(
-                    width: fieldWidth,
-                    child: _DateSelector(
-                      label: 'Date',
-                      value: dateFormat.format(selectedDate),
-                      onTap: () async {
+                ],
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              itemCount: classes.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final schoolClass = classes[index];
+                final session = controller.sessionForClassOnDate(
+                  schoolClass.id,
+                  selectedDate,
+                );
+                final hasSession = session != null;
+                final childCount = controller.childCountForClass(schoolClass.id);
+                final presentCount = session == null
+                    ? 0
+                    : session.records
+                        .where((record) =>
+                            record.status == AttendanceStatus.present)
+                        .length;
+                final statusColor = hasSession ? Colors.green : Colors.orange;
+                final statusLabel = hasSession
+                    ? 'Submitted • $presentCount/${session!.records.length} present'
+                    : 'Pending submission';
+                return ModuleCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        schoolClass.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$childCount student${childCount == 1 ? '' : 's'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () => controller.selectClass(schoolClass),
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            label: Text(
+                              hasSession
+                                  ? 'Review attendance'
+                                  : 'Take attendance',
+                            ),
+                          ),
+                          if (hasSession)
+                            Obx(() {
+                              final isExporting = controller.isExporting.value;
+                              return OutlinedButton.icon(
+                                onPressed: isExporting
+                                    ? null
+                                    : () => controller.exportAttendanceAsPdf(
+                                          session: session,
+                                        ),
+                                icon: isExporting
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.picture_as_pdf_outlined,
+                                        size: 18,
+                                      ),
+                                label: Text(
+                                  isExporting
+                                      ? 'Preparing...'
+                                      : 'Download PDF',
+                                ),
+                              );
+                            }),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class _TeacherClassDetail extends StatelessWidget {
+  const _TeacherClassDetail({
+    required this.classModel,
+    required this.dateFormat,
+  });
+
+  final SchoolClassModel classModel;
+  final DateFormat dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<TeacherAttendanceController>();
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Obx(() {
+          final selectedDate = controller.selectedDate.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  classModel.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      dateFormat.format(selectedDate),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: selectedDate,
@@ -218,26 +325,77 @@ class _TeacherAttendanceFilters extends StatelessWidget {
                           lastDate: DateTime(selectedDate.year + 1),
                         );
                         if (picked != null) {
-                          onDateChanged(picked);
+                          controller.setDate(picked);
                         }
                       },
+                      icon: const Icon(Icons.calendar_today, size: 18),
+                      label: const Text('Change date'),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Students are marked absent by default. Tap the button next to each name to mark them present.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                ],
+                ),
+              ],
+            ),
+          );
+        }),
+        Expanded(
+          child: Obx(() {
+            final entries = controller.currentEntries;
+            if (entries.isEmpty) {
+              final hasChildren =
+                  controller.childrenForClass(classModel.id).isNotEmpty;
+              return ModuleCard(
+                child: SizedBox.expand(
+                  child: Center(
+                    child: hasChildren
+                        ? const ModuleEmptyState(
+                            icon: Icons.event_busy_outlined,
+                            title: 'No attendance records',
+                            message:
+                                'There are no attendance records for the selected day.',
+                          )
+                        : const ModuleEmptyState(
+                            icon: Icons.people_outline,
+                            title: 'No students registered',
+                            message:
+                                'There are no students assigned to this class yet.',
+                          ),
+                  ),
+                ),
               );
-            },
-          ),
-        ],
-      ),
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              itemCount: entries.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return _AttendanceEntryTile(
+                  entry: entry,
+                  onToggle: () => controller.toggleStatus(entry.childId),
+                );
+              },
+            );
+          }),
+        ),
+        const SizedBox(height: 12),
+        _PreviousSessionsCard(sessions: controller.sessions),
+      ],
     );
   }
 }
 
-class _AttendanceEntryCard extends StatelessWidget {
-  const _AttendanceEntryCard({required this.entry, required this.onTap});
+class _AttendanceEntryTile extends StatelessWidget {
+  const _AttendanceEntryTile({required this.entry, required this.onToggle});
 
   final ChildAttendanceEntry entry;
-  final VoidCallback onTap;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +403,6 @@ class _AttendanceEntryCard extends StatelessWidget {
     final isPresent = entry.status == AttendanceStatus.present;
     final statusColor = isPresent ? Colors.green : theme.colorScheme.error;
     return ModuleCard(
-      onTap: onTap,
       child: Row(
         children: [
           Expanded(
@@ -258,66 +415,38 @@ class _AttendanceEntryCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Tap to toggle status',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      isPresent ? Icons.check_circle : Icons.cancel_outlined,
+                      color: statusColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isPresent ? 'Present' : 'Absent',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: onToggle,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  isPresent ? theme.colorScheme.error : Colors.green,
+              foregroundColor: Colors.white,
             ),
-            child: Text(
-              isPresent ? 'Present' : 'Absent',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: Text(isPresent ? 'Mark absent' : 'Mark present'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _DateSelector extends StatelessWidget {
-  const _DateSelector({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: const Icon(Icons.calendar_today, size: 18),
-        ),
-        isEmpty: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(
-            value,
-            style: theme.textTheme.bodyMedium,
-          ),
-        ),
       ),
     );
   }
@@ -355,7 +484,8 @@ class _PreviousSessionsCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   ...sessions.take(4).map((session) {
                     final presentCount = session.records
-                        .where((record) => record.status == AttendanceStatus.present)
+                        .where((record) =>
+                            record.status == AttendanceStatus.present)
                         .length;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),

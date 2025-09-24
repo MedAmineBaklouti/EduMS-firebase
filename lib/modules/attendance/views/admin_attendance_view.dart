@@ -171,95 +171,209 @@ class _AdminAttendanceFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AdminAttendanceController>();
     final dateFormat = DateFormat.yMMMMd();
+    final theme = Theme.of(context);
+    final controller = Get.find<AdminAttendanceController>();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: Obx(() {
-        final classes = controller.classes;
-        final teachers = controller.teachers;
-        final classFilter = controller.classFilter.value;
-        final teacherFilter = controller.teacherFilter.value;
-        final dateFilter = controller.dateFilter.value;
-        return ModuleCard(
-          padding: const EdgeInsets.all(20),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SizedBox(
-                width: 220,
-                child: DropdownButtonFormField<String?>(
-                  value: classFilter,
-                  decoration: const InputDecoration(
-                    labelText: 'Class',
-                    border: OutlineInputBorder(),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Obx(() {
+            final hasFilters =
+                (controller.classFilter.value ?? '').isNotEmpty ||
+                    (controller.teacherFilter.value ?? '').isNotEmpty ||
+                    controller.dateFilter.value != null;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Filter attendance',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('All classes'),
-                    ),
-                    ...classes.map(
-                      (item) => DropdownMenuItem<String?>(
-                        value: item.id,
-                        child: Text(item.name),
-                      ),
-                    ),
-                  ],
-                  onChanged: controller.setClassFilter,
                 ),
+                TextButton.icon(
+                  onPressed: hasFilters ? controller.clearFilters : null,
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear'),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(height: 12),
+          Obx(() {
+            final chips = <Widget>[];
+            final classId = controller.classFilter.value;
+            if (classId != null && classId.isNotEmpty) {
+              chips.add(
+                _ActiveFilterChip(
+                  label: 'Class: ${controller.className(classId)}',
+                  onRemoved: () => controller.setClassFilter(null),
+                ),
+              );
+            }
+            final teacherId = controller.teacherFilter.value;
+            if (teacherId != null && teacherId.isNotEmpty) {
+              chips.add(
+                _ActiveFilterChip(
+                  label: 'Teacher: ${controller.teacherName(teacherId)}',
+                  onRemoved: () => controller.setTeacherFilter(null),
+                ),
+              );
+            }
+            final date = controller.dateFilter.value;
+            if (date != null) {
+              chips.add(
+                _ActiveFilterChip(
+                  label: 'Date: ${dateFormat.format(date)}',
+                  onRemoved: () => controller.setDateFilter(null),
+                ),
+              );
+            }
+            if (chips.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: chips,
               ),
-              SizedBox(
-                width: 220,
-                child: DropdownButtonFormField<String?>(
-                  value: teacherFilter,
-                  decoration: const InputDecoration(
-                    labelText: 'Teacher',
-                    border: OutlineInputBorder(),
+            );
+          }),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 720;
+              final fieldWidth = isWide
+                  ? constraints.maxWidth / 3 - 8
+                  : double.infinity;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: fieldWidth,
+                    child: Obx(() {
+                      final classes = controller.classes;
+                      final value = controller.classFilter.value;
+                      return DropdownButtonFormField<String?> (
+                        value: value,
+                        decoration: const InputDecoration(
+                          labelText: 'Class',
+                          border: OutlineInputBorder(),
+                        ),
+                        hint: const Text('All classes'),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('All classes'),
+                          ),
+                          ...classes.map(
+                            (item) => DropdownMenuItem<String?>(
+                              value: item.id,
+                              child: Text(item.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: controller.setClassFilter,
+                      );
+                    }),
                   ),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('All teachers'),
-                    ),
-                    ...teachers.map(
-                      (item) => DropdownMenuItem<String?>(
-                        value: item.id,
-                        child: Text(item.name),
-                      ),
-                    ),
-                  ],
-                  onChanged: controller.setTeacherFilter,
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final now = DateTime.now();
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: dateFilter ?? now,
-                    firstDate: DateTime(now.year - 1),
-                    lastDate: DateTime(now.year + 1),
-                  );
-                  controller.setDateFilter(picked);
-                },
-                icon: const Icon(Icons.calendar_today),
-                label: Text(
-                  dateFilter == null ? 'Any date' : dateFormat.format(dateFilter),
-                ),
-              ),
-              if (dateFilter != null)
-                IconButton(
-                  onPressed: () => controller.setDateFilter(null),
-                  tooltip: 'Clear date filter',
-                  icon: const Icon(Icons.clear),
-                ),
-            ],
+                  SizedBox(
+                    width: fieldWidth,
+                    child: Obx(() {
+                      final teachers = controller.teachers;
+                      final value = controller.teacherFilter.value;
+                      return DropdownButtonFormField<String?>(
+                        value: value,
+                        decoration: const InputDecoration(
+                          labelText: 'Teacher',
+                          border: OutlineInputBorder(),
+                        ),
+                        hint: const Text('All teachers'),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('All teachers'),
+                          ),
+                          ...teachers.map(
+                            (item) => DropdownMenuItem<String?>(
+                              value: item.id,
+                              child: Text(item.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: controller.setTeacherFilter,
+                      );
+                    }),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: Obx(() {
+                      final selectedDate = controller.dateFilter.value;
+                      return GestureDetector(
+                        onTap: () async {
+                          final now = DateTime.now();
+                          final initialDate = selectedDate ?? now;
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: initialDate,
+                            firstDate: DateTime(now.year - 1),
+                            lastDate: DateTime(now.year + 1),
+                          );
+                          controller.setDateFilter(picked);
+                        },
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Date',
+                            border: OutlineInputBorder(),
+                            suffixIcon:
+                                Icon(Icons.calendar_today, size: 18),
+                          ),
+                          isEmpty: selectedDate == null,
+                          child: Text(
+                            selectedDate == null
+                                ? 'Any date'
+                                : dateFormat.format(selectedDate),
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
           ),
-        );
-      }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveFilterChip extends StatelessWidget {
+  const _ActiveFilterChip({required this.label, required this.onRemoved});
+
+  final String label;
+  final VoidCallback onRemoved;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Chip(
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 16),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      labelStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
