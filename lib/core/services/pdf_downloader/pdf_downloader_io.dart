@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 Future<String?> savePdf(Uint8List bytes, String fileName) async {
@@ -31,11 +32,12 @@ Future<String?> _resolveSavePath(String sanitizedName) async {
   try {
     final directoryPath = await getDirectoryPath();
 
-    if (directoryPath == null || directoryPath.trim().isEmpty) {
-      return null;
+    if (directoryPath != null && directoryPath.trim().isNotEmpty) {
+      return p.join(directoryPath, resolvedName);
     }
-
-    return p.join(directoryPath, resolvedName);
+  } on PlatformException {
+    // Fall through to the manual resolution logic when the platform channel
+    // fails to provide a directory picker (common on some Android devices).
   } on UnimplementedError {
     final directory = await _resolveDownloadDirectory();
     return p.join(directory.path, resolvedName);
@@ -43,31 +45,42 @@ Future<String?> _resolveSavePath(String sanitizedName) async {
     final directory = await _resolveDownloadDirectory();
     return p.join(directory.path, resolvedName);
   }
+
+  final directory = await _resolveDownloadDirectory();
+  return p.join(directory.path, resolvedName);
 }
 
 Future<bool> _ensureStoragePermission() async {
-  final storageStatus = await Permission.storage.status;
-  if (storageStatus.isGranted) {
+  Future<bool> _handlePermission(Permission permission) async {
+    final status = await permission.status;
+
+    if (status.isGranted || status.isLimited) {
+      return true;
+    }
+
+    if (status.isDenied || status.isRestricted || status.isPermanentlyDenied) {
+      final requested = await permission.request();
+      return requested.isGranted || requested.isLimited;
+    }
+
+    return false;
+  }
+
+  try {
+    // Android 11+ requires the "manage external storage" permission to write
+    // to user selected locations. Fall back to the legacy storage permission on
+    // older versions.
+    if (await _handlePermission(Permission.manageExternalStorage)) {
+      return true;
+    }
+
+    return await _handlePermission(Permission.storage);
+  } on PlatformException {
+    // Some devices are unable to report the permission state. In that case we
+    // optimistically continue with the download and rely on the filesystem
+    // write to surface any issues.
     return true;
   }
-
-  // Trigger the system permission prompt when the storage access has not yet
-  // been granted. Returning `false` here simply stops the download flow
-  // without redirecting the user to the system settings screen.
-  if (storageStatus.isDenied || storageStatus.isRestricted) {
-    final requested = await Permission.storage.request();
-    return requested.isGranted;
-  }
-
-  // When the permission has been permanently denied the OS no longer shows
-  // the system prompt. Requesting it again simply returns the same status,
-  // which is preferable to forcing a navigation to the app details page.
-  if (storageStatus.isPermanentlyDenied) {
-    final requested = await Permission.storage.request();
-    return requested.isGranted;
-  }
-
-  return false;
 }
 
 Future<Directory> _resolveDownloadDirectory() async {
