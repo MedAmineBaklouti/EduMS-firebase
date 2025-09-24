@@ -473,7 +473,7 @@ class _TeacherAttendanceTile extends StatelessWidget {
                   ],
                 ),
               ),
-              _StatusDropdown(
+              _StatusSelector(
                 status: entry.status,
                 onChanged: onStatusChanged,
               ),
@@ -532,8 +532,8 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _StatusDropdown extends StatelessWidget {
-  const _StatusDropdown({
+class _StatusSelector extends StatelessWidget {
+  const _StatusSelector({
     required this.status,
     required this.onChanged,
   });
@@ -544,42 +544,40 @@ class _StatusDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final statuses = <AttendanceStatus>[
+      AttendanceStatus.pending,
+      AttendanceStatus.present,
+      AttendanceStatus.absent,
+    ];
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        DropdownButtonHideUnderline(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: DropdownButton<AttendanceStatus>(
-                value: status,
-                borderRadius: BorderRadius.circular(16),
-                icon: const Icon(Icons.expand_more),
-                onChanged: (value) {
-                  if (value != null) {
-                    onChanged(value);
-                  }
-                },
-                items: const [
-                  AttendanceStatus.pending,
-                  AttendanceStatus.present,
-                  AttendanceStatus.absent,
-                ]
-                    .map(
-                      (status) => DropdownMenuItem<AttendanceStatus>(
-                        value: status,
-                        child: Text(status.label),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-          ),
+        ToggleButtons(
+          borderRadius: BorderRadius.circular(20),
+          constraints: const BoxConstraints(minHeight: 40, minWidth: 72),
+          isSelected: statuses.map((value) => value == status).toList(),
+          onPressed: (index) => onChanged(statuses[index]),
+          color: theme.colorScheme.onSurface,
+          selectedColor: theme.colorScheme.primary,
+          fillColor: theme.colorScheme.primary.withOpacity(0.12),
+          borderColor: theme.colorScheme.outline,
+          selectedBorderColor: theme.colorScheme.primary,
+          children: statuses
+              .map(
+                (value) => Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: Text(
+                    value.label,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight:
+                          value == status ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
         ),
         const SizedBox(height: 6),
         Text(

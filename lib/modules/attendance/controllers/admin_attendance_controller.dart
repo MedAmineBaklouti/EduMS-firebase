@@ -172,6 +172,13 @@ class AdminAttendanceController extends GetxController {
       classScope.add(session.classId);
     }
     if (classScope.isEmpty) {
+      for (final classModel in classes) {
+        if (classModel.id.isNotEmpty) {
+          classScope.add(classModel.id);
+        }
+      }
+    }
+    if (classScope.isEmpty) {
       childSummaries.clear();
       return;
     }
