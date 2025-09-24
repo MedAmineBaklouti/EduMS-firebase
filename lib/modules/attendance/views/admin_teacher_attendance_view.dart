@@ -7,6 +7,7 @@ import '../../common/widgets/module_card.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../controllers/admin_teacher_attendance_controller.dart';
+import 'widgets/attendance_date_card.dart';
 
 class AdminTeacherAttendanceView
     extends GetView<AdminTeacherAttendanceController> {
@@ -142,8 +143,7 @@ class _AttendanceHeader extends StatelessWidget {
           : pendingCount > 0
               ? 'Awaiting submission – mark ${pendingCount == 1 ? 'the remaining teacher' : '$pendingCount teachers'} before saving.'
               : 'Ready to save – $presentCount present and $absentCount absent.';
-      return ModuleCard(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      return AttendanceDateCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
