@@ -92,20 +92,27 @@ class ParentPickupNotificationService extends GetxService {
         if (Get.isDialogOpen ?? false) {
           return;
         }
-        Get.dialog(
-          AlertDialog(
+
+        final overlayContext = Get.overlayContext ?? Get.context;
+        if (overlayContext == null) {
+          return;
+        }
+
+        showDialog<void>(
+          context: overlayContext,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
             title: const Text('Pickup update'),
             content: Text(
               '${ticket.childName} is on the way to you. Thank you for your patience!',
             ),
             actions: [
               TextButton(
-                onPressed: () => Get.back(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('OK'),
               ),
             ],
           ),
-          barrierDismissible: false,
         );
       });
     }
