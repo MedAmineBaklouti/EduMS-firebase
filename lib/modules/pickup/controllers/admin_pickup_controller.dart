@@ -40,13 +40,13 @@ class AdminPickupController extends GetxController {
   final RxList<SchoolClassModel> classes = <SchoolClassModel>[].obs;
 
   final RxnString classFilter = RxnString();
-  final Rxn<PickupStage> stageFilter = Rxn<PickupStage>();
+  final Rx<PickupStage?> stageFilter = Rx<PickupStage?>(PickupStage.awaitingTeacher);
   final Rxn<AdminModel> admin = Rxn<AdminModel>();
   final RxBool isLoading = false.obs;
 
   void clearFilters() {
     classFilter.value = null;
-    stageFilter.value = null;
+    stageFilter.value = PickupStage.awaitingTeacher;
     _applyFilters();
   }
 
@@ -98,17 +98,37 @@ class AdminPickupController extends GetxController {
     final classId = classFilter.value;
     final stage = stageFilter.value;
     final filtered = _allTickets.where((ticket) {
-      if (ticket.isArchived) {
+      if (stage != PickupStage.completed && ticket.isArchived) {
         return false;
       }
-      final matchesClass = classId == null || classId.isEmpty
-          ? true
-          : ticket.classId == classId;
-      final matchesStage = stage == null ? true : ticket.stage == stage;
-      return matchesClass && matchesStage;
+      if (classId != null && classId.isNotEmpty && ticket.classId != classId) {
+        return false;
+      }
+      if (stage == PickupStage.completed) {
+        return ticket.isArchived;
+      }
+      if (stage == null) {
+        return !ticket.isArchived;
+      }
+      return ticket.stage == stage;
     }).toList()
-      ..sort((a, b) => a.stage.index.compareTo(b.stage.index));
+      ..sort((a, b) {
+        final aTime = _ticketSortKey(a);
+        final bTime = _ticketSortKey(b);
+        return bTime.compareTo(aTime);
+      });
     tickets.assignAll(filtered);
+  }
+
+  DateTime _ticketSortKey(PickupTicketModel ticket) {
+    if (ticket.isArchived) {
+      return ticket.archivedAt ??
+          ticket.adminValidatedAt ??
+          ticket.teacherValidatedAt ??
+          ticket.parentConfirmedAt ??
+          ticket.createdAt;
+    }
+    return ticket.parentConfirmedAt ?? ticket.createdAt;
   }
 
   Future<void> finalizeTicket(PickupTicketModel ticket) async {

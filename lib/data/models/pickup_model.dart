@@ -98,16 +98,23 @@ class PickupTicketModel {
   bool get isAwaitingParent => parentConfirmedAt == null;
 
   bool get isAwaitingTeacher =>
-      parentConfirmedAt != null && teacherValidatedAt == null;
+      !isArchived && parentConfirmedAt != null && teacherValidatedAt == null;
 
   bool get isAwaitingAdmin =>
-      teacherValidatedAt != null && adminValidatedAt == null;
+      !isArchived && teacherValidatedAt != null && adminValidatedAt == null;
 
-  bool get isCompleted => adminValidatedAt != null;
+  bool get isCompleted => isArchived;
 
   bool get isArchived => archivedAt != null;
 
+  bool get releasedByTeacher => teacherValidatedAt != null;
+
+  bool get releasedByAdmin => adminValidatedAt != null;
+
   PickupStage get stage {
+    if (isArchived) {
+      return PickupStage.completed;
+    }
     if (isCompleted) {
       return PickupStage.completed;
     }

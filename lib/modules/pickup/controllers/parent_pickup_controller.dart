@@ -192,9 +192,6 @@ class ParentPickupController extends GetxController {
       if (ticket.parentId != parentId) {
         return false;
       }
-      if (ticket.isArchived) {
-        return false;
-      }
       final validated =
           ticket.teacherValidatedAt != null || ticket.adminValidatedAt != null;
       if (!validated) {
