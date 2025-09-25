@@ -13,6 +13,7 @@ import '../../../core/services/pdf_downloader/pdf_downloader.dart';
 import '../../../data/models/attendance_record_model.dart';
 import '../../../data/models/child_model.dart';
 import '../../../data/models/parent_model.dart';
+import '../../../data/models/pickup_model.dart';
 import '../../../data/models/school_class_model.dart';
 import '../../../data/models/teacher_model.dart';
 
@@ -511,6 +512,10 @@ class TeacherAttendanceController extends GetxController {
       final existingTicket = await ticketRef.get();
 
       if (existingTicket.exists) {
+        final pickupTicket = PickupTicketModel.fromDoc(existingTicket);
+        if (pickupTicket.isArchived || pickupTicket.teacherValidatedAt != null) {
+          continue;
+        }
         await ticketRef.set(
           <String, dynamic>{
             'childId': child.id,

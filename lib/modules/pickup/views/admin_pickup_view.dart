@@ -54,14 +54,13 @@ class AdminPickupView extends GetView<AdminPickupController> {
                           separatorBuilder: (_, __) => const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final ticket = items[index];
-                            final showAction = !ticket.isArchived;
+                            final showAction =
+                                ticket.stage == PickupStage.awaitingAdmin && !ticket.isArchived;
                             return PickupQueueCard(
                               ticket: ticket,
                               timeFormat: timeFormat,
                               onValidate:
                                   showAction ? () => controller.finalizeTicket(ticket) : null,
-                              actionLabel: 'Validate release',
-                              actionIcon: Icons.task_alt_outlined,
                             );
                           },
                         ),
@@ -90,7 +89,7 @@ class _AdminPickupFilters extends StatelessWidget {
           Obx(() {
             final stageValue = controller.stageFilter.value;
             final hasStageFilter =
-                stageValue != null && stageValue != PickupStage.awaitingTeacher;
+                stageValue != null && stageValue != PickupStage.awaitingAdmin;
             final hasFilters =
                 (controller.classFilter.value ?? '').isNotEmpty || hasStageFilter;
             return Row(
@@ -123,7 +122,7 @@ class _AdminPickupFilters extends StatelessWidget {
                 ),
               );
             }
-            if (stage != null && stage != PickupStage.awaitingTeacher) {
+            if (stage != null && stage != PickupStage.awaitingAdmin) {
               chips.add(
                 _ActiveFilterChip(
                   label: 'Status: ${_stageFilterLabel(stage)}',
