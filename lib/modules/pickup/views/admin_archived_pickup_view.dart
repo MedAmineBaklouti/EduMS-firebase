@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/pickup_model.dart';
-import '../../common/widgets/module_card.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
+import '../../attendance/views/widgets/attendance_date_card.dart';
 import '../controllers/admin_archived_pickup_controller.dart';
 
 class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
@@ -13,7 +13,9 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
 
   @override
   Widget build(BuildContext context) {
-    final timeFormat = DateFormat.yMMMMd().add_jm();
+    final archivedFormat = DateFormat.yMMMMd().add_jm();
+    final dateFormat = DateFormat.yMMMMd();
+    final timeFormat = DateFormat.jm();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Archived Pickups'),
@@ -54,79 +56,99 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                           itemBuilder: (context, index) {
                             final ticket = tickets[index];
                             final archivedAt =
-                                ticket.archivedAt ?? ticket.adminValidatedAt;
+                                ticket.archivedAt ?? ticket.adminValidatedAt ?? ticket.createdAt;
+                            final parentTime = ticket.parentConfirmedAt;
                             final teacherTime = ticket.teacherValidatedAt;
-                            return ModuleCard(
+                            return AttendanceDateCard(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    ticket.childName,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    controller.className(ticket.classId),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Parent: ${ticket.parentName}',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                  if (teacherTime != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Teacher validated: ${timeFormat.format(teacherTime)}',
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ],
-                                  if (archivedAt != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Archived: ${timeFormat.format(archivedAt)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: Colors.green),
-                                    ),
-                                  ],
-                                  const SizedBox(height: 12),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Chip(
-                                        avatar: const Icon(
-                                          Icons.access_time,
-                                          size: 18,
-                                        ),
-                                        label: Text(
-                                          'Created: ${DateFormat.yMMMMd().add_jm().format(ticket.createdAt)}',
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              ticket.childName,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '${controller.className(ticket.classId)} • ${ticket.parentName}',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      if (ticket.parentConfirmedAt != null)
-                                        Chip(
-                                          avatar: const Icon(
-                                            Icons.verified_user,
-                                            size: 18,
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            dateFormat.format(archivedAt),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
-                                          label: Text(
-                                            'Parent confirmed: ${timeFormat.format(ticket.parentConfirmedAt!)}',
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            timeFormat.format(archivedAt),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
                                           ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    children: [
+                                      _ArchiveInfoChip(
+                                        icon: Icons.access_time,
+                                        label:
+                                            'Created: ${archivedFormat.format(ticket.createdAt)}',
+                                      ),
+                                      if (parentTime != null)
+                                        _ArchiveInfoChip(
+                                          icon: Icons.check_circle_outline,
+                                          label:
+                                              'Parent confirmed: ${archivedFormat.format(parentTime)}',
+                                        ),
+                                      if (teacherTime != null)
+                                        _ArchiveInfoChip(
+                                          icon: Icons.verified_outlined,
+                                          label:
+                                              'Teacher validated: ${archivedFormat.format(teacherTime)}',
+                                        ),
+                                      if (ticket.adminValidatedAt != null)
+                                        _ArchiveInfoChip(
+                                          icon: Icons.admin_panel_settings_outlined,
+                                          label:
+                                              'Admin released: ${archivedFormat.format(ticket.adminValidatedAt!)}',
                                         ),
                                     ],
                                   ),
@@ -160,8 +182,7 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
           Obx(() {
             final hasFilters =
                 (controller.classFilter.value ?? '').isNotEmpty ||
-                    controller.dateFilter.value != null ||
-                    controller.searchQuery.value.isNotEmpty;
+                    controller.dateFilter.value != null;
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -198,15 +219,6 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
                 _FilterChip(
                   label: 'Dates: ${format.format(range.start)} – ${format.format(range.end)}',
                   onRemoved: () => controller.setDateFilter(null),
-                ),
-              );
-            }
-            final query = controller.searchQuery.value;
-            if (query.isNotEmpty) {
-              chips.add(
-                _FilterChip(
-                  label: 'Search: $query',
-                  onRemoved: controller.clearSearchQuery,
                 ),
               );
             }
@@ -279,17 +291,6 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
                       label: const Text('Select dates'),
                     ),
                   ),
-                  SizedBox(
-                    width: fieldWidth,
-                    child: TextField(
-                      controller: controller.searchController,
-                      decoration: const InputDecoration(
-                        labelText: 'Search by child or parent',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                    ),
-                  ),
                 ],
               );
             },
@@ -320,6 +321,38 @@ class _FilterChip extends StatelessWidget {
       labelStyle: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.primary,
         fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _ArchiveInfoChip extends StatelessWidget {
+  const _ArchiveInfoChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

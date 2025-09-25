@@ -116,10 +116,12 @@ class TeacherPickupController extends GetxController {
       );
       return;
     }
+    final now = DateTime.now();
     final updated = ticket.copyWith(
       teacherValidatorId: currentTeacher.id,
       teacherValidatorName: currentTeacher.name,
-      teacherValidatedAt: DateTime.now(),
+      teacherValidatedAt: now,
+      archivedAt: now,
     );
     final index = _allTickets.indexWhere((item) => item.id == ticket.id);
     if (index != -1) {
