@@ -389,7 +389,8 @@ class _TeacherClassListState extends State<_TeacherClassList> {
           );
         }),
       ],
-    );
+    ),
+  );
   }
 }
 
