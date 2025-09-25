@@ -33,38 +33,44 @@ class ParentAttendanceView extends GetView<ParentAttendanceController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final summaries = controller.childSummaries;
-                if (summaries.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.event_busy_outlined,
-                        title: 'No attendance records',
-                        message:
-                            'Attendance updates for your children will appear here once they are recorded.',
-                      ),
-                    ],
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: summaries.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final summary = summaries[index];
-                    final latestEntry = summary.subjectEntries.isEmpty
-                        ? null
-                        : summary.subjectEntries.first;
-                    final latestDateLabel = latestEntry == null
-                        ? null
-                        : shortDateFormat.format(latestEntry.date);
-                    return _ParentChildSummaryCard(
-                      summary: summary,
-                      latestDateLabel: latestDateLabel,
-                    );
-                  },
+                return RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: summaries.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.event_busy_outlined,
+                              title: 'No attendance records',
+                              message:
+                                  'Attendance updates for your children will appear here once they are recorded.',
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          itemCount: summaries.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final summary = summaries[index];
+                            final latestEntry = summary.subjectEntries.isEmpty
+                                ? null
+                                : summary.subjectEntries.first;
+                            final latestDateLabel = latestEntry == null
+                                ? null
+                                : shortDateFormat.format(latestEntry.date);
+                            return _ParentChildSummaryCard(
+                              summary: summary,
+                              latestDateLabel: latestDateLabel,
+                            );
+                          },
+                        ),
                 );
               }),
             ),

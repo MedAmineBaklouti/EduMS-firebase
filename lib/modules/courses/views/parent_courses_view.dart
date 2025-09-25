@@ -24,7 +24,10 @@ class ParentCoursesView extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (controller.children.isEmpty) {
-          return _buildNoChildrenState(context);
+          return RefreshIndicator(
+            onRefresh: controller.refreshData,
+            child: _buildNoChildrenState(context),
+          );
         }
         return Container(
           decoration: BoxDecoration(
@@ -43,16 +46,25 @@ class ParentCoursesView extends StatelessWidget {
               Expanded(
                 child: Obx(() {
                   if (controller.courses.isEmpty) {
-                    return _buildEmptyState(context);
+                    return RefreshIndicator(
+                      onRefresh: controller.refreshData,
+                      child: _buildEmptyState(context),
+                    );
                   }
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                    itemCount: controller.courses.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final course = controller.courses[index];
-                      return _ParentCourseTile(course: course);
-                    },
+                  return RefreshIndicator(
+                    onRefresh: controller.refreshData,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                      physics: const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics(),
+                      ),
+                      itemCount: controller.courses.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final course = controller.courses[index];
+                        return _ParentCourseTile(course: course);
+                      },
+                    ),
                   );
                 }),
               ),
@@ -219,77 +231,71 @@ class ParentCoursesView extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.menu_book_outlined,
-                color: theme.colorScheme.primary,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No courses found',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'There are no courses for the selected filters yet.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(32, 120, 32, 160),
+      children: [
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.menu_book_outlined,
+            color: theme.colorScheme.primary,
+            size: 40,
+          ),
         ),
-      ),
+        const SizedBox(height: 24),
+        Text(
+          'No courses found',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'There are no courses for the selected filters yet.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildNoChildrenState(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.diversity_3_outlined,
-              size: 64,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No children linked',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Please contact the school administration to link your children.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(32, 160, 32, 200),
+      children: [
+        Icon(
+          Icons.diversity_3_outlined,
+          size: 64,
+          color: theme.colorScheme.primary,
         ),
-      ),
+        const SizedBox(height: 24),
+        Text(
+          'No children linked',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Please contact the school administration to link your children.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -37,20 +37,26 @@ class AnnouncementListView extends StatelessWidget {
           ),
         ),
         child: Obx(() {
-          if (controller.announcements.isEmpty) {
-            return _buildEmptyState(context);
-          }
-          return ListView.separated(
-            padding: EdgeInsets.fromLTRB(16, 24, 16, isAdmin ? 120 : 32),
-            physics: const BouncingScrollPhysics(),
-            itemCount: controller.announcements.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 18),
-            itemBuilder: (context, index) {
-              final ann = controller.announcements[index];
-              return isAdmin
-                  ? _buildAdminItem(context, controller, ann)
-                  : _buildAnnouncementCard(context, ann);
-            },
+          final items = controller.announcements;
+          return RefreshIndicator(
+            onRefresh: controller.refreshAnnouncements,
+            child: items.isEmpty
+                ? _buildEmptyState(context)
+                : ListView.separated(
+                    padding:
+                        EdgeInsets.fromLTRB(16, 24, 16, isAdmin ? 120 : 32),
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 18),
+                    itemBuilder: (context, index) {
+                      final ann = items[index];
+                      return isAdmin
+                          ? _buildAdminItem(context, controller, ann)
+                          : _buildAnnouncementCard(context, ann);
+                    },
+                  ),
           );
         }),
       ),
@@ -67,43 +73,40 @@ class AnnouncementListView extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              height: 88,
-              width: 88,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.campaign_outlined,
-                color: theme.colorScheme.primary,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No announcements yet',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Stay tuned! New announcements will appear here.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(32, 160, 32, 200),
+      children: [
+        Container(
+          height: 88,
+          width: 88,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.campaign_outlined,
+            color: theme.colorScheme.primary,
+            size: 40,
+          ),
         ),
-      ),
+        const SizedBox(height: 24),
+        Text(
+          'No announcements yet',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Stay tuned! New announcements will appear here.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 

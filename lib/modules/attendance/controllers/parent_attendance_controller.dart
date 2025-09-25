@@ -381,6 +381,33 @@ class ParentAttendanceController extends GetxController {
     );
   }
 
+  Future<void> refreshData() async {
+    final parentId = _auth.currentUser?.uid;
+    if (parentId == null) {
+      return;
+    }
+
+    final childrenSnapshot = await _db.firestore
+        .collection('children')
+        .where('parentId', isEqualTo: parentId)
+        .get();
+    setChildren(childrenSnapshot.docs.map(ChildModel.fromDoc).toList());
+
+    final sessionsSnapshot =
+        await _db.firestore.collection('attendanceSessions').get();
+    setSessions(
+        sessionsSnapshot.docs.map(AttendanceSessionModel.fromDoc).toList());
+
+    final classesSnapshot = await _db.firestore.collection('classes').get();
+    setClasses(classesSnapshot.docs.map(SchoolClassModel.fromDoc).toList());
+
+    final teachersSnapshot = await _db.firestore.collection('teachers').get();
+    setTeachers(teachersSnapshot.docs.map(TeacherModel.fromDoc).toList());
+
+    final subjectsSnapshot = await _db.firestore.collection('subjects').get();
+    setSubjects(subjectsSnapshot.docs.map(SubjectModel.fromDoc).toList());
+  }
+
   Future<void> exportChildAttendanceAsPdf(
       ChildAttendanceSummary summary) async {
     if (summary.subjectEntries.isEmpty) {
