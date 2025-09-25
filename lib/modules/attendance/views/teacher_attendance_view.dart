@@ -172,71 +172,73 @@ class _TeacherClassListState extends State<_TeacherClassList> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Attendance overview',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                dateLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Wrap(
-                          alignment: WrapAlignment.end,
-                          spacing: 8,
-                          runSpacing: 8,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (!isToday)
-                              OutlinedButton.icon(
-                                onPressed: () =>
-                                    controller.setDate(DateTime.now()),
-                                icon: const Icon(Icons.refresh, size: 18),
-                                label: const Text('Clear date'),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Attendance overview',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    dateLabel,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            TextButton.icon(
-                              onPressed: () async {
-                                final picked = await showDatePicker(
-                                  context: context,
-                                  initialDate: selectedDate,
-                                  firstDate: DateTime(selectedDate.year - 1),
-                                  lastDate: DateTime(selectedDate.year + 1),
-                                );
-                                if (picked != null) {
-                                  controller.setDate(picked);
-                                }
-                              },
-                              icon: const Icon(Icons.calendar_today, size: 18),
-                              label:
-                                  Text(isToday ? 'Select date' : 'Change date'),
+                            ),
+                            Wrap(
+                              alignment: WrapAlignment.end,
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                if (!isToday)
+                                  OutlinedButton.icon(
+                                    onPressed: () =>
+                                        controller.setDate(DateTime.now()),
+                                    icon: const Icon(Icons.refresh, size: 18),
+                                    label: const Text('Clear date'),
+                                  ),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: selectedDate,
+                                      firstDate: DateTime(selectedDate.year - 1),
+                                      lastDate: DateTime(selectedDate.year + 1),
+                                    );
+                                    if (picked != null) {
+                                      controller.setDate(picked);
+                                    }
+                                  },
+                                  icon:
+                                      const Icon(Icons.calendar_today, size: 18),
+                                  label: Text(
+                                      isToday ? 'Select date' : 'Change date'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Choose a date to review and mark attendance for your classes.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Choose a date to review and mark attendance for your classes.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+                  ),
+                );
             }),
           ),
         ),
