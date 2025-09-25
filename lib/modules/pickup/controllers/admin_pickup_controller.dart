@@ -60,6 +60,12 @@ class AdminPickupController extends GetxController {
     _maybeFinishLoading();
   }
 
+  void _markAdminMissing() {
+    admin.value = null;
+    _adminLoaded = true;
+    _maybeFinishLoading();
+  }
+
   void setClasses(List<SchoolClassModel> items) {
     classes.assignAll(items);
     if (classFilter.value != null &&
@@ -148,6 +154,8 @@ class AdminPickupController extends GetxController {
           await _db.firestore.collection('pickupTickets').get();
       if (adminSnapshot.exists) {
         setAdmin(AdminModel.fromFirestore(adminSnapshot));
+      } else {
+        _markAdminMissing();
       }
       setClasses(classesSnapshot.docs.map(SchoolClassModel.fromDoc).toList());
       setTickets(ticketsSnapshot.docs.map(PickupTicketModel.fromDoc).toList());
@@ -182,6 +190,8 @@ class AdminPickupController extends GetxController {
         .listen((snapshot) {
       if (snapshot.exists) {
         setAdmin(AdminModel.fromFirestore(snapshot));
+      } else {
+        _markAdminMissing();
       }
     });
 

@@ -69,8 +69,11 @@ class AdminAttendanceView extends GetView<AdminAttendanceController> {
                         : '?';
                     final theme = Theme.of(context);
                     return ModuleCard(
-                      onTap: () => Get.to(
-                        () => AdminChildAttendanceDetailView(summary: summary),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AdminChildAttendanceDetailView(summary: summary),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
