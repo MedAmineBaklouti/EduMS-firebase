@@ -88,7 +88,9 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
                     classModel: selectedClass,
                     dateFormat: dateFormat,
                   );
+            final displacement = selectedClass == null ? 140.0 : 220.0;
             return RefreshIndicator(
+              displacement: displacement,
               onRefresh: controller.refreshData,
               child: content,
             );
@@ -372,45 +374,47 @@ class _TeacherClassDetail extends StatelessWidget {
                   .where((entry) => entry.status == AttendanceStatus.present)
                   .length;
               final total = entries.length;
-              return AttendanceDateCard(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      classModel.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AttendanceDateCard(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                    style: AttendanceDateCardStyle.primary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          classModel.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          dateFormat.format(selectedDate),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color:
+                                theme.colorScheme.onPrimary.withOpacity(0.9),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          total == 0
+                              ? 'No students registered for this class.'
+                              : '$presentCount of $total student${total == 1 ? '' : 's'} marked present.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      dateFormat.format(selectedDate),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.9),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      total == 0
-                          ? 'No students registered for this class.'
-                          : '$presentCount of $total student${total == 1 ? '' : 's'} marked present.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Swipe down to refresh attendance or update the list before saving.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.85),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  const _RefreshHintBanner(),
+                ],
               );
             }),
           ),
@@ -502,6 +506,44 @@ class _TeacherClassDetail extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _RefreshHintBanner extends StatelessWidget {
+  const _RefreshHintBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final background = theme.colorScheme.primaryContainer.withOpacity(
+      theme.brightness == Brightness.dark ? 0.28 : 0.32,
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.swipe_down_alt_outlined,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Swipe down after marking attendance to refresh the list before saving.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
