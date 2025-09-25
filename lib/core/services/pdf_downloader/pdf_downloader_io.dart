@@ -34,59 +34,20 @@ Future<String?> _resolveSavePath(String sanitizedName) async {
     return pathFromPicker;
   }
 
-  if (!Platform.isAndroid) {
-    try {
-      final directoryPath = await getDirectoryPath();
-
-      if (directoryPath != null && directoryPath.trim().isNotEmpty) {
-        return p.join(directoryPath, resolvedName);
-      }
-    } on PlatformException {
-      // Fall through to the manual resolution logic when the platform channel
-      // fails to provide a directory picker (common on some desktop platforms).
-    } on UnimplementedError {
-      final directory = await _resolveDownloadDirectory();
-      return p.join(directory.path, resolvedName);
-    } catch (_) {
-      final directory = await _resolveDownloadDirectory();
-      return p.join(directory.path, resolvedName);
-    }
-  }
-
   final directory = await _resolveDownloadDirectory();
   return p.join(directory.path, resolvedName);
 }
 
 Future<String?> _promptSavePath(String resolvedName) async {
   try {
-    final selectedPath = await getSavePath(
-      suggestedName: resolvedName,
-      confirmButtonText: 'Save',
-      acceptedTypeGroups: const [
-        XTypeGroup(
-          label: 'PDF',
-          extensions: ['pdf'],
-        ),
-      ],
-    );
+    final directoryPath = await getDirectoryPath();
 
-    if (selectedPath == null || selectedPath.trim().isEmpty) {
+    if (directoryPath == null || directoryPath.trim().isEmpty) {
       return null;
     }
 
-    final normalized = selectedPath.trim();
-    if (normalized.toLowerCase().endsWith('.pdf')) {
-      return normalized;
-    }
-
-    final extension = p.extension(normalized);
-    if (extension.isEmpty) {
-      return '$normalized.pdf';
-    }
-
-    // If the user selects a non-pdf extension, replace it to ensure the file
-    // is saved as a PDF.
-    return '${normalized.substring(0, normalized.length - extension.length)}.pdf';
+    final normalizedDirectory = directoryPath.trim();
+    return p.join(normalizedDirectory, resolvedName);
   } on PlatformException {
     // Some platforms (notably older Android versions) may throw when the
     // platform picker is not available. In that case we fall back to the
