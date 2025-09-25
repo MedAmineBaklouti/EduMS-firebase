@@ -536,7 +536,7 @@ class PickupTicketDetailView extends StatelessWidget {
     return 'Pickup in progress';
   }
 
-  String _initialsFor(String input) {
+  Object _initialsFor(String input) {
     final normalized = input.trim();
     if (normalized.isEmpty) {
       return 'ST';
