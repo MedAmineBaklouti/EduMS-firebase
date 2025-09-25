@@ -32,6 +32,7 @@ class ChildAttendanceSummary {
     required this.childName,
     required this.classId,
     required this.className,
+    required this.displayDate,
     required List<ChildSubjectAttendance> subjectEntries,
   }) : subjectEntries = List<ChildSubjectAttendance>.unmodifiable(
           subjectEntries..sort((a, b) => b.date.compareTo(a.date)),
@@ -41,22 +42,36 @@ class ChildAttendanceSummary {
   final String childName;
   final String classId;
   final String className;
+  final DateTime displayDate;
   final List<ChildSubjectAttendance> subjectEntries;
 
-  int get presentCount =>
-      subjectEntries.where((entry) => entry.status == AttendanceStatus.present).length;
+  Iterable<ChildSubjectAttendance> get _entriesForDisplay {
+    final normalizedDisplayDate =
+        DateTime(displayDate.year, displayDate.month, displayDate.day);
+    final filtered = subjectEntries.where(
+      (entry) => entry.date.year == normalizedDisplayDate.year &&
+          entry.date.month == normalizedDisplayDate.month &&
+          entry.date.day == normalizedDisplayDate.day,
+    );
+    return filtered.isNotEmpty ? filtered : subjectEntries;
+  }
 
-  int get absentCount =>
-      subjectEntries.where((entry) => entry.status == AttendanceStatus.absent).length;
+  int get presentCount => _entriesForDisplay
+      .where((entry) => entry.status == AttendanceStatus.present)
+      .length;
 
-  int get pendingCount => subjectEntries
+  int get absentCount => _entriesForDisplay
+      .where((entry) => entry.status == AttendanceStatus.absent)
+      .length;
+
+  int get pendingCount => _entriesForDisplay
       .where((entry) =>
           entry.status == null ||
           entry.status == AttendanceStatus.pending ||
           !entry.isSubmitted)
       .length;
 
-  int get totalSubjects => subjectEntries.length;
+  int get totalSubjects => _entriesForDisplay.length;
 }
 
 class ChildAttendanceSummaryBuilder {
@@ -65,12 +80,14 @@ class ChildAttendanceSummaryBuilder {
     required this.childName,
     required this.classId,
     required this.className,
+    required this.displayDate,
   });
 
   final String childId;
   String childName;
   String classId;
   String className;
+  DateTime displayDate;
 
   final List<ChildSubjectAttendance> _entries = <ChildSubjectAttendance>[];
   final Map<String, int> _entryIndexByKey = <String, int>{};
@@ -96,6 +113,7 @@ class ChildAttendanceSummaryBuilder {
       childName: childName,
       classId: classId,
       className: className,
+      displayDate: displayDate,
       subjectEntries: List<ChildSubjectAttendance>.from(_entries),
     );
   }

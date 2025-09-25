@@ -174,6 +174,7 @@ class ParentAttendanceController extends GetxController {
       return;
     }
 
+    final targetDate = _normalizeDate(dateFilter.value ?? DateTime.now());
     final builders = <String, ChildAttendanceSummaryBuilder>{};
     final childrenById = {for (final child in children) child.id: child};
     final classesById = {for (final item in classes) item.id: item};
@@ -208,9 +209,11 @@ class ParentAttendanceController extends GetxController {
           childName: resolvedName,
           classId: child.classId,
           className: classModel?.name ?? 'Class',
+          displayDate: targetDate,
         );
       });
       builder.childName = resolvedName;
+      builder.displayDate = targetDate;
       if (child.classId.isNotEmpty) {
         builder.classId = child.classId;
         builder.className = classModel?.name ?? builder.className;
@@ -243,9 +246,11 @@ class ParentAttendanceController extends GetxController {
             className: childModel?.classId.isNotEmpty == true
                 ? classesById[childModel!.classId]?.name ?? session.className
                 : session.className,
+            displayDate: targetDate,
           );
         });
         builder.childName = resolvedName;
+        builder.displayDate = targetDate;
         if (childModel?.classId.isNotEmpty == true) {
           builder.classId = childModel!.classId;
           builder.className =
@@ -287,7 +292,7 @@ class ParentAttendanceController extends GetxController {
     }
 
     final placeholderDate =
-        _normalizeDate(dateFilter.value ?? DateTime.now());
+        targetDate;
     for (final classId in classScope) {
       final classModel = classesById[classId];
       if (classModel == null || classModel.teacherSubjects.isEmpty) {
@@ -309,11 +314,13 @@ class ParentAttendanceController extends GetxController {
             childName: resolvedName,
             classId: classId,
             className: classModel.name,
+            displayDate: targetDate,
           );
         });
         builder.childName = resolvedName;
         builder.classId = classId;
         builder.className = classModel.name;
+        builder.displayDate = targetDate;
 
         for (final subjectEntry in classModel.teacherSubjects.entries) {
           final subjectId = subjectEntry.key;
