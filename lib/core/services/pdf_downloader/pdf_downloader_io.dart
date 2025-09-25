@@ -59,16 +59,39 @@ Future<String?> _promptSavePath(String resolvedName) async {
 }
 
 Future<bool> _ensureStoragePermission() async {
-  Future<bool> _handlePermission(Permission permission) async {
-    final status = await permission.status;
+  Future<bool> _requestPermission(Permission permission) async {
+    bool _isGranted(PermissionStatus status) {
+      return status.isGranted || status.isLimited;
+    }
 
-    if (status.isGranted || status.isLimited) {
+    Future<bool> _openSettingsAndCheck() async {
+      final opened = await openAppSettings();
+      if (!opened) {
+        return false;
+      }
+
+      final updatedStatus = await permission.status;
+      return _isGranted(updatedStatus);
+    }
+
+    var status = await permission.status;
+
+    if (_isGranted(status)) {
       return true;
     }
 
-    if (status.isDenied || status.isRestricted || status.isPermanentlyDenied) {
-      final requested = await permission.request();
-      return requested.isGranted || requested.isLimited;
+    if (status.isPermanentlyDenied) {
+      return _openSettingsAndCheck();
+    }
+
+    status = await permission.request();
+
+    if (_isGranted(status)) {
+      return true;
+    }
+
+    if (status.isPermanentlyDenied) {
+      return _openSettingsAndCheck();
     }
 
     return false;
@@ -78,11 +101,11 @@ Future<bool> _ensureStoragePermission() async {
     // Android 11+ requires the "manage external storage" permission to write
     // to user selected locations. Fall back to the legacy storage permission on
     // older versions.
-    if (await _handlePermission(Permission.manageExternalStorage)) {
+    if (await _requestPermission(Permission.manageExternalStorage)) {
       return true;
     }
 
-    return await _handlePermission(Permission.storage);
+    return await _requestPermission(Permission.storage);
   } on PlatformException {
     // Some devices are unable to report the permission state. In that case we
     // optimistically continue with the download and rely on the filesystem
