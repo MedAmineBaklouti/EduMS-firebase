@@ -495,12 +495,17 @@ class AnnouncementDetailView extends StatelessWidget {
       final sanitized = _sanitizeFileName(announcement.title);
       final fileName =
           sanitized.isEmpty ? 'announcement.pdf' : '$sanitized.pdf';
-      final savedPath = await savePdf(bytes, fileName);
+      final result = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
+      if (result.wasCancelled) {
+        return;
+      }
       Get.snackbar(
         'Download ready',
-        savedPath != null
-            ? 'Saved to $savedPath'
+        result.wasSuccessful
+            ? (result.path != null
+                ? 'Saved to ${result.path}'
+                : 'The download has started.')
             : 'The PDF was not saved. Please check storage permissions or try again.',
         snackPosition: SnackPosition.BOTTOM,
       );

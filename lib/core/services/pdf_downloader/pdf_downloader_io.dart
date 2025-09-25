@@ -6,6 +6,8 @@ import 'package:path/path.dart' as p;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'pdf_download_result.dart';
+
 int? _cachedAndroidSdkInt;
 
 Future<int?> _androidSdkInt() async {
@@ -26,40 +28,59 @@ Future<int?> _androidSdkInt() async {
 }
 
 class _SavePathResult {
-  const _SavePathResult(this.path, {this.requiresStoragePermission = false});
+  const _SavePathResult(
+    this.path, {
+    this.requiresStoragePermission = false,
+    this.wasCancelled = false,
+  });
 
-  final String path;
+  const _SavePathResult.cancelled()
+      : path = null,
+        requiresStoragePermission = false,
+        wasCancelled = true;
+
+  final String? path;
   final bool requiresStoragePermission;
+  final bool wasCancelled;
 }
 
-Future<String?> savePdf(Uint8List bytes, String fileName) async {
+Future<PdfDownloadResult> savePdf(Uint8List bytes, String fileName) async {
   final sanitizedName = fileName.trim().isEmpty ? 'document.pdf' : fileName;
 
   final target = await _resolveSavePath(sanitizedName);
-  if (target == null) {
-    return null;
+  if (target.wasCancelled) {
+    return PdfDownloadResult.cancelled;
+  }
+
+  final path = target.path;
+  if (path == null) {
+    return PdfDownloadResult.failed;
   }
 
   if (target.requiresStoragePermission &&
       Platform.isAndroid &&
       !await _ensureStoragePermission()) {
-    return null;
+    return PdfDownloadResult.failed;
   }
 
-  final file = File(target.path);
+  final file = File(path);
   await file.parent.create(recursive: true);
   await file.writeAsBytes(bytes, flush: true);
-  return file.path;
+  return PdfDownloadResult.saved(file.path);
 }
 
-Future<_SavePathResult?> _resolveSavePath(String sanitizedName) async {
+Future<_SavePathResult> _resolveSavePath(String sanitizedName) async {
   final resolvedName = sanitizedName.toLowerCase().endsWith('.pdf')
       ? sanitizedName
       : '$sanitizedName.pdf';
 
-  final pathFromPicker = await _promptSavePath(resolvedName);
-  if (pathFromPicker != null) {
-    return _SavePathResult(pathFromPicker);
+  final promptResult = await _promptSavePath(resolvedName);
+  if (promptResult.path != null) {
+    return _SavePathResult(promptResult.path!);
+  }
+
+  if (promptResult.result == _PromptSavePathResult.userCancelled) {
+    return const _SavePathResult.cancelled();
   }
 
   final directory = await _resolveDownloadDirectory();
@@ -70,23 +91,44 @@ Future<_SavePathResult?> _resolveSavePath(String sanitizedName) async {
   );
 }
 
-Future<String?> _promptSavePath(String resolvedName) async {
+enum _PromptSavePathResult {
+  userCancelled,
+  pickerUnavailable,
+  // When the picker succeeds this enum is not used – see the nullable `path`
+  // field on `_PromptSavePathOutcome` below. This keeps the calling code easy
+  // to reason about while still differentiating the error scenarios above.
+}
+
+class _PromptSavePathOutcome {
+  const _PromptSavePathOutcome({this.path, this.result});
+
+  final String? path;
+  final _PromptSavePathResult? result;
+}
+
+Future<_PromptSavePathOutcome> _promptSavePath(String resolvedName) async {
   try {
     final directoryPath = await getDirectoryPath();
 
     if (directoryPath == null || directoryPath.trim().isEmpty) {
-      return null;
+      return const _PromptSavePathOutcome(
+        result: _PromptSavePathResult.userCancelled,
+      );
     }
 
     final normalizedDirectory = directoryPath.trim();
-    return p.join(normalizedDirectory, resolvedName);
+    return _PromptSavePathOutcome(path: p.join(normalizedDirectory, resolvedName));
   } on PlatformException {
     // Some platforms (notably older Android versions) may throw when the
     // platform picker is not available. In that case we fall back to the
     // default download directory resolution below.
-    return null;
+    return const _PromptSavePathOutcome(
+      result: _PromptSavePathResult.pickerUnavailable,
+    );
   } on UnimplementedError {
-    return null;
+    return const _PromptSavePathOutcome(
+      result: _PromptSavePathResult.pickerUnavailable,
+    );
   }
 }
 

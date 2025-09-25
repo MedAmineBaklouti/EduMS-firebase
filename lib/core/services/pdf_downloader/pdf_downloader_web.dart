@@ -2,7 +2,9 @@
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-Future<String?> savePdf(Uint8List bytes, String fileName) async {
+import 'pdf_download_result.dart';
+
+Future<PdfDownloadResult> savePdf(Uint8List bytes, String fileName) async {
   final sanitizedName = fileName.trim().isEmpty ? 'document.pdf' : fileName;
   final blob = html.Blob([bytes], 'application/pdf');
   final url = html.Url.createObjectUrlFromBlob(blob);
@@ -15,5 +17,5 @@ Future<String?> savePdf(Uint8List bytes, String fileName) async {
   anchor.remove();
   html.Url.revokeObjectUrl(url);
 
-  return null;
+  return PdfDownloadResult.triggeredDownload;
 }
