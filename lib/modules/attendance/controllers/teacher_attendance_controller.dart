@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,7 @@ import '../../../core/services/database_service.dart';
 import '../../../core/services/pdf_downloader/pdf_downloader.dart';
 import '../../../data/models/attendance_record_model.dart';
 import '../../../data/models/child_model.dart';
+import '../../../data/models/parent_model.dart';
 import '../../../data/models/school_class_model.dart';
 import '../../../data/models/teacher_model.dart';
 
@@ -45,6 +47,7 @@ class TeacherAttendanceController extends GetxController {
 
   final Map<String, List<ChildModel>> _childrenByClass =
       <String, List<ChildModel>>{};
+  final Map<String, ParentModel?> _parentCache = <String, ParentModel?>{};
 
   final Rxn<TeacherModel> teacher = Rxn<TeacherModel>();
 
@@ -63,6 +66,7 @@ class TeacherAttendanceController extends GetxController {
     _teacherSubscription?.cancel();
     _classesSubscription?.cancel();
     _sessionsSubscription?.cancel();
+    _parentCache.clear();
     super.onClose();
   }
 
@@ -231,6 +235,11 @@ class TeacherAttendanceController extends GetxController {
       } else {
         _sessions.add(session);
       }
+      await _ensurePickupTicketsForPresentChildren(
+        classModel: classModel,
+        sessionDate: normalizedDate,
+        entries: session.records,
+      );
       _refreshSessionList();
       return true;
     } finally {
@@ -457,6 +466,102 @@ class TeacherAttendanceController extends GetxController {
   void _maybeFinishLoading() {
     if (_teacherLoaded && _classesLoaded && _sessionsLoaded) {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _ensurePickupTicketsForPresentChildren({
+    required SchoolClassModel classModel,
+    required DateTime sessionDate,
+    required List<ChildAttendanceEntry> entries,
+  }) async {
+    final presentEntries = entries
+        .where((entry) => entry.status == AttendanceStatus.present)
+        .toList();
+    if (presentEntries.isEmpty) {
+      return;
+    }
+    final children = _childrenByClass[classModel.id] ?? <ChildModel>[];
+    final childrenById = {for (final child in children) child.id: child};
+    final dateCode = DateFormat('yyyyMMdd').format(sessionDate);
+
+    for (final entry in presentEntries) {
+      ChildModel? child = childrenById[entry.childId];
+      if (child == null) {
+        try {
+          final childSnapshot = await _db.firestore
+              .collection('children')
+              .doc(entry.childId)
+              .get();
+          if (childSnapshot.exists) {
+            child = ChildModel.fromDoc(childSnapshot);
+            childrenById[child.id] = child;
+          }
+        } catch (error) {
+          Get.log('Unable to load child ${entry.childId}: $error');
+        }
+      }
+      if (child == null || child.parentId.isEmpty) {
+        continue;
+      }
+
+      final parent = await _getParent(child.parentId);
+      final parentName = parent?.name ?? 'Parent';
+      final ticketId = '${child.id}_$dateCode';
+      final ticketRef = _db.firestore.collection('pickupTickets').doc(ticketId);
+      final existingTicket = await ticketRef.get();
+
+      if (existingTicket.exists) {
+        await ticketRef.set(
+          <String, dynamic>{
+            'childId': child.id,
+            'childName': entry.childName,
+            'parentId': child.parentId,
+            'parentName': parentName,
+            'classId': classModel.id,
+            'className': classModel.name,
+          },
+          SetOptions(merge: true),
+        );
+        continue;
+      }
+
+      await ticketRef.set(<String, dynamic>{
+        'childId': child.id,
+        'childName': entry.childName,
+        'parentId': child.parentId,
+        'parentName': parentName,
+        'classId': classModel.id,
+        'className': classModel.name,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+        'parentConfirmedAt': null,
+        'teacherValidatorId': '',
+        'teacherValidatorName': '',
+        'teacherValidatedAt': null,
+        'adminValidatorId': '',
+        'adminValidatorName': '',
+        'adminValidatedAt': null,
+      });
+    }
+  }
+
+  Future<ParentModel?> _getParent(String parentId) async {
+    if (_parentCache.containsKey(parentId)) {
+      return _parentCache[parentId];
+    }
+    try {
+      final snapshot =
+          await _db.firestore.collection('parents').doc(parentId).get();
+      if (!snapshot.exists) {
+        _parentCache[parentId] = null;
+        return null;
+      }
+      final parent = ParentModel.fromDoc(snapshot);
+      _parentCache[parentId] = parent;
+      return parent;
+    } catch (error) {
+      Get.log('Unable to load parent $parentId: $error');
+      _parentCache[parentId] = null;
+      return null;
     }
   }
 
