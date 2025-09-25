@@ -6,6 +6,25 @@ import 'package:path/path.dart' as p;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+int? _cachedAndroidSdkInt;
+
+Future<int?> _androidSdkInt() async {
+  if (!Platform.isAndroid) {
+    return null;
+  }
+
+  if (_cachedAndroidSdkInt != null) {
+    return _cachedAndroidSdkInt;
+  }
+
+  final match = RegExp(r'SDK (\d+)').firstMatch(Platform.version);
+  if (match != null) {
+    _cachedAndroidSdkInt = int.tryParse(match.group(1)!);
+  }
+
+  return _cachedAndroidSdkInt;
+}
+
 Future<String?> savePdf(Uint8List bytes, String fileName) async {
   final sanitizedName = fileName.trim().isEmpty ? 'document.pdf' : fileName;
 
@@ -98,11 +117,16 @@ Future<bool> _ensureStoragePermission() async {
   }
 
   try {
-    // Android 11+ requires the "manage external storage" permission to write
-    // to user selected locations. Fall back to the legacy storage permission on
-    // older versions.
-    if (await _requestPermission(Permission.manageExternalStorage)) {
-      return true;
+    final sdkInt = await _androidSdkInt();
+    final needsManageExternalStorage = sdkInt != null && sdkInt >= 30;
+
+    if (needsManageExternalStorage) {
+      // Android 11+ requires the "manage external storage" permission to write
+      // to user selected locations. Fall back to the legacy storage permission
+      // on older versions or when the elevated permission is not granted.
+      if (await _requestPermission(Permission.manageExternalStorage)) {
+        return true;
+      }
     }
 
     return await _requestPermission(Permission.storage);
