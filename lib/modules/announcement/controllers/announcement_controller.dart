@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -125,6 +126,28 @@ class AnnouncementController extends GetxController {
 
   Future<void> deleteAnnouncement(String id) async {
     await _db.deleteAnnouncement(id);
+  }
+
+  Future<void> refreshAnnouncements() async {
+    Query query = _db.firestore.collection('announcements');
+    if (audienceFilter != null) {
+      query = query.where('audience', arrayContains: audienceFilter);
+    }
+    final snapshot = await query.get();
+    final now = DateTime.now();
+    final refreshed = <AnnouncementModel>[];
+
+    for (final doc in snapshot.docs) {
+      final announcement = AnnouncementModel.fromDoc(doc);
+      if (now.difference(announcement.createdAt).inDays >= 7) {
+        await deleteAnnouncement(announcement.id);
+      } else {
+        refreshed.add(announcement);
+      }
+    }
+
+    refreshed.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    announcements.assignAll(refreshed);
   }
 
   void clearForm() {

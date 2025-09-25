@@ -30,65 +30,26 @@ class ParentHomeworkListView extends GetView<ParentHomeworkController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final items = controller.homeworks;
-                if (items.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.checklist_rtl_outlined,
-                        title: 'No homework assignments are available',
-                        message:
-                            'When teachers publish new homework, it will appear here for your review.',
-                      ),
-                    ],
-                  );
-                }
-                final now = DateTime.now();
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final homework = items[index];
-                    final isLocked = homework.isLockedForParent(now);
-                    final relevantChildren =
-                        controller.childrenForClass(homework.classId)
-                          ..sort((a, b) => a.name.compareTo(b.name));
-                    final childStatuses = relevantChildren
-                        .map(
-                          (child) => _ParentChildStatus(
-                            childId: child.id,
-                            name: child.name,
-                            completed:
-                                homework.isCompletedForChild(child.id),
-                          ),
+                return RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: items.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.checklist_rtl_outlined,
+                              title: 'No homework assignments are available',
+                              message:
+                                  'When teachers publish new homework, it will appear here for your review.',
+                            ),
+                          ],
                         )
-                        .toList();
-                    return _ParentHomeworkCard(
-                      homework: homework,
-                      dateFormat: dateFormat,
-                      isLocked: isLocked,
-                      childStatuses: childStatuses,
-                      onTap: () {
-                        final relevantChildren =
-                            controller.childrenForClass(homework.classId)
-                              ..sort((a, b) => a.name.compareTo(b.name));
-                        Get.to(
-                          () => HomeworkDetailView(
-                            homework: homework,
-                            showParentControls: true,
-                            parentChildren: relevantChildren,
-                            isParentLocked: isLocked,
-                            initialChildCount: relevantChildren.length,
-                            onParentToggle: (childId, value) => controller
-                                .markCompletion(homework, childId, value),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                      : _ParentHomeworkList(
+                          items: items,
+                          dateFormat: dateFormat,
+                        ),
                 );
               }),
             ),
@@ -397,4 +358,66 @@ class _ParentChildStatus {
   final String childId;
   final String name;
   final bool completed;
+}
+
+class _ParentHomeworkList extends StatelessWidget {
+  const _ParentHomeworkList({
+    required this.items,
+    required this.dateFormat,
+  });
+
+  final List<HomeworkModel> items;
+  final DateFormat dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<ParentHomeworkController>();
+    final now = DateTime.now();
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final homework = items[index];
+        final isLocked = homework.isLockedForParent(now);
+        final relevantChildren =
+            controller.childrenForClass(homework.classId)
+              ..sort((a, b) => a.name.compareTo(b.name));
+        final childStatuses = relevantChildren
+            .map(
+              (child) => _ParentChildStatus(
+                childId: child.id,
+                name: child.name,
+                completed: homework.isCompletedForChild(child.id),
+              ),
+            )
+            .toList();
+        return _ParentHomeworkCard(
+          homework: homework,
+          dateFormat: dateFormat,
+          isLocked: isLocked,
+          childStatuses: childStatuses,
+          onTap: () {
+            final relevantChildren =
+                controller.childrenForClass(homework.classId)
+                  ..sort((a, b) => a.name.compareTo(b.name));
+            Get.to(
+              () => HomeworkDetailView(
+                homework: homework,
+                showParentControls: true,
+                parentChildren: relevantChildren,
+                isParentLocked: isLocked,
+                initialChildCount: relevantChildren.length,
+                onParentToggle: (childId, value) =>
+                    controller.markCompletion(homework, childId, value),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }

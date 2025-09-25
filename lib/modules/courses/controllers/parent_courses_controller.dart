@@ -99,6 +99,25 @@ class ParentCoursesController extends GetxController {
     _applyFilters();
   }
 
+  Future<void> refreshData() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      return;
+    }
+
+    await _loadChildren(uid);
+
+    final snapshot = await _db.firestore
+        .collection('courses')
+        .orderBy('createdAt', descending: true)
+        .get();
+    final latestCourses =
+        snapshot.docs.map((doc) => CourseModel.fromDoc(doc)).toList();
+    _allCourses.assignAll(latestCourses);
+    _buildSubjectOptions();
+    _applyFilters();
+  }
+
   String childName(String id) {
     return children.firstWhereOrNull((child) => child.id == id)?.name ?? 'Child';
   }
