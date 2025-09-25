@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -100,7 +99,7 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
   }
 }
 
-class _TeacherClassList extends StatefulWidget {
+class _TeacherClassList extends StatelessWidget {
   const _TeacherClassList({
     required this.dateFormat,
     required this.onRefresh,
@@ -110,160 +109,115 @@ class _TeacherClassList extends StatefulWidget {
   final Future<void> Function() onRefresh;
 
   @override
-  State<_TeacherClassList> createState() => _TeacherClassListState();
-}
-
-class _TeacherClassListState extends State<_TeacherClassList> {
-  static const double _overviewVerticalPadding = 28;
-
-  final GlobalKey _overviewKey = GlobalKey();
-  double _edgeOffset = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateEdgeOffset());
-  }
-
-  void _updateEdgeOffset() {
-    final context = _overviewKey.currentContext;
-    if (context == null) {
-      return;
-    }
-    final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox) {
-      return;
-    }
-    final newOffset = renderObject.size.height + _overviewVerticalPadding;
-    if ((newOffset - _edgeOffset).abs() > 0.5) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _edgeOffset = newOffset;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final controller = Get.find<TeacherAttendanceController>();
     final theme = Theme.of(context);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateEdgeOffset());
-    return RefreshIndicator(
-      onRefresh: widget.onRefresh,
-      edgeOffset: _edgeOffset,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            sliver: SliverToBoxAdapter(
-              child: Obx(() {
-                final selectedDate = controller.selectedDate.value;
-                final now = DateTime.now();
-                final isToday = DateUtils.isSameDay(selectedDate, now);
-                final dateLabel = widget.dateFormat.format(selectedDate);
-                return KeyedSubtree(
-                  key: _overviewKey,
-                  child: AttendanceDateCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Obx(() {
+            final selectedDate = controller.selectedDate.value;
+            final now = DateTime.now();
+            final isToday = DateUtils.isSameDay(selectedDate, now);
+            final dateLabel = dateFormat.format(selectedDate);
+            return AttendanceDateCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Attendance overview',
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    dateLabel,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
+                            Text(
+                              'Attendance overview',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            Wrap(
-                              alignment: WrapAlignment.end,
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                if (!isToday)
-                                  OutlinedButton.icon(
-                                    onPressed: () =>
-                                        controller.setDate(DateTime.now()),
-                                    icon: const Icon(Icons.refresh, size: 18),
-                                    label: const Text('Clear date'),
-                                  ),
-                                TextButton.icon(
-                                  onPressed: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: selectedDate,
-                                      firstDate: DateTime(selectedDate.year - 1),
-                                      lastDate: DateTime(selectedDate.year + 1),
-                                    );
-                                    if (picked != null) {
-                                      controller.setDate(picked);
-                                    }
-                                  },
-                                  icon:
-                                      const Icon(Icons.calendar_today, size: 18),
-                                  label: Text(
-                                      isToday ? 'Select date' : 'Change date'),
-                                ),
-                              ],
+                            const SizedBox(height: 4),
+                            Text(
+                              dateLabel,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Choose a date to review and mark attendance for your classes.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (!isToday)
+                            OutlinedButton.icon(
+                              onPressed: () => controller.setDate(DateTime.now()),
+                              icon: const Icon(Icons.refresh, size: 18),
+                              label: const Text('Clear date'),
+                            ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate,
+                                firstDate: DateTime(selectedDate.year - 1),
+                                lastDate: DateTime(selectedDate.year + 1),
+                              );
+                              if (picked != null) {
+                                controller.setDate(picked);
+                              }
+                            },
+                            icon: const Icon(Icons.calendar_today, size: 18),
+                            label: Text(isToday ? 'Select date' : 'Change date'),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Choose a date to review and mark attendance for your classes.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                );
-            }),
-          ),
-        ),
-        Obx(() {
-          final classes = controller.classes;
-          final selectedDate = controller.selectedDate.value;
-          if (classes.isEmpty) {
-            return SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                child: const ModuleEmptyState(
-                  icon: Icons.class_outlined,
-                  title: 'No classes assigned',
-                  message:
-                      'Once your classes are assigned, they will appear here.',
-                ),
+                ],
               ),
             );
-          }
-          return SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
+          }),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: onRefresh,
+            child: Obx(() {
+              final classes = controller.classes;
+              final selectedDate = controller.selectedDate.value;
+              if (classes.isEmpty) {
+                return ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                  children: const [
+                    ModuleEmptyState(
+                      icon: Icons.class_outlined,
+                      title: 'No classes assigned',
+                      message:
+                          'Once your classes are assigned, they will appear here.',
+                    ),
+                  ],
+                );
+              }
+              return ListView.separated(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                itemCount: classes.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
                   final schoolClass = classes[index];
                   final session = controller.sessionForClassOnDate(
                     schoolClass.id,
@@ -281,116 +235,103 @@ class _TeacherClassListState extends State<_TeacherClassList> {
                   final statusLabel = hasSession
                       ? '$presentCount/${session!.records.length} present'
                       : 'Awaiting submission';
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: index == classes.length - 1 ? 0 : 16,
-                    ),
-                    child: ModuleCard(
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      schoolClass.name,
-                                      style:
-                                          theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                  return ModuleCard(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    schoolClass.name,
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '$childCount student${childCount == 1 ? '' : 's'}',
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$childCount student${childCount == 1 ? '' : 's'}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              _StatusPill(label: statusLabel, color: statusColor),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            hasSession
-                                ? 'Submitted on ${widget.dateFormat.format(session!.date)}.'
-                                : 'No submission recorded for ${widget.dateFormat.format(selectedDate)}.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
                             ),
+                            _StatusPill(label: statusLabel, color: statusColor),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          hasSession
+                              ? 'Submitted on ${dateFormat.format(session!.date)}.'
+                              : 'No submission recorded for ${dateFormat.format(selectedDate)}.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(height: 16),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              FilledButton.icon(
-                                onPressed: () =>
-                                    controller.selectClass(schoolClass),
-                                icon: Icon(
-                                  hasSession
-                                      ? Icons.visibility_outlined
-                                      : Icons.fact_check_outlined,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  hasSession
-                                      ? 'Review attendance'
-                                      : 'Take attendance',
-                                ),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () => controller.selectClass(schoolClass),
+                              icon: Icon(
+                                hasSession
+                                    ? Icons.visibility_outlined
+                                    : Icons.fact_check_outlined,
+                                size: 18,
                               ),
-                              if (hasSession)
-                                Obx(() {
-                                  final isExporting =
-                                      controller.isExporting.value;
-                                  return OutlinedButton.icon(
-                                    onPressed: isExporting
-                                        ? null
-                                        : () => controller.exportAttendanceAsPdf(
-                                              session: session,
-                                            ),
-                                    icon: isExporting
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.picture_as_pdf_outlined,
-                                            size: 18,
+                              label: Text(
+                                hasSession
+                                    ? 'Review attendance'
+                                    : 'Take attendance',
+                              ),
+                            ),
+                            if (hasSession)
+                              Obx(() {
+                                final isExporting = controller.isExporting.value;
+                                return OutlinedButton.icon(
+                                  onPressed: isExporting
+                                      ? null
+                                      : () => controller.exportAttendanceAsPdf(
+                                            session: session,
                                           ),
-                                    label: Text(
-                                      isExporting
-                                          ? 'Preparing...'
-                                          : 'Export PDF',
-                                    ),
-                                  );
-                                }),
-                            ],
-                          ),
-                        ],
-                      ),
+                                  icon: isExporting
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.picture_as_pdf_outlined,
+                                          size: 18,
+                                        ),
+                                  label: Text(
+                                    isExporting ? 'Preparing...' : 'Export PDF',
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ],
                     ),
                   );
                 },
-                childCount: classes.length,
-              ),
-            ),
-          );
-        }),
+              );
+            }),
+          ),
+        ),
       ],
-    ),
-  );
+    );
   }
 }
 
