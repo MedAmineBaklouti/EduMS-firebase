@@ -39,58 +39,63 @@ class TeacherCoursesView extends StatelessWidget {
             children: [
               _buildFilters(context),
               Expanded(
-                child: controller.courses.isEmpty
-                    ? _buildEmptyState(context)
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: controller.courses.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final course = controller.courses[index];
-                          return Dismissible(
-                            key: ValueKey(course.id),
-                            background: SwipeActionBackground(
-                              alignment: Alignment.centerLeft,
-                              color: theme.colorScheme.primary,
-                              icon: Icons.edit_outlined,
-                              label: 'Edit',
-                            ),
-                            secondaryBackground: SwipeActionBackground(
-                              alignment: Alignment.centerRight,
-                              color: theme.colorScheme.error,
-                              icon: Icons.delete_outline,
-                              label: 'Delete',
-                            ),
-                            confirmDismiss: (direction) async {
-                              if (direction == DismissDirection.startToEnd) {
-                                controller.openForm(course: course);
-                                return false;
-                              }
-                              final confirmed = await _confirmDelete(context);
-                              if (confirmed == true) {
-                                await controller.deleteCourse(course.id);
-                              }
-                              return confirmed ?? false;
-                            },
-                            child: _CourseListTile(
-                              course: course,
-                              onTap: () {
-                                Get.to(
-                                  () => CourseDetailView(
-                                    course: course,
-                                    onEdit: () async {
-                                      Get.back();
-                                      await Future<void>.delayed(Duration.zero);
-                                      controller.openForm(course: course);
-                                    },
-                                  ),
-                                );
+                child: RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: controller.courses.isEmpty
+                      ? _buildEmptyState(context)
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          itemCount: controller.courses.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final course = controller.courses[index];
+                            return Dismissible(
+                              key: ValueKey(course.id),
+                              background: SwipeActionBackground(
+                                alignment: Alignment.centerLeft,
+                                color: theme.colorScheme.primary,
+                                icon: Icons.edit_outlined,
+                                label: 'Edit',
+                              ),
+                              secondaryBackground: SwipeActionBackground(
+                                alignment: Alignment.centerRight,
+                                color: theme.colorScheme.error,
+                                icon: Icons.delete_outline,
+                                label: 'Delete',
+                              ),
+                              confirmDismiss: (direction) async {
+                                if (direction == DismissDirection.startToEnd) {
+                                  controller.openForm(course: course);
+                                  return false;
+                                }
+                                final confirmed = await _confirmDelete(context);
+                                if (confirmed == true) {
+                                  await controller.deleteCourse(course.id);
+                                }
+                                return confirmed ?? false;
                               },
-                            ),
-                          );
-                        },
-                      ),
+                              child: _CourseListTile(
+                                course: course,
+                                onTap: () {
+                                  Get.to(
+                                    () => CourseDetailView(
+                                      course: course,
+                                      onEdit: () async {
+                                        Get.back();
+                                        await Future<void>.delayed(Duration.zero);
+                                        controller.openForm(course: course);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                ),
               ),
             ],
           ),
@@ -110,43 +115,42 @@ class TeacherCoursesView extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.menu_book_outlined,
-                color: theme.colorScheme.primary,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No courses yet',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap the button below to publish your first course.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(32),
+      children: [
+        const SizedBox(height: 120),
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.menu_book_outlined,
+            color: theme.colorScheme.primary,
+            size: 40,
+          ),
         ),
-      ),
+        const SizedBox(height: 24),
+        Text(
+          'No courses yet',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tap the button below to publish your first course.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 160),
+      ],
     );
   }
 

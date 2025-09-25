@@ -43,6 +43,70 @@ class TeacherCoursesController extends GetxController {
     _initialize();
   }
 
+  Future<void> refreshData() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      Get.snackbar(
+        'Authentication required',
+        'Unable to determine the authenticated teacher.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    try {
+      final teacherDoc =
+          await _db.firestore.collection('teachers').doc(uid).get();
+      if (!teacherDoc.exists) {
+        Get.snackbar(
+          'Profile missing',
+          'Please contact the administrator to complete your profile.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      final teacherModel = TeacherModel.fromDoc(teacherDoc);
+      teacher.value = teacherModel;
+
+      if (teacherModel.subjectId.isNotEmpty) {
+        final subjectDoc = await _db.firestore
+            .collection('subjects')
+            .doc(teacherModel.subjectId)
+            .get();
+        subject.value =
+            subjectDoc.exists ? SubjectModel.fromDoc(subjectDoc) : null;
+      } else {
+        subject.value = null;
+      }
+
+      final classesSnap = await _db.firestore.collection('classes').get();
+      final classes = classesSnap.docs
+          .map((doc) => SchoolClassModel.fromDoc(doc))
+          .where((schoolClass) =>
+              schoolClass.teacherSubjects[teacherModel.subjectId] ==
+              teacherModel.id)
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
+      availableClasses.assignAll(classes);
+
+      final coursesSnap = await _db.firestore
+          .collection('courses')
+          .where('teacherId', isEqualTo: teacherModel.id)
+          .get();
+      _allCourses.assignAll(
+        coursesSnap.docs.map((doc) => CourseModel.fromDoc(doc)).toList(),
+      );
+      _applyFilters();
+    } catch (error) {
+      Get.snackbar(
+        'Refresh failed',
+        'Unable to refresh your courses: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
   Future<void> _initialize() async {
     try {
       isLoading.value = true;

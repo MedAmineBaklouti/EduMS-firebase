@@ -40,82 +40,90 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final items = controller.homeworks;
-                if (items.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.menu_book_outlined,
-                        title: 'No homework assignments found',
-                        message:
-                            'Create your first assignment to help students stay on track.',
-                      ),
-                    ],
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final homework = items[index];
-                    final totalChildren =
-                        controller.childCountForClass(homework.classId);
-                    return Dismissible(
-                      key: ValueKey(homework.id),
-                      background: SwipeActionBackground(
-                        alignment: Alignment.centerLeft,
-                        color: Theme.of(context).colorScheme.primary,
-                        icon: Icons.edit_outlined,
-                        label: 'Edit',
-                      ),
-                      secondaryBackground: SwipeActionBackground(
-                        alignment: Alignment.centerRight,
-                        color: Theme.of(context).colorScheme.error,
-                        icon: Icons.delete_outline,
-                        label: 'Delete',
-                      ),
-                      confirmDismiss: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          controller.startEdit(homework);
-                          await Get.to(
-                            () => const TeacherHomeworkFormView(),
-                          );
-                          return false;
-                        }
-                        return _confirmDelete(context);
-                      },
-                      onDismissed: (_) {
-                        controller.removeHomework(homework);
-                      },
-                      child: _TeacherHomeworkCard(
-                        homework: homework,
-                        dateFormat: dateFormat,
-                        totalChildren: totalChildren,
-                        onTap: () {
-                          Get.to(
-                            () => HomeworkDetailView(
-                              homework: homework,
-                              initialChildCount: totalChildren,
-                              showTeacherInsights: true,
-                              onEdit: () async {
-                                Get.back();
-                                await Future<void>.delayed(Duration.zero);
-                                controller.startEdit(homework);
-                                await Get.to(
-                                  () => const TeacherHomeworkFormView(),
-                                );
-                              },
+                return RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: items.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.menu_book_outlined,
+                              title: 'No homework assignments found',
+                              message:
+                                  'Create your first assignment to help students stay on track.',
                             ),
-                          );
-                        },
-                      ),
-                    );
-                  },
+                          ],
+                        )
+                      : ListView.separated(
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final homework = items[index];
+                            final totalChildren =
+                                controller.childCountForClass(homework.classId);
+                            return Dismissible(
+                              key: ValueKey(homework.id),
+                              background: SwipeActionBackground(
+                                alignment: Alignment.centerLeft,
+                                color:
+                                    Theme.of(context).colorScheme.primary,
+                                icon: Icons.edit_outlined,
+                                label: 'Edit',
+                              ),
+                              secondaryBackground: SwipeActionBackground(
+                                alignment: Alignment.centerRight,
+                                color: Theme.of(context).colorScheme.error,
+                                icon: Icons.delete_outline,
+                                label: 'Delete',
+                              ),
+                              confirmDismiss: (direction) async {
+                                if (direction == DismissDirection.startToEnd) {
+                                  controller.startEdit(homework);
+                                  await Get.to(
+                                    () => const TeacherHomeworkFormView(),
+                                  );
+                                  return false;
+                                }
+                                return _confirmDelete(context);
+                              },
+                              onDismissed: (_) {
+                                controller.removeHomework(homework);
+                              },
+                              child: _TeacherHomeworkCard(
+                                homework: homework,
+                                dateFormat: dateFormat,
+                                totalChildren: totalChildren,
+                                onTap: () {
+                                  Get.to(
+                                    () => HomeworkDetailView(
+                                      homework: homework,
+                                      initialChildCount: totalChildren,
+                                      showTeacherInsights: true,
+                                      onEdit: () async {
+                                        Get.back();
+                                        await Future<void>.delayed(
+                                            Duration.zero);
+                                        controller.startEdit(homework);
+                                        await Get.to(
+                                          () =>
+                                              const TeacherHomeworkFormView(),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
                 );
               }),
             ),

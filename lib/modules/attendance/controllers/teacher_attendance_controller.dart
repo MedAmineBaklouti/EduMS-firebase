@@ -58,6 +58,57 @@ class TeacherAttendanceController extends GetxController {
     _initialize();
   }
 
+  Future<void> refreshData() async {
+    final teacherId = teacher.value?.id ?? _auth.currentUser?.uid;
+    if (teacherId == null) {
+      Get.snackbar(
+        'Authentication required',
+        'Unable to determine the authenticated teacher.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    try {
+      final teacherDoc =
+          await _db.firestore.collection('teachers').doc(teacherId).get();
+      if (teacherDoc.exists) {
+        teacher.value = TeacherModel.fromDoc(teacherDoc);
+      }
+
+      final classesSnap = await _db.firestore.collection('classes').get();
+      final teacherClasses = classesSnap.docs
+          .map(SchoolClassModel.fromDoc)
+          .where((item) => item.teacherSubjects.values.contains(teacherId))
+          .toList();
+      setClasses(teacherClasses);
+      _syncChildrenListeners(teacherClasses);
+
+      for (final schoolClass in teacherClasses) {
+        final childrenSnap = await _db.firestore
+            .collection('children')
+            .where('classId', isEqualTo: schoolClass.id)
+            .get();
+        registerChildren(
+          schoolClass.id,
+          childrenSnap.docs.map(ChildModel.fromDoc).toList(),
+        );
+      }
+
+      final sessionsSnap = await _db.firestore
+          .collection('attendanceSessions')
+          .where('teacherId', isEqualTo: teacherId)
+          .get();
+      setSessions(sessionsSnap.docs.map(AttendanceSessionModel.fromDoc).toList());
+    } catch (error) {
+      Get.snackbar(
+        'Refresh failed',
+        'Unable to refresh attendance data: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
   @override
   void onClose() {
     for (final subscription in _childrenSubscriptions.values) {
