@@ -20,21 +20,16 @@ class AdminArchivedPickupController extends GetxController {
 
   final RxnString classFilter = RxnString();
   final Rxn<DateTimeRange> dateFilter = Rxn<DateTimeRange>();
-  final RxString searchQuery = ''.obs;
-  final TextEditingController searchController = TextEditingController();
   final RxBool isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    searchController.addListener(_handleSearchInput);
     _initialize();
   }
 
   @override
   void onClose() {
-    searchController.removeListener(_handleSearchInput);
-    searchController.dispose();
     _classesSubscription?.cancel();
     _ticketsSubscription?.cancel();
     super.onClose();
@@ -67,41 +62,10 @@ class AdminArchivedPickupController extends GetxController {
     _applyFilters();
   }
 
-  void setSearchQuery(String value) {
-    if (searchController.text != value) {
-      searchController.value = TextEditingValue(
-        text: value,
-        selection: TextSelection.collapsed(offset: value.length),
-      );
-    } else {
-      final normalized = value.trim();
-      if (searchQuery.value != normalized) {
-        searchQuery.value = normalized;
-        _applyFilters();
-      }
-    }
-  }
-
   void clearFilters() {
     classFilter.value = null;
     dateFilter.value = null;
-    if (searchController.text.isNotEmpty) {
-      searchController.clear();
-    } else {
-      if (searchQuery.value.isNotEmpty) {
-        searchQuery.value = '';
-      }
-      _applyFilters();
-    }
-  }
-
-  void clearSearchQuery() {
-    if (searchController.text.isNotEmpty) {
-      searchController.clear();
-    } else if (searchQuery.value.isNotEmpty) {
-      searchQuery.value = '';
-      _applyFilters();
-    }
+    _applyFilters();
   }
 
   String className(String id) {
@@ -149,7 +113,6 @@ class AdminArchivedPickupController extends GetxController {
   void _applyFilters() {
     final classId = classFilter.value;
     final range = dateFilter.value;
-    final query = searchQuery.value.toLowerCase();
     final filtered = _allTickets.where((ticket) {
       final matchesClass = classId == null || classId.isEmpty
           ? true
@@ -165,12 +128,7 @@ class AdminArchivedPickupController extends GetxController {
         return !archivedAt.isBefore(start) && !archivedAt.isAfter(end);
       }();
 
-      final matchesQuery = query.isEmpty
-          ? true
-          : ticket.childName.toLowerCase().contains(query) ||
-              ticket.parentName.toLowerCase().contains(query);
-
-      return matchesClass && matchesDate && matchesQuery;
+      return matchesClass && matchesDate;
     }).toList()
       ..sort((a, b) {
         final aDate = a.archivedAt ?? a.adminValidatedAt ?? a.createdAt;
@@ -179,14 +137,5 @@ class AdminArchivedPickupController extends GetxController {
       });
 
     tickets.assignAll(filtered);
-  }
-
-  void _handleSearchInput() {
-    final normalized = searchController.text.trim();
-    if (searchQuery.value == normalized) {
-      return;
-    }
-    searchQuery.value = normalized;
-    _applyFilters();
   }
 }

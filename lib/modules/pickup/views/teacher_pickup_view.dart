@@ -73,8 +73,17 @@ class TeacherPickupView extends GetView<TeacherPickupController> {
                                             ),
                                       ),
                                       const SizedBox(height: 8),
-                                      _PickupStageChip(stage: ticket.stage),
-                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Stage: ${_stageLabel(ticket.stage)}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
                                       if (ticket.parentConfirmedAt != null)
                                         Text(
                                           'Parent confirmed at ${timeFormat.format(ticket.parentConfirmedAt!)}',
@@ -85,6 +94,13 @@ class TeacherPickupView extends GetView<TeacherPickupController> {
                                       if (ticket.teacherValidatedAt != null)
                                         Text(
                                           'Teacher validated at ${timeFormat.format(ticket.teacherValidatedAt!)}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                        ),
+                                      if (ticket.adminValidatedAt != null)
+                                        Text(
+                                          'Admin validated at ${timeFormat.format(ticket.adminValidatedAt!)}',
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall,
@@ -232,46 +248,15 @@ class _ActiveFilterChip extends StatelessWidget {
   }
 }
 
-class _PickupStageChip extends StatelessWidget {
-  const _PickupStageChip({required this.stage});
-
-  final PickupStage stage;
-
-  @override
-  Widget build(BuildContext context) {
-    late final Color color;
-    late final String label;
-    switch (stage) {
-      case PickupStage.awaitingParent:
-        color = Colors.orange;
-        label = 'Awaiting parent';
-        break;
-      case PickupStage.awaitingTeacher:
-        color = Colors.blue;
-        label = 'Ready for teacher';
-        break;
-      case PickupStage.awaitingAdmin:
-        color = Colors.purple;
-        label = 'Admin validation';
-        break;
-      case PickupStage.completed:
-        color = Colors.green;
-        label = 'Completed';
-        break;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
+String _stageLabel(PickupStage stage) {
+  switch (stage) {
+    case PickupStage.awaitingParent:
+      return 'Waiting for parent confirmation';
+    case PickupStage.awaitingTeacher:
+      return 'Waiting for teacher validation';
+    case PickupStage.awaitingAdmin:
+      return 'Waiting for admin release';
+    case PickupStage.completed:
+      return 'Completed';
   }
 }
