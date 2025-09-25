@@ -93,17 +93,24 @@ class TeacherPickupController extends GetxController {
       if (!teacherClassIds.contains(ticket.classId)) {
         return false;
       }
-      final matchesClass = classId == null || classId.isEmpty
-          ? true
-          : ticket.classId == classId;
-      final requiresTeacher =
-          ticket.stage == PickupStage.awaitingTeacher ||
-              ticket.stage == PickupStage.awaitingAdmin ||
-              ticket.stage == PickupStage.completed;
-      return matchesClass && requiresTeacher;
+      if (ticket.stage != PickupStage.awaitingTeacher) {
+        return false;
+      }
+      if (classId != null && classId.isNotEmpty && ticket.classId != classId) {
+        return false;
+      }
+      return true;
     }).toList()
-      ..sort((a, b) => a.stage.index.compareTo(b.stage.index));
+      ..sort((a, b) {
+        final aTime = _ticketSortTime(a);
+        final bTime = _ticketSortTime(b);
+        return bTime.compareTo(aTime);
+      });
     tickets.assignAll(filtered);
+  }
+
+  DateTime _ticketSortTime(PickupTicketModel ticket) {
+    return ticket.parentConfirmedAt ?? ticket.createdAt;
   }
 
   void validatePickup(PickupTicketModel ticket) {

@@ -7,6 +7,7 @@ import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../../attendance/views/widgets/attendance_date_card.dart';
 import '../controllers/admin_archived_pickup_controller.dart';
+import 'pickup_ticket_detail_view.dart';
 
 class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
   const AdminArchivedPickupView({super.key});
@@ -60,99 +61,122 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                             final parentTime = ticket.parentConfirmedAt;
                             final teacherTime = ticket.teacherValidatedAt;
                             return AttendanceDateCard(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(24),
+                                  onTap: () => Get.to(
+                                    () => PickupTicketDetailView(ticket: ticket),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 4, bottom: 4),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              ticket.childName,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleMedium
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w700,
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    ticket.childName,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium
+                                                        ?.copyWith(
+                                                          fontWeight: FontWeight.w700,
+                                                        ),
                                                   ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    '${controller.className(ticket.classId)} • ${ticket.parentName}',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '${controller.className(ticket.classId)} • ${ticket.parentName}',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                Text(
+                                                  dateFormat.format(archivedAt),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleSmall
+                                                      ?.copyWith(
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  timeFormat.format(archivedAt),
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
+                                                      ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
-                                      ),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            dateFormat.format(archivedAt),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleSmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                        const SizedBox(height: 16),
+                                        Wrap(
+                                          spacing: 12,
+                                          runSpacing: 12,
+                                          children: [
+                                            _ArchiveInfoChip(
+                                              icon: Icons.access_time,
+                                              label:
+                                                  'Created: ${archivedFormat.format(ticket.createdAt)}',
+                                            ),
+                                            if (parentTime != null)
+                                              _ArchiveInfoChip(
+                                                icon: Icons.check_circle_outline,
+                                                label:
+                                                    'Parent confirmed: ${archivedFormat.format(parentTime)}',
+                                              ),
+                                            if (teacherTime != null)
+                                              _ArchiveInfoChip(
+                                                icon: Icons.verified_outlined,
+                                                label:
+                                                    'Teacher validated: ${archivedFormat.format(teacherTime)}',
+                                              ),
+                                            if (ticket.adminValidatedAt != null)
+                                              _ArchiveInfoChip(
+                                                icon: Icons.admin_panel_settings_outlined,
+                                                label:
+                                                    'Admin released: ${archivedFormat.format(ticket.adminValidatedAt!)}',
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: TextButton.icon(
+                                            onPressed: () => Get.to(
+                                              () => PickupTicketDetailView(ticket: ticket),
+                                            ),
+                                            icon: const Icon(Icons.visibility_outlined, size: 18),
+                                            label: const Text('View details'),
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            timeFormat.format(archivedAt),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(height: 16),
-                                  Wrap(
-                                    spacing: 12,
-                                    runSpacing: 12,
-                                    children: [
-                                      _ArchiveInfoChip(
-                                        icon: Icons.access_time,
-                                        label:
-                                            'Created: ${archivedFormat.format(ticket.createdAt)}',
-                                      ),
-                                      if (parentTime != null)
-                                        _ArchiveInfoChip(
-                                          icon: Icons.check_circle_outline,
-                                          label:
-                                              'Parent confirmed: ${archivedFormat.format(parentTime)}',
-                                        ),
-                                      if (teacherTime != null)
-                                        _ArchiveInfoChip(
-                                          icon: Icons.verified_outlined,
-                                          label:
-                                              'Teacher validated: ${archivedFormat.format(teacherTime)}',
-                                        ),
-                                      if (ticket.adminValidatedAt != null)
-                                        _ArchiveInfoChip(
-                                          icon: Icons.admin_panel_settings_outlined,
-                                          label:
-                                              'Admin released: ${archivedFormat.format(ticket.adminValidatedAt!)}',
-                                        ),
-                                    ],
-                                  ),
-                                ],
+                                ),
                               ),
                             );
                           },

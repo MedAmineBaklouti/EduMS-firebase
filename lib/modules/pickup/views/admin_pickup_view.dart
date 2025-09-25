@@ -3,20 +3,20 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/pickup_model.dart';
-import '../../common/widgets/module_card.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../controllers/admin_pickup_controller.dart';
+import 'widgets/pickup_queue_card.dart';
 
 class AdminPickupView extends GetView<AdminPickupController> {
   const AdminPickupView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final timeFormat = DateFormat.jm();
+    final timeFormat = DateFormat('MMM d • h:mm a');
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pickup Validation'),
+        title: const Text('Pickup Queue'),
         centerTitle: true,
       ),
       body: ModulePageContainer(
@@ -29,81 +29,42 @@ class AdminPickupView extends GetView<AdminPickupController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final tickets = controller.tickets;
-                if (tickets.isEmpty) {
-                  return RefreshIndicator(
-                    onRefresh: controller.refreshTickets,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                      children: const [
-                        ModuleEmptyState(
-                          icon: Icons.security_outlined,
-                          title: 'No pickup tickets match',
-                          message:
-                              'Adjust the filters above to review pickups that require administrative validation.',
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                final items = tickets.toList();
                 return RefreshIndicator(
                   onRefresh: controller.refreshTickets,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                    physics: AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
-                    itemCount: tickets.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                    final ticket = tickets[index];
-                    return ModuleCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${ticket.childName} • ${ticket.className}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Stage: ${_stageLabel(ticket.stage)}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                          if (ticket.parentConfirmedAt != null)
-                            Text(
-                              'Parent confirmed at ${timeFormat.format(ticket.parentConfirmedAt!)}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          if (ticket.teacherValidatedAt != null)
-                            Text(
-                              'Teacher validated at ${timeFormat.format(ticket.teacherValidatedAt!)}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          if (ticket.adminValidatedAt != null)
-                            Text(
-                              'Admin validated at ${timeFormat.format(ticket.adminValidatedAt!)}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          if (ticket.stage == PickupStage.awaitingAdmin) ...[
-                            const SizedBox(height: 16),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                onPressed: () => controller.finalizeTicket(ticket),
-                                child: const Text('Release'),
-                              ),
+                  child: items.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.security_outlined,
+                              title: 'No pickups waiting',
+                              message:
+                                  'Parents will appear here after they arrive at the school gate.',
                             ),
                           ],
-                        ],
-                      ),
-                    );
-                  },
-                  ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final ticket = items[index];
+                            final showAction = !ticket.isArchived;
+                            return PickupQueueCard(
+                              ticket: ticket,
+                              timeFormat: timeFormat,
+                              onValidate:
+                                  showAction ? () => controller.finalizeTicket(ticket) : null,
+                              actionLabel: 'Validate release',
+                              actionIcon: Icons.task_alt_outlined,
+                            );
+                          },
+                        ),
                 );
               }),
             ),
@@ -127,9 +88,11 @@ class _AdminPickupFilters extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Obx(() {
+            final stageValue = controller.stageFilter.value;
+            final hasStageFilter =
+                stageValue != null && stageValue != PickupStage.awaitingTeacher;
             final hasFilters =
-                (controller.classFilter.value ?? '').isNotEmpty ||
-                    controller.stageFilter.value != null;
+                (controller.classFilter.value ?? '').isNotEmpty || hasStageFilter;
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -151,6 +114,7 @@ class _AdminPickupFilters extends StatelessWidget {
           Obx(() {
             final chips = <Widget>[];
             final classId = controller.classFilter.value;
+            final stage = controller.stageFilter.value;
             if (classId != null && classId.isNotEmpty) {
               chips.add(
                 _ActiveFilterChip(
@@ -159,8 +123,7 @@ class _AdminPickupFilters extends StatelessWidget {
                 ),
               );
             }
-            final stage = controller.stageFilter.value;
-            if (stage != null) {
+            if (stage != null && stage != PickupStage.awaitingTeacher) {
               chips.add(
                 _ActiveFilterChip(
                   label: 'Status: ${_stageFilterLabel(stage)}',
@@ -239,7 +202,7 @@ class _AdminPickupFilters extends StatelessWidget {
                           ),
                           DropdownMenuItem<PickupStage?>(
                             value: PickupStage.awaitingTeacher,
-                            child: Text('Awaiting teacher'),
+                            child: Text('Awaiting release'),
                           ),
                           DropdownMenuItem<PickupStage?>(
                             value: PickupStage.awaitingAdmin,
@@ -269,7 +232,7 @@ String _stageFilterLabel(PickupStage stage) {
     case PickupStage.awaitingParent:
       return 'Awaiting parent';
     case PickupStage.awaitingTeacher:
-      return 'Awaiting teacher';
+      return 'Awaiting release';
     case PickupStage.awaitingAdmin:
       return 'Awaiting admin';
     case PickupStage.completed:
@@ -299,18 +262,5 @@ class _ActiveFilterChip extends StatelessWidget {
         fontWeight: FontWeight.w600,
       ),
     );
-  }
-}
-
-String _stageLabel(PickupStage stage) {
-  switch (stage) {
-    case PickupStage.awaitingParent:
-      return 'Waiting for parent confirmation';
-    case PickupStage.awaitingTeacher:
-      return 'Waiting for teacher validation';
-    case PickupStage.awaitingAdmin:
-      return 'Waiting for admin release';
-    case PickupStage.completed:
-      return 'Completed';
   }
 }
