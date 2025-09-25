@@ -20,6 +20,7 @@ import '../../modules/pickup/controllers/admin_archived_pickup_controller.dart';
 import '../../modules/pickup/controllers/admin_pickup_controller.dart';
 import '../../modules/pickup/controllers/parent_pickup_controller.dart';
 import '../../modules/pickup/controllers/teacher_pickup_controller.dart';
+import '../../modules/pickup/services/parent_pickup_notification_service.dart';
 import '../../modules/parents_dashboard/controllers/parent_controller.dart';
 import '../../modules/teachers_dashboard/controllers/teacher_controller.dart';
 
@@ -68,5 +69,6 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => ParentBehaviorController(), fenix: true);
     Get.lazyPut(() => ParentHomeworkController(), fenix: true);
     Get.lazyPut(() => ParentPickupController(), fenix: true);
+    Get.put(ParentPickupNotificationService(), permanent: true);
   }
 }
