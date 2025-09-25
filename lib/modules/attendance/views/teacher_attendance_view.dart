@@ -372,8 +372,20 @@ class _TeacherClassDetail extends StatelessWidget {
                   .where((entry) => entry.status == AttendanceStatus.present)
                   .length;
               final total = entries.length;
+              final primary = theme.colorScheme.primary;
               return AttendanceDateCard(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                backgroundColor: primary,
+                borderColor: Colors.transparent,
+                shadowColor: primary.withOpacity(0.35),
+                overlayGradient: LinearGradient(
+                  colors: [
+                    primary.withOpacity(0.92),
+                    primary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
