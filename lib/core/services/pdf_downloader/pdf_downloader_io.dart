@@ -72,6 +72,7 @@ Future<_SavePathResult?> _resolveSavePath(String sanitizedName) async {
 
 Future<String?> _promptSavePath(String resolvedName) async {
   try {
+    final directoryPath = await getDirectoryPath();
 
     if (directoryPath == null || directoryPath.trim().isEmpty) {
       return null;
