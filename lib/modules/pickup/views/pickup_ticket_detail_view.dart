@@ -536,14 +536,14 @@ class PickupTicketDetailView extends StatelessWidget {
     return 'Pickup in progress';
   }
 
-  Object _initialsFor(String input) {
+  String _initialsFor(String input) {
     final normalized = input.trim();
     if (normalized.isEmpty) {
       return 'ST';
     }
-    final parts = normalized.split(' ');
+    final parts = normalized.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
     if (parts.length == 1) {
-      return normalized.characters.take(2).toUpperCase();
+      return parts.first.characters.take(2).toString().toUpperCase();
     }
     final first = parts.first.characters.first;
     final last = parts.last.characters.first;
