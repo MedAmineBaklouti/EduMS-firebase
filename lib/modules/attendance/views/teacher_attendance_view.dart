@@ -16,75 +16,84 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMMd();
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attendance'),
-        centerTitle: true,
-        leading: Obx(() {
-          final selectedClass = controller.selectedClass.value;
-          if (selectedClass == null) {
-            return IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Get.back<void>(),
-            );
-          }
-          return IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: controller.returnToClassList,
-          );
-        }),
-        actions: [
-          Obx(() {
+    return WillPopScope(
+      onWillPop: () async {
+        if (controller.selectedClass.value != null) {
+          controller.returnToClassList();
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Attendance'),
+          centerTitle: true,
+          leading: Obx(() {
             final selectedClass = controller.selectedClass.value;
             if (selectedClass == null) {
-              return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Get.back<void>(),
+              );
             }
-            final isSaving = controller.isSaving.value;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: TextButton(
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        final success = await controller.submitAttendance();
-                        if (success) {
-                          Get.snackbar(
-                            'Attendance saved',
-                            'The attendance list has been stored.',
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                          controller.returnToClassList();
-                        }
-                      },
-                child: isSaving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Save'),
-              ),
+            return IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: controller.returnToClassList,
             );
           }),
-        ],
-      ),
-      body: ModulePageContainer(
-        child: Obx(() {
-          if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final selectedClass = controller.selectedClass.value;
-          final content = selectedClass == null
-              ? _TeacherClassList(dateFormat: dateFormat)
-              : _TeacherClassDetail(
-                  classModel: selectedClass,
-                  dateFormat: dateFormat,
-                );
-          return RefreshIndicator(
-            onRefresh: controller.refreshData,
-            child: content,
-          );
-        }),
+          actions: [
+            Obx(() {
+              final selectedClass = controller.selectedClass.value;
+              if (selectedClass == null) {
+                return const SizedBox.shrink();
+              }
+              final isSaving = controller.isSaving.value;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final success = await controller.submitAttendance();
+                          if (success) {
+                            Get.snackbar(
+                              'Attendance saved',
+                              'The attendance list has been stored.',
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                            controller.returnToClassList();
+                          }
+                        },
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
+                ),
+              );
+            }),
+          ],
+        ),
+        body: ModulePageContainer(
+          child: Obx(() {
+            if (controller.isLoading.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final selectedClass = controller.selectedClass.value;
+            final content = selectedClass == null
+                ? _TeacherClassList(dateFormat: dateFormat)
+                : _TeacherClassDetail(
+                    classModel: selectedClass,
+                    dateFormat: dateFormat,
+                  );
+            return RefreshIndicator(
+              onRefresh: controller.refreshData,
+              child: content,
+            );
+          }),
+        ),
       ),
     );
   }
@@ -356,104 +365,54 @@ class _TeacherClassDetail extends StatelessWidget {
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Obx(() {
-                  final selectedDate = controller.selectedDate.value;
-                  final entries = controller.currentEntries;
-                  final presentCount = entries
-                      .where((entry) => entry.status == AttendanceStatus.present)
-                      .length;
-                  final total = entries.length;
-                  return ModuleCard(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                classModel.name,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: () async {
-                                final picked = await showDatePicker(
-                                  context: context,
-                                  initialDate: selectedDate,
-                                  firstDate: DateTime(selectedDate.year - 1),
-                                  lastDate: DateTime(selectedDate.year + 1),
-                                );
-                                if (picked != null) {
-                                  controller.setDate(picked);
-                                }
-                              },
-                              icon: const Icon(Icons.calendar_today, size: 18),
-                              label: const Text('Change date'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          dateFormat.format(selectedDate),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          total == 0
-                              ? 'No students registered for this class.'
-                              : '$presentCount of $total student${total == 1 ? '' : 's'} marked present.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Use the switches below to mark each student present or absent before saving.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 16),
-                Obx(() {
-                  final isExporting = controller.isExporting.value;
-                  final hasEntries = controller.currentEntries.isNotEmpty;
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: isExporting || !hasEntries
-                          ? null
-                          : () => controller.exportAttendanceAsPdf(),
-                      icon: isExporting
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.picture_as_pdf_outlined),
-                      label: Text(
-                        isExporting ? 'Preparing PDF...' : 'Download as PDF',
+            child: Obx(() {
+              final selectedDate = controller.selectedDate.value;
+              final entries = controller.currentEntries;
+              final presentCount = entries
+                  .where((entry) => entry.status == AttendanceStatus.present)
+                  .length;
+              final total = entries.length;
+              return AttendanceDateCard(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      classModel.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  );
-                }),
-                const SizedBox(height: 16),
-              ],
-            ),
+                    const SizedBox(height: 8),
+                    Text(
+                      dateFormat.format(selectedDate),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      total == 0
+                          ? 'No students registered for this class.'
+                          : '$presentCount of $total student${total == 1 ? '' : 's'} marked present.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Swipe down to refresh attendance or update the list before saving.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ),
         ),
         Obx(() {
@@ -488,7 +447,7 @@ class _TeacherClassDetail extends StatelessWidget {
             );
           }
           return SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -508,6 +467,40 @@ class _TeacherClassDetail extends StatelessWidget {
             ),
           );
         }),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+          sliver: SliverFillRemaining(
+            hasScrollBody: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Spacer(),
+                Obx(() {
+                  final isExporting = controller.isExporting.value;
+                  final hasEntries = controller.currentEntries.isNotEmpty;
+                  return ElevatedButton.icon(
+                    onPressed: isExporting || !hasEntries
+                        ? null
+                        : () => controller.exportAttendanceAsPdf(),
+                    icon: isExporting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.picture_as_pdf_outlined),
+                    label: Text(
+                      isExporting ? 'Preparing PDF...' : 'Download as PDF',
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
