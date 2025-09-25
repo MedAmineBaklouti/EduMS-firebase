@@ -16,6 +16,7 @@ import '../../modules/behavior/controllers/teacher_behavior_controller.dart';
 import '../../modules/homework/controllers/admin_homework_controller.dart';
 import '../../modules/homework/controllers/parent_homework_controller.dart';
 import '../../modules/homework/controllers/teacher_homework_controller.dart';
+import '../../modules/pickup/controllers/admin_archived_pickup_controller.dart';
 import '../../modules/pickup/controllers/admin_pickup_controller.dart';
 import '../../modules/pickup/controllers/parent_pickup_controller.dart';
 import '../../modules/pickup/controllers/teacher_pickup_controller.dart';
@@ -56,6 +57,7 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => AdminBehaviorController(), fenix: true);
     Get.lazyPut(() => AdminHomeworkController(), fenix: true);
     Get.lazyPut(() => AdminPickupController(), fenix: true);
+    Get.lazyPut(() => AdminArchivedPickupController(), fenix: true);
     Get.lazyPut(() => TeacherController(), fenix: true);
     Get.lazyPut(() => TeacherAttendanceController(), fenix: true);
     Get.lazyPut(() => TeacherBehaviorController(), fenix: true);

@@ -23,6 +23,7 @@ class PickupTicketModel {
   final String adminValidatorId;
   final String adminValidatorName;
   final DateTime? adminValidatedAt;
+  final DateTime? archivedAt;
 
   const PickupTicketModel({
     required this.id,
@@ -40,6 +41,7 @@ class PickupTicketModel {
     required this.adminValidatorId,
     required this.adminValidatorName,
     required this.adminValidatedAt,
+    required this.archivedAt,
   });
 
   factory PickupTicketModel.fromDoc(DocumentSnapshot doc) {
@@ -62,6 +64,7 @@ class PickupTicketModel {
       adminValidatorId: data['adminValidatorId'] as String? ?? '',
       adminValidatorName: data['adminValidatorName'] as String? ?? '',
       adminValidatedAt: (data['adminValidatedAt'] as Timestamp?)?.toDate(),
+      archivedAt: (data['archivedAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -86,6 +89,9 @@ class PickupTicketModel {
       'adminValidatedAt': adminValidatedAt == null
           ? null
           : Timestamp.fromDate(adminValidatedAt!),
+      'archivedAt': archivedAt == null
+          ? null
+          : Timestamp.fromDate(archivedAt!),
     };
   }
 
@@ -98,6 +104,8 @@ class PickupTicketModel {
       teacherValidatedAt != null && adminValidatedAt == null;
 
   bool get isCompleted => adminValidatedAt != null;
+
+  bool get isArchived => archivedAt != null;
 
   PickupStage get stage {
     if (isCompleted) {
@@ -128,6 +136,7 @@ class PickupTicketModel {
     String? adminValidatorId,
     String? adminValidatorName,
     DateTime? adminValidatedAt,
+    DateTime? archivedAt,
   }) {
     return PickupTicketModel(
       id: id ?? this.id,
@@ -146,6 +155,7 @@ class PickupTicketModel {
       adminValidatorId: adminValidatorId ?? this.adminValidatorId,
       adminValidatorName: adminValidatorName ?? this.adminValidatorName,
       adminValidatedAt: adminValidatedAt ?? this.adminValidatedAt,
+      archivedAt: archivedAt ?? this.archivedAt,
     );
   }
 }

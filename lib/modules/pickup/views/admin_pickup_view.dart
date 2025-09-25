@@ -30,25 +30,32 @@ class AdminPickupView extends GetView<AdminPickupController> {
                 }
                 final tickets = controller.tickets;
                 if (tickets.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.security_outlined,
-                        title: 'No pickup tickets match',
-                        message:
-                            'Adjust the filters above to review pickups that require administrative validation.',
-                      ),
-                    ],
+                  return RefreshIndicator(
+                    onRefresh: controller.refreshTickets,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                      children: const [
+                        ModuleEmptyState(
+                          icon: Icons.security_outlined,
+                          title: 'No pickup tickets match',
+                          message:
+                              'Adjust the filters above to review pickups that require administrative validation.',
+                        ),
+                      ],
+                    ),
                   );
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: tickets.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
+                return RefreshIndicator(
+                  onRefresh: controller.refreshTickets,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    physics: AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    itemCount: tickets.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
                     final ticket = tickets[index];
                     return ModuleCard(
                       child: Column(
@@ -96,6 +103,7 @@ class AdminPickupView extends GetView<AdminPickupController> {
                       ),
                     );
                   },
+                  ),
                 );
               }),
             ),

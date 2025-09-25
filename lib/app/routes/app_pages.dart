@@ -19,6 +19,7 @@ import '../../modules/homework/views/admin_homework_list_view.dart';
 import '../../modules/homework/views/parent_homework_list_view.dart';
 import '../../modules/homework/views/teacher_homework_list_view.dart';
 import '../../modules/parents_dashboard/views/parent_dashboard_view.dart';
+import '../../modules/pickup/views/admin_archived_pickup_view.dart';
 import '../../modules/pickup/views/admin_pickup_view.dart';
 import '../../modules/pickup/views/parent_pickup_view.dart';
 import '../../modules/pickup/views/teacher_pickup_view.dart';
@@ -49,6 +50,7 @@ abstract class AppPages {
   static const TEACHER_BEHAVIOR = '/teacher/behavior';
   static const PARENT_BEHAVIOR = '/parent/behavior';
   static const ADMIN_PICKUP = '/admin/pickup';
+  static const ADMIN_PICKUP_ARCHIVE = '/admin/pickup/archive';
   static const TEACHER_PICKUP = '/teacher/pickup';
   static const PARENT_PICKUP = '/parent/pickup';
 
@@ -92,6 +94,10 @@ abstract class AppPages {
     GetPage(
         name: PARENT_BEHAVIOR, page: () => const ParentBehaviorListView()),
     GetPage(name: ADMIN_PICKUP, page: () => const AdminPickupView()),
+    GetPage(
+      name: ADMIN_PICKUP_ARCHIVE,
+      page: () => const AdminArchivedPickupView(),
+    ),
     GetPage(name: TEACHER_PICKUP, page: () => const TeacherPickupView()),
     GetPage(name: PARENT_PICKUP, page: () => const ParentPickupView()),
   ];

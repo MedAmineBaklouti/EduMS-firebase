@@ -65,6 +65,13 @@ class AdminDashboard extends StatelessWidget {
           onTap: () => Get.toNamed(AppPages.ADMIN_PICKUP),
         ),
         DashboardCard(
+          icon: Icons.archive_outlined,
+          title: 'Archived Pickups',
+          subtitle: 'Review completed releases',
+          color: Colors.teal,
+          onTap: () => Get.toNamed(AppPages.ADMIN_PICKUP_ARCHIVE),
+        ),
+        DashboardCard(
           icon: Icons.settings,
           title: 'Control',
           subtitle: 'Manage data',

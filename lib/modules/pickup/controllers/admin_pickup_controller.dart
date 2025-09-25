@@ -92,6 +92,9 @@ class AdminPickupController extends GetxController {
     final classId = classFilter.value;
     final stage = stageFilter.value;
     final filtered = _allTickets.where((ticket) {
+      if (ticket.isArchived) {
+        return false;
+      }
       final matchesClass = classId == null || classId.isEmpty
           ? true
           : ticket.classId == classId;
@@ -112,10 +115,12 @@ class AdminPickupController extends GetxController {
       );
       return;
     }
+    final now = DateTime.now();
     final updated = ticket.copyWith(
       adminValidatorId: adminUser.id,
       adminValidatorName: adminUser.name,
-      adminValidatedAt: DateTime.now(),
+      adminValidatedAt: now,
+      archivedAt: now,
     );
     final index = _allTickets.indexWhere((item) => item.id == ticket.id);
     if (index != -1) {
@@ -126,6 +131,35 @@ class AdminPickupController extends GetxController {
         .collection('pickupTickets')
         .doc(ticket.id)
         .update(updated.toMap());
+  }
+
+  Future<void> refreshTickets() async {
+    final adminId = _auth.currentUser?.uid;
+    if (adminId == null) {
+      return;
+    }
+    try {
+      isLoading.value = true;
+      final adminSnapshot =
+          await _db.firestore.collection('admins').doc(adminId).get();
+      final classesSnapshot =
+          await _db.firestore.collection('classes').get();
+      final ticketsSnapshot =
+          await _db.firestore.collection('pickupTickets').get();
+      if (adminSnapshot.exists) {
+        setAdmin(AdminModel.fromFirestore(adminSnapshot));
+      }
+      setClasses(classesSnapshot.docs.map(SchoolClassModel.fromDoc).toList());
+      setTickets(ticketsSnapshot.docs.map(PickupTicketModel.fromDoc).toList());
+    } catch (error) {
+      Get.snackbar(
+        'Refresh failed',
+        'Unable to refresh pickup data: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void _initialize() {
