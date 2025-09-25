@@ -40,13 +40,13 @@ class AdminPickupController extends GetxController {
   final RxList<SchoolClassModel> classes = <SchoolClassModel>[].obs;
 
   final RxnString classFilter = RxnString();
-  final Rx<PickupStage?> stageFilter = Rx<PickupStage?>(PickupStage.awaitingTeacher);
+  final Rx<PickupStage?> stageFilter = Rx<PickupStage?>(PickupStage.awaitingAdmin);
   final Rxn<AdminModel> admin = Rxn<AdminModel>();
   final RxBool isLoading = false.obs;
 
   void clearFilters() {
     classFilter.value = null;
-    stageFilter.value = PickupStage.awaitingTeacher;
+    stageFilter.value = PickupStage.awaitingAdmin;
     _applyFilters();
   }
 

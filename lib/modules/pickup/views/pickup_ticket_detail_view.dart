@@ -521,11 +521,25 @@ class PickupTicketDetailView extends StatelessWidget {
   }
 
   String _stageHeadline() {
-    if (ticket.releasedByTeacher) {
-      return 'Released by ${ticket.teacherValidatorName.isEmpty ? 'teacher' : ticket.teacherValidatorName}';
+    if (ticket.isArchived) {
+      if (ticket.releasedByAdmin) {
+        final adminName =
+            ticket.adminValidatorName.isEmpty ? 'admin' : ticket.adminValidatorName;
+        return 'Released by $adminName';
+      }
+      if (ticket.releasedByTeacher) {
+        final teacherName = ticket.teacherValidatorName.isEmpty
+            ? 'teacher'
+            : ticket.teacherValidatorName;
+        return 'Released by $teacherName';
+      }
+      return 'Pickup archived';
     }
     if (ticket.releasedByAdmin) {
       return 'Released by ${ticket.adminValidatorName.isEmpty ? 'admin' : ticket.adminValidatorName}';
+    }
+    if (ticket.releasedByTeacher) {
+      return 'Released by ${ticket.teacherValidatorName.isEmpty ? 'teacher' : ticket.teacherValidatorName}';
     }
     if (ticket.isAwaitingTeacher) {
       return 'Waiting for release';

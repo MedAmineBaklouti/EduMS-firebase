@@ -128,7 +128,6 @@ class TeacherPickupController extends GetxController {
       teacherValidatorId: currentTeacher.id,
       teacherValidatorName: currentTeacher.name,
       teacherValidatedAt: now,
-      archivedAt: now,
     );
     final index = _allTickets.indexWhere((item) => item.id == ticket.id);
     if (index != -1) {
