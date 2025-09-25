@@ -25,40 +25,67 @@ Future<int?> _androidSdkInt() async {
   return _cachedAndroidSdkInt;
 }
 
+class _SavePathResult {
+  const _SavePathResult(this.path, {this.requiresStoragePermission = false});
+
+  final String path;
+  final bool requiresStoragePermission;
+}
+
 Future<String?> savePdf(Uint8List bytes, String fileName) async {
   final sanitizedName = fileName.trim().isEmpty ? 'document.pdf' : fileName;
 
-  if (Platform.isAndroid && !await _ensureStoragePermission()) {
+  final target = await _resolveSavePath(sanitizedName);
+  if (target == null) {
     return null;
   }
 
-  final targetPath = await _resolveSavePath(sanitizedName);
-  if (targetPath == null) {
+  if (target.requiresStoragePermission &&
+      Platform.isAndroid &&
+      !await _ensureStoragePermission()) {
     return null;
   }
 
-  final file = File(targetPath);
+  final file = File(target.path);
   await file.parent.create(recursive: true);
   await file.writeAsBytes(bytes, flush: true);
   return file.path;
 }
 
-Future<String?> _resolveSavePath(String sanitizedName) async {
+Future<_SavePathResult?> _resolveSavePath(String sanitizedName) async {
   final resolvedName = sanitizedName.toLowerCase().endsWith('.pdf')
       ? sanitizedName
       : '$sanitizedName.pdf';
 
   final pathFromPicker = await _promptSavePath(resolvedName);
   if (pathFromPicker != null) {
-    return pathFromPicker;
+    return _SavePathResult(pathFromPicker);
   }
 
   final directory = await _resolveDownloadDirectory();
-  return p.join(directory.path, resolvedName);
+  final fallbackPath = p.join(directory.path, resolvedName);
+  return _SavePathResult(
+    fallbackPath,
+    requiresStoragePermission: Platform.isAndroid,
+  );
 }
 
 Future<String?> _promptSavePath(String resolvedName) async {
   try {
+    final savePath = await getSavePath(
+      suggestedName: resolvedName,
+      acceptedTypeGroups: const [
+        XTypeGroup(
+          label: 'PDF',
+          extensions: ['pdf'],
+        ),
+      ],
+    );
+
+    if (savePath != null && savePath.trim().isNotEmpty) {
+      return savePath.trim();
+    }
+
     final directoryPath = await getDirectoryPath();
 
     if (directoryPath == null || directoryPath.trim().isEmpty) {
