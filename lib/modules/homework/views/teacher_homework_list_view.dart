@@ -249,6 +249,7 @@ class _ActiveFilterChip extends StatelessWidget {
 }
 
 Future<bool> _confirmDelete(BuildContext context) async {
+  final theme = Theme.of(context);
   return await showDialog<bool>(
         context: context,
         builder: (context) {
@@ -260,11 +261,18 @@ Future<bool> _confirmDelete(BuildContext context) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
+                child: Text(
+                  'Cancel',
+                  style:
+                      TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
               ),
-              ElevatedButton(
+              TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Delete'),
+                child: Text(
+                  'Delete',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
               ),
             ],
           );
