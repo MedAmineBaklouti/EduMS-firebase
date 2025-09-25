@@ -321,6 +321,10 @@ class _ParentHomeworkCard extends StatelessWidget {
                             : theme.colorScheme.secondary,
                         fontWeight: FontWeight.w600,
                       ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: Colors.transparent),
+                      ),
                     ),
                   )
                   .toList(),

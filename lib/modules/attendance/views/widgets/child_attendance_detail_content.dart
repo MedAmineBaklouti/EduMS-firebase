@@ -312,17 +312,23 @@ class ChildAttendanceDetailContent extends StatelessWidget {
   }
 
   Widget _buildDownloadButton(BuildContext context) {
-    return Align(
-      alignment: Alignment.center,
-      child: FilledButton.icon(
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
         onPressed: isExporting ? null : onDownload,
         icon: isExporting
             ? const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
               )
-            : const Icon(Icons.picture_as_pdf_outlined),
+            : const Icon(
+                Icons.picture_as_pdf_outlined,
+                color: Colors.white,
+              ),
         label: Text(isExporting ? 'Preparing...' : downloadLabel),
       ),
     );
