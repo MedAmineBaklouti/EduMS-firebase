@@ -87,6 +87,9 @@ class TeacherPickupController extends GetxController {
     }
     final classId = classFilter.value;
     final filtered = _allTickets.where((ticket) {
+      if (ticket.isArchived) {
+        return false;
+      }
       if (!teacherClassIds.contains(ticket.classId)) {
         return false;
       }
@@ -187,6 +190,33 @@ class TeacherPickupController extends GetxController {
 
   void _maybeFinishLoading() {
     if (_teacherLoaded && _classesLoaded && _ticketsLoaded) {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshTickets() async {
+    final teacherId = _auth.currentUser?.uid;
+    if (teacherId == null) {
+      return;
+    }
+    try {
+      isLoading.value = true;
+      final classesSnapshot = await _db.firestore.collection('classes').get();
+      final ticketsSnapshot =
+          await _db.firestore.collection('pickupTickets').get();
+      final teacherClasses = classesSnapshot.docs
+          .map(SchoolClassModel.fromDoc)
+          .where((item) => item.teacherSubjects.values.contains(teacherId))
+          .toList();
+      setClasses(teacherClasses);
+      setTickets(ticketsSnapshot.docs.map(PickupTicketModel.fromDoc).toList());
+    } catch (error) {
+      Get.snackbar(
+        'Refresh failed',
+        'Unable to refresh pickup data: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
       isLoading.value = false;
     }
   }

@@ -19,6 +19,8 @@ class ParentPickupController extends GetxController {
   bool _ticketsLoaded = false;
 
   final Set<String> _childIds = <String>{};
+  final Set<String> _notifiedTicketIds = <String>{};
+  bool _notificationSeeded = false;
 
   @override
   void onInit() {
@@ -66,6 +68,7 @@ class ParentPickupController extends GetxController {
 
   void setTickets(List<PickupTicketModel> items) {
     _allTickets.assignAll(items);
+    _checkTicketNotifications(items);
     _applyFilters();
     _ticketsLoaded = true;
     _maybeFinishLoading();
@@ -83,7 +86,13 @@ class ParentPickupController extends GetxController {
       return;
     }
     final relevantTickets = _allTickets.where((ticket) {
-      return _childIds.contains(ticket.childId);
+      if (ticket.isArchived) {
+        return false;
+      }
+      if (!_childIds.contains(ticket.childId)) {
+        return false;
+      }
+      return ticket.stage == PickupStage.awaitingParent;
     }).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -110,6 +119,33 @@ class ParentPickupController extends GetxController {
         .collection('pickupTickets')
         .doc(ticket.id)
         .update(updated.toMap());
+  }
+
+  Future<void> refreshTickets() async {
+    final parentId = _auth.currentUser?.uid;
+    if (parentId == null) {
+      return;
+    }
+    try {
+      isLoading.value = true;
+      final childrenSnapshot = await _db.firestore
+          .collection('children')
+          .where('parentId', isEqualTo: parentId)
+          .get();
+      final ticketSnapshot = await _db.firestore
+          .collection('pickupTickets')
+          .get();
+      setChildren(childrenSnapshot.docs.map(ChildModel.fromDoc).toList());
+      setTickets(ticketSnapshot.docs.map(PickupTicketModel.fromDoc).toList());
+    } catch (error) {
+      Get.snackbar(
+        'Refresh failed',
+        'Unable to refresh pickup data: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void _initialize() {
@@ -144,6 +180,62 @@ class ParentPickupController extends GetxController {
   void _maybeFinishLoading() {
     if (_childrenLoaded && _ticketsLoaded) {
       isLoading.value = false;
+    }
+  }
+
+  void _checkTicketNotifications(List<PickupTicketModel> items) {
+    final parentId = _auth.currentUser?.uid;
+    if (parentId == null) {
+      return;
+    }
+    final validatedTickets = items.where((ticket) {
+      if (ticket.parentId != parentId) {
+        return false;
+      }
+      if (ticket.isArchived) {
+        return false;
+      }
+      final validated =
+          ticket.teacherValidatedAt != null || ticket.adminValidatedAt != null;
+      if (!validated) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (!_notificationSeeded) {
+      _notifiedTicketIds
+        ..clear()
+        ..addAll(validatedTickets.map((ticket) => ticket.id));
+      _notificationSeeded = true;
+      return;
+    }
+
+    for (final ticket in validatedTickets) {
+      if (_notifiedTicketIds.contains(ticket.id)) {
+        continue;
+      }
+      _notifiedTicketIds.add(ticket.id);
+      Future.microtask(() {
+        if (Get.isDialogOpen ?? false) {
+          return;
+        }
+        Get.dialog(
+          AlertDialog(
+            title: const Text('Pickup update'),
+            content: Text(
+              '${ticket.childName} is on the way to you. Thank you for your patience!',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+          barrierDismissible: false,
+        );
+      });
     }
   }
 }

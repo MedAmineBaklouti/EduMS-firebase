@@ -31,68 +31,81 @@ class TeacherPickupView extends GetView<TeacherPickupController> {
                 child: Builder(
                   builder: (context) {
                     final tickets = controller.tickets;
-                    if (tickets.isEmpty) {
-                      return ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                        children: const [
-                          ModuleEmptyState(
-                            icon: Icons.directions_car_outlined,
-                            title: 'No pickup tickets',
-                            message:
-                                'Parents will appear here when they confirm pickups that require your validation.',
-                          ),
-                        ],
-                      );
-                    }
-                    return ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: tickets.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final ticket = tickets[index];
-                        return ModuleCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${ticket.childName} • ${ticket.className}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                              const SizedBox(height: 8),
-                              _PickupStageChip(stage: ticket.stage),
-                              const SizedBox(height: 12),
-                              if (ticket.parentConfirmedAt != null)
-                                Text(
-                                  'Parent confirmed at ${timeFormat.format(ticket.parentConfirmedAt!)}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              if (ticket.teacherValidatedAt != null)
-                                Text(
-                                  'Teacher validated at ${timeFormat.format(ticket.teacherValidatedAt!)}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              if (ticket.stage == PickupStage.awaitingTeacher) ...[
-                                const SizedBox(height: 16),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: ElevatedButton(
-                                    onPressed: () =>
-                                        controller.validatePickup(ticket),
-                                    child: const Text('Validate'),
-                                  ),
+                    return RefreshIndicator(
+                      onRefresh: controller.refreshTickets,
+                      child: tickets.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                              children: const [
+                                ModuleEmptyState(
+                                  icon: Icons.directions_car_outlined,
+                                  title: 'No pickup tickets',
+                                  message:
+                                      'Parents will appear here when they confirm pickups that require your validation.',
                                 ),
                               ],
-                            ],
-                          ),
-                        );
-                      },
+                            )
+                          : ListView.separated(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                              physics: AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              itemCount: tickets.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (context, index) {
+                                final ticket = tickets[index];
+                                return ModuleCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${ticket.childName} • ${ticket.className}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _PickupStageChip(stage: ticket.stage),
+                                      const SizedBox(height: 12),
+                                      if (ticket.parentConfirmedAt != null)
+                                        Text(
+                                          'Parent confirmed at ${timeFormat.format(ticket.parentConfirmedAt!)}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                        ),
+                                      if (ticket.teacherValidatedAt != null)
+                                        Text(
+                                          'Teacher validated at ${timeFormat.format(ticket.teacherValidatedAt!)}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                        ),
+                                      if (ticket.stage ==
+                                          PickupStage.awaitingTeacher) ...[
+                                        const SizedBox(height: 16),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: ElevatedButton(
+                                            onPressed: () => controller
+                                                .validatePickup(ticket),
+                                            child: const Text('Validate'),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                     );
                   },
                 ),

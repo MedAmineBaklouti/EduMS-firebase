@@ -31,25 +31,32 @@ class ParentPickupView extends GetView<ParentPickupController> {
                 }
                 final tickets = controller.tickets;
                 if (tickets.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.local_taxi_outlined,
-                        title: 'No pickup tickets available',
-                        message:
-                            'When the school opens pickup for your children, the tickets will appear here.',
-                      ),
-                    ],
+                  return RefreshIndicator(
+                    onRefresh: controller.refreshTickets,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                      children: const [
+                        ModuleEmptyState(
+                          icon: Icons.local_taxi_outlined,
+                          title: 'No pickup tickets available',
+                          message:
+                              'When the school opens pickup for your children, the tickets will appear here.',
+                        ),
+                      ],
+                    ),
                   );
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: tickets.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
+                return RefreshIndicator(
+                  onRefresh: controller.refreshTickets,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    physics: AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    itemCount: tickets.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
                     final ticket = tickets[index];
                     final stage = ticket.stage;
                     return ModuleCard(
@@ -104,6 +111,7 @@ class ParentPickupView extends GetView<ParentPickupController> {
                       ),
                     );
                   },
+                  ),
                 );
               }),
             ),
