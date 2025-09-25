@@ -206,7 +206,7 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
               chips.add(
                 _FilterChip(
                   label: 'Search: $query',
-                  onRemoved: () => controller.setSearchQuery(''),
+                  onRemoved: controller.clearSearchQuery,
                 ),
               );
             }
@@ -281,16 +281,14 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
                   ),
                   SizedBox(
                     width: fieldWidth,
-                    child: Obx(() {
-                      return TextField(
-                        decoration: const InputDecoration(
-                          labelText: 'Search by child or parent',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.search),
-                        ),
-                        onChanged: controller.setSearchQuery,
-                      );
-                    }),
+                    child: TextField(
+                      controller: controller.searchController,
+                      decoration: const InputDecoration(
+                        labelText: 'Search by child or parent',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    ),
                   ),
                 ],
               );

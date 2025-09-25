@@ -21,16 +21,20 @@ class AdminArchivedPickupController extends GetxController {
   final RxnString classFilter = RxnString();
   final Rxn<DateTimeRange> dateFilter = Rxn<DateTimeRange>();
   final RxString searchQuery = ''.obs;
+  final TextEditingController searchController = TextEditingController();
   final RxBool isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
+    searchController.addListener(_handleSearchInput);
     _initialize();
   }
 
   @override
   void onClose() {
+    searchController.removeListener(_handleSearchInput);
+    searchController.dispose();
     _classesSubscription?.cancel();
     _ticketsSubscription?.cancel();
     super.onClose();
@@ -64,15 +68,40 @@ class AdminArchivedPickupController extends GetxController {
   }
 
   void setSearchQuery(String value) {
-    searchQuery.value = value.trim();
-    _applyFilters();
+    if (searchController.text != value) {
+      searchController.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
+    } else {
+      final normalized = value.trim();
+      if (searchQuery.value != normalized) {
+        searchQuery.value = normalized;
+        _applyFilters();
+      }
+    }
   }
 
   void clearFilters() {
     classFilter.value = null;
     dateFilter.value = null;
-    searchQuery.value = '';
-    _applyFilters();
+    if (searchController.text.isNotEmpty) {
+      searchController.clear();
+    } else {
+      if (searchQuery.value.isNotEmpty) {
+        searchQuery.value = '';
+      }
+      _applyFilters();
+    }
+  }
+
+  void clearSearchQuery() {
+    if (searchController.text.isNotEmpty) {
+      searchController.clear();
+    } else if (searchQuery.value.isNotEmpty) {
+      searchQuery.value = '';
+      _applyFilters();
+    }
   }
 
   String className(String id) {
@@ -150,5 +179,14 @@ class AdminArchivedPickupController extends GetxController {
       });
 
     tickets.assignAll(filtered);
+  }
+
+  void _handleSearchInput() {
+    final normalized = searchController.text.trim();
+    if (searchQuery.value == normalized) {
+      return;
+    }
+    searchQuery.value = normalized;
+    _applyFilters();
   }
 }
