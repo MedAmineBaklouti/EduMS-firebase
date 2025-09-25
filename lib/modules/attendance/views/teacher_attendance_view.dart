@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -83,9 +84,9 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
             }
             final selectedClass = controller.selectedClass.value;
             if (selectedClass == null) {
-              return RefreshIndicator(
+              return _TeacherClassList(
+                dateFormat: dateFormat,
                 onRefresh: controller.refreshData,
-                child: _TeacherClassList(dateFormat: dateFormat),
               );
             }
             return _TeacherClassDetail(
@@ -99,32 +100,78 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
   }
 }
 
-class _TeacherClassList extends StatelessWidget {
-  const _TeacherClassList({required this.dateFormat});
+class _TeacherClassList extends StatefulWidget {
+  const _TeacherClassList({
+    required this.dateFormat,
+    required this.onRefresh,
+  });
 
   final DateFormat dateFormat;
+  final Future<void> Function() onRefresh;
+
+  @override
+  State<_TeacherClassList> createState() => _TeacherClassListState();
+}
+
+class _TeacherClassListState extends State<_TeacherClassList> {
+  static const double _overviewVerticalPadding = 28;
+
+  final GlobalKey _overviewKey = GlobalKey();
+  double _edgeOffset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateEdgeOffset());
+  }
+
+  void _updateEdgeOffset() {
+    final context = _overviewKey.currentContext;
+    if (context == null) {
+      return;
+    }
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox) {
+      return;
+    }
+    final newOffset = renderObject.size.height + _overviewVerticalPadding;
+    if ((newOffset - _edgeOffset).abs() > 0.5) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _edgeOffset = newOffset;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<TeacherAttendanceController>();
     final theme = Theme.of(context);
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(
-        parent: AlwaysScrollableScrollPhysics(),
-      ),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-          sliver: SliverToBoxAdapter(
-            child: Obx(() {
-              final selectedDate = controller.selectedDate.value;
-              final now = DateTime.now();
-              final isToday = DateUtils.isSameDay(selectedDate, now);
-              final dateLabel = dateFormat.format(selectedDate);
-              return AttendanceDateCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateEdgeOffset());
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      edgeOffset: _edgeOffset,
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            sliver: SliverToBoxAdapter(
+              child: Obx(() {
+                final selectedDate = controller.selectedDate.value;
+                final now = DateTime.now();
+                final isToday = DateUtils.isSameDay(selectedDate, now);
+                final dateLabel = widget.dateFormat.format(selectedDate);
+                return KeyedSubtree(
+                  key: _overviewKey,
+                  child: AttendanceDateCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -272,8 +319,8 @@ class _TeacherClassList extends StatelessWidget {
                           const SizedBox(height: 12),
                           Text(
                             hasSession
-                                ? 'Submitted on ${dateFormat.format(session!.date)}.'
-                                : 'No submission recorded for ${dateFormat.format(selectedDate)}.',
+                                ? 'Submitted on ${widget.dateFormat.format(session!.date)}.'
+                                : 'No submission recorded for ${widget.dateFormat.format(selectedDate)}.',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
