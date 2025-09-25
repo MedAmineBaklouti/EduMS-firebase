@@ -72,21 +72,6 @@ Future<_SavePathResult?> _resolveSavePath(String sanitizedName) async {
 
 Future<String?> _promptSavePath(String resolvedName) async {
   try {
-    final savePath = await getSavePath(
-      suggestedName: resolvedName,
-      acceptedTypeGroups: const [
-        XTypeGroup(
-          label: 'PDF',
-          extensions: ['pdf'],
-        ),
-      ],
-    );
-
-    if (savePath != null && savePath.trim().isNotEmpty) {
-      return savePath.trim();
-    }
-
-    final directoryPath = await getDirectoryPath();
 
     if (directoryPath == null || directoryPath.trim().isEmpty) {
       return null;
