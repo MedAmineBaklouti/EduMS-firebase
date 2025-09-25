@@ -82,15 +82,15 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
               return const Center(child: CircularProgressIndicator());
             }
             final selectedClass = controller.selectedClass.value;
-            final content = selectedClass == null
-                ? _TeacherClassList(dateFormat: dateFormat)
-                : _TeacherClassDetail(
-                    classModel: selectedClass,
-                    dateFormat: dateFormat,
-                  );
-            return RefreshIndicator(
-              onRefresh: controller.refreshData,
-              child: content,
+            if (selectedClass == null) {
+              return RefreshIndicator(
+                onRefresh: controller.refreshData,
+                child: _TeacherClassList(dateFormat: dateFormat),
+              );
+            }
+            return _TeacherClassDetail(
+              classModel: selectedClass,
+              dateFormat: dateFormat,
             );
           }),
         ),
