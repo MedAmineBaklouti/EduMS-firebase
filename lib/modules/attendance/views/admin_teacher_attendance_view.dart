@@ -143,7 +143,25 @@ class _AttendanceHeader extends StatelessWidget {
           : pendingCount > 0
               ? 'Awaiting submission – mark ${pendingCount == 1 ? 'the remaining teacher' : '$pendingCount teachers'} before saving.'
               : 'Ready to save – $presentCount present and $absentCount absent.';
+      final onPrimary = theme.colorScheme.onPrimary;
+      final onPrimaryMuted = onPrimary.withOpacity(0.82);
+      final buttonTextStyle = theme.textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: onPrimary,
+      );
       return AttendanceDateCard(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        backgroundColor: theme.colorScheme.primary,
+        borderColor: theme.colorScheme.primary.withOpacity(0.55),
+        shadowColor: theme.colorScheme.primary.withOpacity(0.38),
+        overlayGradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.9),
+            theme.colorScheme.primary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -158,13 +176,14 @@ class _AttendanceHeader extends StatelessWidget {
                         'Attendance overview',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
+                          color: onPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         overviewLabel,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: onPrimaryMuted,
                         ),
                       ),
                     ],
@@ -177,12 +196,25 @@ class _AttendanceHeader extends StatelessWidget {
                   children: [
                     if (!isToday)
                       OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: onPrimary,
+                          backgroundColor:
+                              theme.colorScheme.primary.withOpacity(0.18),
+                          side: BorderSide(color: onPrimary.withOpacity(0.45)),
+                          textStyle: buttonTextStyle,
+                        ),
                         onPressed: () =>
                             controller.setDate(DateTime(now.year, now.month, now.day)),
                         icon: const Icon(Icons.refresh, size: 18),
                         label: const Text('Clear date'),
                       ),
                     TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: onPrimary,
+                        backgroundColor:
+                            theme.colorScheme.primary.withOpacity(0.14),
+                        textStyle: buttonTextStyle,
+                      ),
                       onPressed: () async {
                         final picked = await showDatePicker(
                           context: context,
@@ -205,7 +237,7 @@ class _AttendanceHeader extends StatelessWidget {
             Text(
               statusMessage,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: onPrimaryMuted,
               ),
             ),
             if (total > 0) ...[
@@ -217,24 +249,22 @@ class _AttendanceHeader extends StatelessWidget {
                   if (presentCount > 0)
                     _AttendanceStatusChip(
                       icon: Icons.check_circle,
-                      backgroundColor: Colors.green.shade50,
-                      iconColor: Colors.green.shade600,
+                      backgroundColor: Colors.white.withOpacity(0.18),
+                      iconColor: onPrimary,
                       label: '$presentCount present',
                     ),
                   if (absentCount > 0)
                     _AttendanceStatusChip(
                       icon: Icons.cancel_outlined,
-                      backgroundColor:
-                          theme.colorScheme.error.withOpacity(0.12),
-                      iconColor: theme.colorScheme.error,
+                      backgroundColor: Colors.white.withOpacity(0.18),
+                      iconColor: onPrimary,
                       label: '$absentCount absent',
                     ),
                   if (pendingCount > 0)
                     _AttendanceStatusChip(
                       icon: Icons.hourglass_empty,
-                      backgroundColor:
-                          theme.colorScheme.primary.withOpacity(0.12),
-                      iconColor: theme.colorScheme.primary,
+                      backgroundColor: Colors.white.withOpacity(0.18),
+                      iconColor: onPrimary,
                       label: '$pendingCount pending',
                     ),
                 ],
