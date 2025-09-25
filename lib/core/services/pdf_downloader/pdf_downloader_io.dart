@@ -29,6 +29,11 @@ Future<String?> _resolveSavePath(String sanitizedName) async {
       ? sanitizedName
       : '$sanitizedName.pdf';
 
+  final pathFromPicker = await _promptSavePath(resolvedName);
+  if (pathFromPicker != null) {
+    return pathFromPicker;
+  }
+
   if (!Platform.isAndroid) {
     try {
       final directoryPath = await getDirectoryPath();
@@ -50,6 +55,46 @@ Future<String?> _resolveSavePath(String sanitizedName) async {
 
   final directory = await _resolveDownloadDirectory();
   return p.join(directory.path, resolvedName);
+}
+
+Future<String?> _promptSavePath(String resolvedName) async {
+  try {
+    final selectedPath = await getSavePath(
+      suggestedName: resolvedName,
+      confirmButtonText: 'Save',
+      acceptedTypeGroups: const [
+        XTypeGroup(
+          label: 'PDF',
+          extensions: ['pdf'],
+        ),
+      ],
+    );
+
+    if (selectedPath == null || selectedPath.trim().isEmpty) {
+      return null;
+    }
+
+    final normalized = selectedPath.trim();
+    if (normalized.toLowerCase().endsWith('.pdf')) {
+      return normalized;
+    }
+
+    final extension = p.extension(normalized);
+    if (extension.isEmpty) {
+      return '$normalized.pdf';
+    }
+
+    // If the user selects a non-pdf extension, replace it to ensure the file
+    // is saved as a PDF.
+    return '${normalized.substring(0, normalized.length - extension.length)}.pdf';
+  } on PlatformException {
+    // Some platforms (notably older Android versions) may throw when the
+    // platform picker is not available. In that case we fall back to the
+    // default download directory resolution below.
+    return null;
+  } on UnimplementedError {
+    return null;
+  }
 }
 
 Future<bool> _ensureStoragePermission() async {
