@@ -39,7 +39,7 @@ class BehaviorTypeChip extends StatelessWidget {
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide.none,
+        side: const BorderSide(color: Colors.transparent),
       ),
     );
   }
