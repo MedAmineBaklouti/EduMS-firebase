@@ -16,6 +16,13 @@ class AdminDashboard extends StatelessWidget {
       onLogout: _controller.logout,
       cards: [
         DashboardCard(
+          icon: Icons.message,
+          title: 'Messages',
+          subtitle: 'Stay connected',
+          color: Colors.cyan,
+          onTap: () => Get.toNamed(AppPages.MESSAGING),
+        ),
+        DashboardCard(
           icon: Icons.announcement,
           title: 'Announcements',
           subtitle: 'School notices',
