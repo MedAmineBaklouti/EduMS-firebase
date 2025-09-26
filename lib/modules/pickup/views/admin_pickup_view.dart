@@ -24,46 +24,44 @@ class AdminPickupView extends GetView<AdminPickupController> {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          final tickets = controller.tickets;
+
           return Column(
             children: [
               const _AdminPickupFilters(),
               Expanded(
-                child: Builder(
-                  builder: (context) {
-                    final items = controller.tickets.toList();
-                    return RefreshIndicator(
-                      onRefresh: controller.refreshTickets,
-                      child: items.isEmpty
-                          ? ListView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                              children: const [
-                                ModuleEmptyState(
-                                  icon: Icons.security_outlined,
-                                  title: 'No pickups ready',
-                                  message:
-                                      'Once parents confirm their arrival, the pickup will appear here for your validation.',
-                                ),
-                              ],
-                            )
-                          : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                              physics: const AlwaysScrollableScrollPhysics(
-                                parent: BouncingScrollPhysics(),
-                              ),
-                              itemCount: items.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 16),
-                              itemBuilder: (context, index) {
-                                final ticket = items[index];
-                                return PickupQueueCard(
-                                  ticket: ticket,
-                                  timeFormat: timeFormat,
-                                  onValidate: () => controller.finalizeTicket(ticket),
-                                );
-                              },
+                child: RefreshIndicator(
+                  onRefresh: controller.refreshTickets,
+                  child: tickets.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.security_outlined,
+                              title: 'No pickups ready',
+                              message:
+                                  'Once parents confirm their arrival, the pickup will appear here for your validation.',
                             ),
-                    );
-                  },
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          itemCount: tickets.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final ticket = tickets[index];
+                            return PickupQueueCard(
+                              ticket: ticket,
+                              timeFormat: timeFormat,
+                              onValidate: () => controller.finalizeTicket(ticket),
+                            );
+                          },
+                        ),
                 ),
               ),
             ],
