@@ -12,6 +12,6 @@ class AppConfig {
     // Fall back to compile-time environment variables so the app can
     // still run (for example during tests) even if dotenv hasn't been
     // loaded yet.
-    return const String.fromEnvironment(key, defaultValue: '');
+    return String.fromEnvironment(key, defaultValue: '');
   }
 }
