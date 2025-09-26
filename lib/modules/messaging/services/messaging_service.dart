@@ -159,7 +159,7 @@ class MessagingService extends GetxService {
 
   Future<void> _setupLocalNotifications() async {
     const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
     const initializationSettingsDarwin = DarwinInitializationSettings();
     const initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
