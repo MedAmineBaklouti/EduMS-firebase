@@ -39,18 +39,23 @@ class AdminCoursesView extends StatelessWidget {
               _buildFilters(context),
               _buildStatsSection(context),
               Expanded(
-                child: controller.courses.isEmpty
-                    ? _buildEmptyState(context)
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: controller.courses.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
-                        itemBuilder: (context, index) {
-                          final course = controller.courses[index];
-                          return _AdminCourseTile(course: course);
-                        },
-                      ),
+                child: RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: controller.courses.isEmpty
+                      ? _buildEmptyState(context)
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          itemCount: controller.courses.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final course = controller.courses[index];
+                            return _AdminCourseTile(course: course);
+                          },
+                        ),
+                ),
               ),
             ],
           ),
@@ -60,72 +65,190 @@ class AdminCoursesView extends StatelessWidget {
   }
 
   Widget _buildStatsSection(BuildContext context) {
+    final theme = Theme.of(context);
     final filteredCount = controller.courses.length;
     final totalCount = controller.totalCourseCount;
     final filteredTeachers = controller.filteredTeacherCount;
     final filteredSubjects = controller.filteredSubjectCount;
     final filteredClasses = controller.filteredClassCount;
-
-    final cards = [
-      _buildSummaryCard(
-        context,
-        icon: Icons.menu_book_outlined,
-        label: 'Visible courses',
-        value:
-            totalCount > 0 ? '$filteredCount of $totalCount' : '$filteredCount',
-      ),
-      _buildSummaryCard(
-        context,
-        icon: Icons.groups_outlined,
-        label: 'Teachers represented',
-        value: filteredTeachers.toString(),
-      ),
-      _buildSummaryCard(
-        context,
-        icon: Icons.category_outlined,
-        label: 'Subjects',
-        value: filteredSubjects.toString(),
-      ),
-      _buildSummaryCard(
-        context,
-        icon: Icons.class_outlined,
-        label: 'Classes covered',
-        value: filteredClasses.toString(),
-      ),
-    ];
+    final totalTeachers = controller.totalTeacherCount;
+    final totalSubjects = controller.totalSubjectCount;
+    final totalClasses = controller.totalClassCount;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxWidth = constraints.maxWidth;
-          int columnCount;
-          if (maxWidth >= 1100) {
+          int columnCount = 1;
+          if (maxWidth >= 820) {
             columnCount = 4;
           } else if (maxWidth >= 720) {
             columnCount = 2;
-          } else {
-            columnCount = 1;
           }
           const spacing = 12.0;
-          final effectiveColumns =
-              columnCount.clamp(1, cards.length).toInt();
-          final itemWidth =
-              (maxWidth - (effectiveColumns - 1) * spacing) / effectiveColumns;
+          final itemWidth = columnCount == 1
+              ? maxWidth
+              : (maxWidth - (columnCount - 1) * spacing) / columnCount;
 
-          return Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: cards
-                .map(
-                  (card) => SizedBox(
-                    width: itemWidth,
-                    child: card,
+          return Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.08),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Course insights',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                )
-                .toList(),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: [
+                      SizedBox(
+                        width: itemWidth,
+                        child: _buildStatItem(
+                          context,
+                          icon: Icons.menu_book_outlined,
+                          label: 'Visible courses',
+                          value: filteredCount.toString(),
+                          subtitle: totalCount > 0
+                              ? 'of $totalCount total courses'
+                              : 'No courses available yet',
+                        ),
+                      ),
+                      SizedBox(
+                        width: itemWidth,
+                        child: _buildStatItem(
+                          context,
+                          icon: Icons.groups_outlined,
+                          label: 'Teachers represented',
+                          value: filteredTeachers.toString(),
+                          subtitle: totalTeachers > 0
+                              ? 'out of $totalTeachers teachers'
+                              : 'No teacher assignments',
+                        ),
+                      ),
+                      SizedBox(
+                        width: itemWidth,
+                        child: _buildStatItem(
+                          context,
+                          icon: Icons.category_outlined,
+                          label: 'Subjects covered',
+                          value: filteredSubjects.toString(),
+                          subtitle: totalSubjects > 0
+                              ? 'of $totalSubjects total subjects'
+                              : 'No subjects linked yet',
+                        ),
+                      ),
+                      SizedBox(
+                        width: itemWidth,
+                        child: _buildStatItem(
+                          context,
+                          icon: Icons.class_outlined,
+                          label: 'Classes connected',
+                          value: filteredClasses.toString(),
+                          subtitle: totalClasses > 0
+                              ? 'across $totalClasses classes overall'
+                              : 'No classes connected yet',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    String? subtitle,
+  }) {
+    final theme = Theme.of(context);
+    final background = theme.colorScheme.primary.withOpacity(
+      theme.brightness == Brightness.dark ? 0.18 : 0.12,
+    );
+    final borderColor = theme.colorScheme.primary.withOpacity(
+      theme.brightness == Brightness.dark ? 0.24 : 0.16,
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor),
+        color: background,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: theme.colorScheme.primary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -304,69 +427,10 @@ class AdminCoursesView extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 12),
-          ),
-        ],
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: theme.colorScheme.primary, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActiveFilterChip(
     BuildContext context, {
-    required String label,
-    required VoidCallback onRemoved,
+      required String label,
+      required VoidCallback onRemoved,
   }) {
     final theme = Theme.of(context);
     return Chip(
@@ -389,43 +453,40 @@ class AdminCoursesView extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.menu_book_outlined,
-                color: theme.colorScheme.primary,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'No courses found',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Adjust the filters or check back later for new courses.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+      children: [
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.menu_book_outlined,
+            color: theme.colorScheme.primary,
+            size: 40,
+          ),
         ),
-      ),
+        const SizedBox(height: 24),
+        Text(
+          'No courses found',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Adjust the filters or check back later for new courses.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

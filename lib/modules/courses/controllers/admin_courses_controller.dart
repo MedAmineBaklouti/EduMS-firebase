@@ -39,6 +39,47 @@ class AdminCoursesController extends GetxController {
     _initialize();
   }
 
+  Future<void> refreshData() async {
+    try {
+      final results = await Future.wait([
+        _db.firestore.collection('subjects').get(),
+        _db.firestore.collection('teachers').get(),
+        _db.firestore.collection('classes').get(),
+        _db.firestore.collection('courses').get(),
+      ]);
+
+      final subjectSnapshot = results[0];
+      final teacherSnapshot = results[1];
+      final classSnapshot = results[2];
+      final courseSnapshot = results[3];
+
+      subjects.assignAll(
+        subjectSnapshot.docs.map((doc) => SubjectModel.fromDoc(doc)).toList()
+          ..sort((a, b) => a.name.compareTo(b.name)),
+      );
+      teachers.assignAll(
+        teacherSnapshot.docs.map((doc) => TeacherModel.fromDoc(doc)).toList()
+          ..sort((a, b) => a.name.compareTo(b.name)),
+      );
+      classes.assignAll(
+        classSnapshot.docs.map((doc) => SchoolClassModel.fromDoc(doc)).toList()
+          ..sort((a, b) => a.name.compareTo(b.name)),
+      );
+
+      final refreshedCourses =
+          courseSnapshot.docs.map((doc) => CourseModel.fromDoc(doc)).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _allCourses.assignAll(refreshedCourses);
+      _applyFilters();
+    } catch (error) {
+      Get.snackbar(
+        'Refresh failed',
+        'Unable to refresh courses: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
   Future<void> _initialize() async {
     try {
       isLoading.value = true;

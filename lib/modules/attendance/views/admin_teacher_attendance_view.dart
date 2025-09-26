@@ -22,21 +22,6 @@ class AdminTeacherAttendanceView
         centerTitle: true,
         actions: [
           Obx(() {
-            final isExporting = controller.isExporting.value;
-            return IconButton(
-              tooltip: 'Download PDF',
-              onPressed:
-                  isExporting ? null : () => controller.exportAttendanceAsPdf(),
-              icon: isExporting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.picture_as_pdf_outlined),
-            );
-          }),
-          Obx(() {
             final isSaving = controller.isSaving.value;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -68,38 +53,77 @@ class AdminTeacherAttendanceView
                   return const Center(child: CircularProgressIndicator());
                 }
                 final entries = controller.currentEntries;
-                if (entries.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.person_outline,
-                        title: 'No teacher attendance records',
-                        message:
-                            'Adjust the filters above to review attendance for specific classes or subjects.',
-                      ),
-                    ],
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  itemCount: entries.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    final subjectLabel =
-                        controller.subjectLabelForTeacher(entry.teacherId);
-                    final classesLabel =
-                        controller.classNamesForTeacher(entry.teacherId);
-                    return _TeacherAttendanceTile(
-                      entry: entry,
-                      subjectLabel: subjectLabel,
-                      classNames: classesLabel,
-                      onStatusChanged: (status) =>
-                          controller.updateStatus(entry.teacherId, status),
-                    );
-                  },
+                return RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: entries.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.person_outline,
+                              title: 'No teacher attendance records',
+                              message:
+                                  'Adjust the filters above to review attendance for specific classes or subjects.',
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          itemCount: entries.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final entry = entries[index];
+                            final subjectLabel =
+                                controller.subjectLabelForTeacher(entry.teacherId);
+                            final classesLabel =
+                                controller.classNamesForTeacher(entry.teacherId);
+                            return _TeacherAttendanceTile(
+                              entry: entry,
+                              subjectLabel: subjectLabel,
+                              classNames: classesLabel,
+                              onStatusChanged: (status) =>
+                                  controller.updateStatus(entry.teacherId, status),
+                            );
+                          },
+                        ),
+                );
+              }),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Obx(() {
+                final isExporting = controller.isExporting.value;
+                final hasEntries = controller.currentEntries.isNotEmpty;
+                final theme = Theme.of(context);
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: isExporting || !hasEntries
+                        ? null
+                        : () => controller.exportAttendanceAsPdf(),
+                    icon: isExporting
+                        ? SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                theme.colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            Icons.picture_as_pdf_outlined,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                    label: Text(
+                      isExporting ? 'Preparing PDF...' : 'Download as PDF',
+                    ),
+                  ),
                 );
               }),
             ),
@@ -136,32 +160,14 @@ class _AttendanceHeader extends StatelessWidget {
       final now = DateTime.now();
       final isToday = DateUtils.isSameDay(date, now);
       final overviewLabel = total == 0
-          ? 'Teacher attendance • $dateLabel'
-          : '$total teacher${total == 1 ? '' : 's'} • $dateLabel';
+          ? 'Teacher attendance'
+          : '$total teacher${total == 1 ? '' : 's'} tracked';
       final statusMessage = total == 0
           ? 'No teachers are scheduled for this day.'
           : pendingCount > 0
               ? 'Awaiting submission – mark ${pendingCount == 1 ? 'the remaining teacher' : '$pendingCount teachers'} before saving.'
               : 'Ready to save – $presentCount present and $absentCount absent.';
-      final onPrimary = theme.colorScheme.onPrimary;
-      final onPrimaryMuted = onPrimary.withOpacity(0.82);
-      final buttonTextStyle = theme.textTheme.labelLarge?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: onPrimary,
-      );
       return AttendanceDateCard(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-        backgroundColor: theme.colorScheme.primary,
-        borderColor: theme.colorScheme.primary.withOpacity(0.55),
-        shadowColor: theme.colorScheme.primary.withOpacity(0.38),
-        overlayGradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withOpacity(0.9),
-            theme.colorScheme.primary,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -176,14 +182,13 @@ class _AttendanceHeader extends StatelessWidget {
                         'Attendance overview',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: onPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        overviewLabel,
+                        '$overviewLabel • $dateLabel',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: onPrimaryMuted,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -196,25 +201,13 @@ class _AttendanceHeader extends StatelessWidget {
                   children: [
                     if (!isToday)
                       OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: onPrimary,
-                          backgroundColor:
-                              theme.colorScheme.primary.withOpacity(0.18),
-                          side: BorderSide(color: onPrimary.withOpacity(0.45)),
-                          textStyle: buttonTextStyle,
+                        onPressed: () => controller.setDate(
+                          DateTime(now.year, now.month, now.day),
                         ),
-                        onPressed: () =>
-                            controller.setDate(DateTime(now.year, now.month, now.day)),
                         icon: const Icon(Icons.refresh, size: 18),
                         label: const Text('Clear date'),
                       ),
                     TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: onPrimary,
-                        backgroundColor:
-                            theme.colorScheme.primary.withOpacity(0.14),
-                        textStyle: buttonTextStyle,
-                      ),
                       onPressed: () async {
                         final picked = await showDatePicker(
                           context: context,
@@ -237,7 +230,7 @@ class _AttendanceHeader extends StatelessWidget {
             Text(
               statusMessage,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: onPrimaryMuted,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             if (total > 0) ...[
@@ -249,22 +242,24 @@ class _AttendanceHeader extends StatelessWidget {
                   if (presentCount > 0)
                     _AttendanceStatusChip(
                       icon: Icons.check_circle,
-                      backgroundColor: Colors.white.withOpacity(0.18),
-                      iconColor: onPrimary,
+                      backgroundColor: Colors.green.shade50,
+                      iconColor: Colors.green.shade600,
                       label: '$presentCount present',
                     ),
                   if (absentCount > 0)
                     _AttendanceStatusChip(
                       icon: Icons.cancel_outlined,
-                      backgroundColor: Colors.white.withOpacity(0.18),
-                      iconColor: onPrimary,
+                      backgroundColor:
+                          theme.colorScheme.error.withOpacity(0.12),
+                      iconColor: theme.colorScheme.error,
                       label: '$absentCount absent',
                     ),
                   if (pendingCount > 0)
                     _AttendanceStatusChip(
                       icon: Icons.hourglass_empty,
-                      backgroundColor: Colors.white.withOpacity(0.18),
-                      iconColor: onPrimary,
+                      backgroundColor:
+                          theme.colorScheme.primary.withOpacity(0.12),
+                      iconColor: theme.colorScheme.primary,
                       label: '$pendingCount pending',
                     ),
                 ],

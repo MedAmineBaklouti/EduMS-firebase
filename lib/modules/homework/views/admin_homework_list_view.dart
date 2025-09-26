@@ -30,45 +30,47 @@ class AdminHomeworkListView extends GetView<AdminHomeworkController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final items = controller.homeworks;
-                if (items.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.library_books_outlined,
-                        title: 'No homeworks match the filters',
-                        message:
-                            'Adjust the filters above to explore assignments shared across classes.',
-                      ),
-                    ],
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
-                  ),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final homework = items[index];
-                    final totalChildren =
-                        controller.childCountForClass(homework.classId);
-                    return _AdminHomeworkCard(
-                      homework: homework,
-                      dateFormat: dateFormat,
-                      totalChildren: totalChildren,
-                      onTap: () {
-                        Get.to(
-                          () => HomeworkDetailView(
-                            homework: homework,
-                            initialChildCount: totalChildren,
+                return RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: items.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.library_books_outlined,
+                              title: 'No homeworks match the filters',
+                              message:
+                                  'Adjust the filters above to explore assignments shared across classes.',
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
                           ),
-                        );
-                      },
-                    );
-                  },
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final homework = items[index];
+                            final totalChildren =
+                                controller.childCountForClass(homework.classId);
+                            return _AdminHomeworkCard(
+                              homework: homework,
+                              dateFormat: dateFormat,
+                              totalChildren: totalChildren,
+                              onTap: () {
+                                Get.to(
+                                  () => HomeworkDetailView(
+                                    homework: homework,
+                                    initialChildCount: totalChildren,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                 );
               }),
             ),
