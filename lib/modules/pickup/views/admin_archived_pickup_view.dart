@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -17,6 +18,7 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
     final archivedFormat = DateFormat.yMMMMd().add_jm();
     final dateFormat = DateFormat.yMMMMd();
     final timeFormat = DateFormat.jm();
+    final headerFormat = DateFormat.yMMMMEEEEd();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Archived Pickups'),
@@ -32,6 +34,15 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final tickets = controller.tickets;
+                final grouped = groupBy<PickupTicketModel, DateTime>(
+                  tickets,
+                  (ticket) {
+                    final archivedAt =
+                        ticket.archivedAt ?? ticket.adminValidatedAt ?? ticket.createdAt;
+                    return DateTime(archivedAt.year, archivedAt.month, archivedAt.day);
+                  },
+                ).entries.toList()
+                  ..sort((a, b) => b.key.compareTo(a.key));
                 return RefreshIndicator(
                   onRefresh: controller.refreshTickets,
                   child: tickets.isEmpty
@@ -47,135 +58,69 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                             ),
                           ],
                         )
-                      : ListView.separated(
+                      : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                          physics: AlwaysScrollableScrollPhysics(
+                          physics: const AlwaysScrollableScrollPhysics(
                             parent: BouncingScrollPhysics(),
                           ),
-                          itemCount: tickets.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemCount: grouped.length + 1,
                           itemBuilder: (context, index) {
-                            final ticket = tickets[index];
-                            final archivedAt =
-                                ticket.archivedAt ?? ticket.adminValidatedAt ?? ticket.createdAt;
-                            final parentTime = ticket.parentConfirmedAt;
-                            final teacherTime = ticket.teacherValidatedAt;
-                            final adminTime = ticket.adminValidatedAt;
+                            if (index == 0) {
+                              return _ArchiveListSummary(
+                                total: tickets.length,
+                                range: controller.dateFilter.value,
+                              );
+                            }
+                            final entry = grouped[index - 1];
+                            final dayTickets = List<PickupTicketModel>.from(entry.value)
+                              ..sort((a, b) {
+                                final aDate =
+                                    a.archivedAt ?? a.adminValidatedAt ?? a.createdAt;
+                                final bDate =
+                                    b.archivedAt ?? b.adminValidatedAt ?? b.createdAt;
+                                return bDate.compareTo(aDate);
+                              });
                             final theme = Theme.of(context);
                             final colors = theme.colorScheme;
-                            return AttendanceDateCard(
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(24),
-                                  onTap: () => Get.to(
-                                    () => PickupTicketDetailView(ticket: ticket),
+                            return Padding(
+                              padding: EdgeInsets.only(top: index == 1 ? 20 : 32),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        headerFormat.format(entry.key),
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${dayTickets.length} pickup${dayTickets.length == 1 ? '' : 's'}',
+                                        style: theme.textTheme.labelLarge?.copyWith(
+                                          color: colors.onSurfaceVariant,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(top: 4, bottom: 4),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    ticket.childName,
-                                                    style: theme.textTheme.titleMedium
-                                                        ?.copyWith(
-                                                          fontWeight: FontWeight.w700,
-                                                        ),
-                                                  ),
-                                                  const SizedBox(height: 6),
-                                                  Text(
-                                                    '${controller.className(ticket.classId)} • ${ticket.parentName}',
-                                                    style: theme.textTheme.bodySmall
-                                                        ?.copyWith(
-                                                          color: colors.onSurfaceVariant,
-                                                        ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                Text(
-                                                  dateFormat.format(archivedAt),
-                                                  style: theme.textTheme.titleSmall
-                                                      ?.copyWith(
-                                                        fontWeight: FontWeight.w600,
-                                                      ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  timeFormat.format(archivedAt),
-                                                  style: theme.textTheme.labelMedium
-                                                      ?.copyWith(
-                                                        color: colors.onSurfaceVariant,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Wrap(
-                                          spacing: 12,
-                                          runSpacing: 12,
-                                          children: [
-                                            _ArchiveTimelineStep(
-                                              icon: Icons.access_time,
-                                              title: 'Ticket created',
-                                              subtitle: archivedFormat.format(ticket.createdAt),
-                                              color: colors.secondary,
-                                            ),
-                                            if (parentTime != null)
-                                              _ArchiveTimelineStep(
-                                                icon: Icons.check_circle_outline,
-                                                title: 'Parent confirmed',
-                                                subtitle: archivedFormat.format(parentTime),
-                                                color: colors.primary,
-                                              ),
-                                            if (teacherTime != null)
-                                              _ArchiveTimelineStep(
-                                                icon: Icons.verified_outlined,
-                                                title: ticket.teacherValidatorName.isNotEmpty
-                                                    ? 'Released by ${ticket.teacherValidatorName}'
-                                                    : 'Teacher released',
-                                                subtitle: archivedFormat.format(teacherTime),
-                                                color: colors.tertiary,
-                                              ),
-                                            if (adminTime != null)
-                                              _ArchiveTimelineStep(
-                                                icon: Icons.admin_panel_settings_outlined,
-                                                title: ticket.adminValidatorName.isNotEmpty
-                                                    ? 'Validated by ${ticket.adminValidatorName}'
-                                                    : 'Admin validated',
-                                                subtitle: archivedFormat.format(adminTime),
-                                                color: colors.primary,
-                                              ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: TextButton.icon(
-                                            onPressed: () => Get.to(
-                                              () => PickupTicketDetailView(ticket: ticket),
-                                            ),
-                                            icon: const Icon(Icons.visibility_outlined, size: 18),
-                                            label: const Text('View details'),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                  const SizedBox(height: 12),
+                                  ...List.generate(dayTickets.length, (itemIndex) {
+                                    final ticket = dayTickets[itemIndex];
+                                    return Padding(
+                                      padding: EdgeInsets.only(top: itemIndex == 0 ? 0 : 16),
+                                      child: _ArchiveTicketCard(
+                                        ticket: ticket,
+                                        controller: controller,
+                                        archivedFormat: archivedFormat,
+                                        dateFormat: dateFormat,
+                                        timeFormat: timeFormat,
+                                      ),
+                                    );
+                                  }),
+                                ],
                               ),
                             );
                           },
@@ -296,22 +241,84 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
                   ),
                   SizedBox(
                     width: fieldWidth,
-                    child: OutlinedButton.icon(
+                    child: _DateSelectionButton(
+                      label: 'From',
+                      icon: Icons.calendar_today_outlined,
+                      selectedDateBuilder: () {
+                        final range = controller.dateFilter.value;
+                        return range?.start;
+                      },
                       onPressed: () async {
                         final now = DateTime.now();
-                        final range = await showDateRangePicker(
+                        final currentRange = controller.dateFilter.value;
+                        final baseFirstDate = DateTime(now.year - 3);
+                        final baseLastDate = currentRange?.end ?? DateTime(now.year + 1);
+                        final firstDate = baseFirstDate.isBefore(baseLastDate)
+                            ? baseFirstDate
+                            : baseLastDate;
+                        final lastDate = baseFirstDate.isBefore(baseLastDate)
+                            ? baseLastDate
+                            : baseFirstDate;
+                        final initialDate = currentRange?.start ?? currentRange?.end ?? now;
+                        final clampedInitial = initialDate.isBefore(firstDate)
+                            ? firstDate
+                            : (initialDate.isAfter(lastDate) ? lastDate : initialDate);
+                        final picked = await showDatePicker(
                           context: context,
-                          firstDate: DateTime(now.year - 3),
-                          lastDate: DateTime(now.year + 1),
-                          currentDate: now,
-                          initialDateRange: controller.dateFilter.value,
+                          firstDate: firstDate,
+                          lastDate: lastDate,
+                          initialDate: clampedInitial,
+                          helpText: 'Select start date',
                         );
-                        if (range != null) {
-                          controller.setDateFilter(range);
+                        if (picked != null) {
+                          final end = currentRange?.end;
+                          final adjustedEnd = end != null && end.isBefore(picked) ? picked : end;
+                          controller.setDateFilter(
+                            DateTimeRange(start: picked, end: adjustedEnd ?? picked),
+                          );
                         }
                       },
-                      icon: const Icon(Icons.date_range_outlined),
-                      label: const Text('Select dates'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: _DateSelectionButton(
+                      label: 'To',
+                      icon: Icons.event_available_outlined,
+                      selectedDateBuilder: () {
+                        final range = controller.dateFilter.value;
+                        return range?.end;
+                      },
+                      onPressed: () async {
+                        final now = DateTime.now();
+                        final currentRange = controller.dateFilter.value;
+                        final baseLastDate = DateTime(now.year + 1);
+                        final baseFirstDate = currentRange?.start ?? DateTime(now.year - 3);
+                        final firstDate = baseFirstDate.isBefore(baseLastDate)
+                            ? baseFirstDate
+                            : baseLastDate;
+                        final lastDate = baseFirstDate.isBefore(baseLastDate)
+                            ? baseLastDate
+                            : baseFirstDate;
+                        final initialDate = currentRange?.end ?? currentRange?.start ?? now;
+                        final clampedInitial = initialDate.isBefore(firstDate)
+                            ? firstDate
+                            : (initialDate.isAfter(lastDate) ? lastDate : initialDate);
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: firstDate,
+                          lastDate: lastDate,
+                          initialDate: clampedInitial,
+                          helpText: 'Select end date',
+                        );
+                        if (picked != null) {
+                          final start = currentRange?.start;
+                          final adjustedStart = start != null && start.isAfter(picked) ? picked : start;
+                          controller.setDateFilter(
+                            DateTimeRange(start: adjustedStart ?? picked, end: picked),
+                          );
+                        }
+                      },
                     ),
                   ),
                 ],
@@ -320,6 +327,105 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DateSelectionButton extends StatelessWidget {
+  const _DateSelectionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    required this.selectedDateBuilder,
+  });
+
+  final String label;
+  final IconData icon;
+  final Future<void> Function() onPressed;
+  final DateTime? Function() selectedDateBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final selectedDate = selectedDateBuilder();
+    final format = DateFormat.yMMMd();
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        alignment: Alignment.centerLeft,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: colors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  selectedDate != null ? format.format(selectedDate) : 'Select a date',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArchiveListSummary extends StatelessWidget {
+  const _ArchiveListSummary({required this.total, required this.range});
+
+  final int total;
+  final DateTimeRange? range;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final format = DateFormat.yMMMd();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$total archived pickup${total == 1 ? '' : 's'} found',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        if (range != null) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: colors.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'Showing archives from ${format.format(range!.start)} to ${format.format(range!.end)}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.onSecondaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -344,6 +450,150 @@ class _FilterChip extends StatelessWidget {
       labelStyle: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.primary,
         fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _ArchiveTicketCard extends StatelessWidget {
+  const _ArchiveTicketCard({
+    required this.ticket,
+    required this.controller,
+    required this.archivedFormat,
+    required this.dateFormat,
+    required this.timeFormat,
+  });
+
+  final PickupTicketModel ticket;
+  final AdminArchivedPickupController controller;
+  final DateFormat archivedFormat;
+  final DateFormat dateFormat;
+  final DateFormat timeFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final archivedAt = ticket.archivedAt ?? ticket.adminValidatedAt ?? ticket.createdAt;
+    final parentTime = ticket.parentConfirmedAt;
+    final teacherTime = ticket.teacherValidatedAt;
+    final adminTime = ticket.adminValidatedAt;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return AttendanceDateCard(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => Get.to(() => PickupTicketDetailView(ticket: ticket)),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ticket.childName,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${controller.className(ticket.classId)} • ${ticket.parentName}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.primaryContainer,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            child: Text(
+                              dateFormat.format(archivedAt),
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          timeFormat.format(archivedAt),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _ArchiveTimelineStep(
+                      icon: Icons.access_time,
+                      title: 'Ticket created',
+                      subtitle: archivedFormat.format(ticket.createdAt),
+                      color: colors.secondary,
+                    ),
+                    if (parentTime != null)
+                      _ArchiveTimelineStep(
+                        icon: Icons.check_circle_outline,
+                        title: 'Parent confirmed',
+                        subtitle: archivedFormat.format(parentTime),
+                        color: colors.primary,
+                      ),
+                    if (teacherTime != null)
+                      _ArchiveTimelineStep(
+                        icon: Icons.verified_outlined,
+                        title: ticket.teacherValidatorName.isNotEmpty
+                            ? 'Released by ${ticket.teacherValidatorName}'
+                            : 'Teacher released',
+                        subtitle: archivedFormat.format(teacherTime),
+                        color: colors.tertiary,
+                      ),
+                    if (adminTime != null)
+                      _ArchiveTimelineStep(
+                        icon: Icons.admin_panel_settings_outlined,
+                        title: ticket.adminValidatorName.isNotEmpty
+                            ? 'Validated by ${ticket.adminValidatorName}'
+                            : 'Admin validated',
+                        subtitle: archivedFormat.format(adminTime),
+                        color: colors.primary,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => Get.to(() => PickupTicketDetailView(ticket: ticket)),
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: const Text('View details'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
