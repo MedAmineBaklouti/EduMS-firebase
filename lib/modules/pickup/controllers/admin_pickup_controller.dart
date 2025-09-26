@@ -58,8 +58,27 @@ class AdminPickupController extends GetxController {
     _maybeFinishLoading();
   }
 
+  AdminModel? _buildFallbackAdmin() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return null;
+    }
+    final displayName = user.displayName?.trim();
+    final fallbackName =
+        (displayName != null && displayName.isNotEmpty)
+            ? displayName
+            : (user.email ?? 'Administrator');
+    final creationTime = user.metadata.creationTime;
+    return AdminModel(
+      id: user.uid,
+      name: fallbackName,
+      email: user.email ?? '',
+      createdAt: creationTime ?? DateTime.now(),
+    );
+  }
+
   void _markAdminMissing() {
-    admin.value = null;
+    admin.value = _buildFallbackAdmin();
     _adminLoaded = true;
     _maybeFinishLoading();
   }
@@ -116,7 +135,7 @@ class AdminPickupController extends GetxController {
   }
 
   Future<void> finalizeTicket(PickupTicketModel ticket) async {
-    final adminUser = admin.value;
+    final adminUser = admin.value ?? _buildFallbackAdmin();
     if (adminUser == null) {
       Get.snackbar(
         'Missing profile',
