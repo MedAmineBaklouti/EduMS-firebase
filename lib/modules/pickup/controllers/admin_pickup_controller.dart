@@ -40,13 +40,11 @@ class AdminPickupController extends GetxController {
   final RxList<SchoolClassModel> classes = <SchoolClassModel>[].obs;
 
   final RxnString classFilter = RxnString();
-  final Rx<PickupStage?> stageFilter = Rx<PickupStage?>(PickupStage.awaitingAdmin);
   final Rxn<AdminModel> admin = Rxn<AdminModel>();
   final RxBool isLoading = false.obs;
 
   void clearFilters() {
     classFilter.value = null;
-    stageFilter.value = PickupStage.awaitingAdmin;
     _applyFilters();
   }
 
@@ -67,7 +65,10 @@ class AdminPickupController extends GetxController {
   }
 
   void setClasses(List<SchoolClassModel> items) {
-    classes.assignAll(items);
+    classes.assignAll(
+      List<SchoolClassModel>.from(items)
+        ..sort((a, b) => a.name.compareTo(b.name)),
+    );
     if (classFilter.value != null &&
         !classes.any((element) => element.id == classFilter.value)) {
       classFilter.value = null;
@@ -85,32 +86,20 @@ class AdminPickupController extends GetxController {
   }
 
   void setClassFilter(String? classId) {
-    classFilter.value = classId;
-    _applyFilters();
-  }
-
-  void setStageFilter(PickupStage? stage) {
-    stageFilter.value = stage;
+    classFilter.value = classId == null || classId.isEmpty ? null : classId;
     _applyFilters();
   }
 
   void _applyFilters() {
     final classId = classFilter.value;
-    final stage = stageFilter.value;
     final filtered = _allTickets.where((ticket) {
-      if (stage != PickupStage.completed && ticket.isArchived) {
+      if (ticket.isArchived) {
         return false;
       }
       if (classId != null && classId.isNotEmpty && ticket.classId != classId) {
         return false;
       }
-      if (stage == PickupStage.completed) {
-        return ticket.isArchived;
-      }
-      if (stage == null) {
-        return !ticket.isArchived;
-      }
-      return ticket.stage == stage;
+      return ticket.isAwaitingAdmin;
     }).toList()
       ..sort((a, b) {
         final aTime = _ticketSortKey(a);
@@ -121,14 +110,9 @@ class AdminPickupController extends GetxController {
   }
 
   DateTime _ticketSortKey(PickupTicketModel ticket) {
-    if (ticket.isArchived) {
-      return ticket.archivedAt ??
-          ticket.adminValidatedAt ??
-          ticket.teacherValidatedAt ??
-          ticket.parentConfirmedAt ??
-          ticket.createdAt;
-    }
-    return ticket.parentConfirmedAt ?? ticket.createdAt;
+    return ticket.teacherValidatedAt ??
+        ticket.parentConfirmedAt ??
+        ticket.createdAt;
   }
 
   Future<void> finalizeTicket(PickupTicketModel ticket) async {
