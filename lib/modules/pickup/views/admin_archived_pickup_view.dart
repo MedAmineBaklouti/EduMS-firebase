@@ -205,14 +205,17 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth > 720;
-              final fieldWidth =
-                  isWide ? constraints.maxWidth / 3 - 8 : double.infinity;
+              final classFieldWidth =
+                  isWide ? constraints.maxWidth / 3 - 8 : constraints.maxWidth;
+              final dateFieldWidth = isWide
+                  ? classFieldWidth
+                  : (constraints.maxWidth - 12) / 2;
               return Wrap(
                 spacing: 12,
                 runSpacing: 12,
                 children: [
                   SizedBox(
-                    width: fieldWidth,
+                    width: classFieldWidth,
                     child: Obx(() {
                       final classes = controller.classes;
                       final value = controller.classFilter.value;
@@ -240,8 +243,8 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
                     }),
                   ),
                   SizedBox(
-                    width: fieldWidth,
-                    child: _DateSelectionButton(
+                    width: dateFieldWidth,
+                    child: _DateSelectionField(
                       label: 'From',
                       icon: Icons.calendar_today_outlined,
                       selectedDateBuilder: () {
@@ -281,8 +284,8 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
                     ),
                   ),
                   SizedBox(
-                    width: fieldWidth,
-                    child: _DateSelectionButton(
+                    width: dateFieldWidth,
+                    child: _DateSelectionField(
                       label: 'To',
                       icon: Icons.event_available_outlined,
                       selectedDateBuilder: () {
@@ -331,8 +334,8 @@ class _AdminArchivedPickupFilters extends StatelessWidget {
   }
 }
 
-class _DateSelectionButton extends StatelessWidget {
-  const _DateSelectionButton({
+class _DateSelectionField extends StatelessWidget {
+  const _DateSelectionField({
     required this.label,
     required this.icon,
     required this.onPressed,
@@ -350,39 +353,60 @@ class _DateSelectionButton extends StatelessWidget {
     final colors = theme.colorScheme;
     final selectedDate = selectedDateBuilder();
     final format = DateFormat.yMMMd();
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        alignment: Alignment.centerLeft,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: colors.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  selectedDate != null ? format.format(selectedDate) : 'Select a date',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+    final hasSelection = selectedDate != null;
+    final borderRadius = BorderRadius.circular(12);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: borderRadius,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: onPressed,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            border: Border.all(color: colors.outline),
           ),
-        ],
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: colors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hasSelection
+                          ? format.format(selectedDate!)
+                          : 'Select a date',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: hasSelection
+                            ? colors.onSurface
+                            : colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 20,
+                color: colors.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
