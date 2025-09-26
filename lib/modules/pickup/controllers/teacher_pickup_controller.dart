@@ -83,6 +83,7 @@ class TeacherPickupController extends GetxController {
     final teacherClassIds = classes.map((item) => item.id).toSet();
     if (teacherClassIds.isEmpty) {
       tickets.clear();
+      tickets.refresh();
       return;
     }
     final classId = classFilter.value;
@@ -107,6 +108,7 @@ class TeacherPickupController extends GetxController {
         return bTime.compareTo(aTime);
       });
     tickets.assignAll(filtered);
+    tickets.refresh();
   }
 
   DateTime _ticketSortTime(PickupTicketModel ticket) {

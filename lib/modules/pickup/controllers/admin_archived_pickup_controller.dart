@@ -137,5 +137,6 @@ class AdminArchivedPickupController extends GetxController {
       });
 
     tickets.assignAll(filtered);
+    tickets.refresh();
   }
 }
