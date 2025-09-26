@@ -32,144 +32,149 @@ class AdminAttendanceView extends GetView<AdminAttendanceController> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final summaries = controller.childSummaries;
-                if (summaries.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                    children: const [
-                      ModuleEmptyState(
-                        icon: Icons.school_outlined,
-                        title: 'No attendance data found',
-                        message:
-                            'Adjust the filters above to review attendance submissions for students.',
-                      ),
-                    ],
-                  );
-                }
                 final shortDateFormat = DateFormat.yMMMd();
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: summaries.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final summary = summaries[index];
-                    final latestEntry = summary.subjectEntries.isEmpty
-                        ? null
-                        : summary.subjectEntries.first;
-                    final latestDateLabel = latestEntry == null
-                        ? null
-                        : shortDateFormat.format(latestEntry.date);
-                    final presentCount = summary.presentCount;
-                    final absentCount = summary.absentCount;
-                    final pendingCount = summary.pendingCount;
-                    final totalSubjects = summary.totalSubjects;
-                    final avatarText = summary.childName.isNotEmpty
-                        ? summary.childName[0].toUpperCase()
-                        : '?';
-                    final theme = Theme.of(context);
-                    return ModuleCard(
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AdminChildAttendanceDetailView(summary: summary),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CircleAvatar(
-                                radius: 26,
-                                backgroundColor:
-                                    theme.colorScheme.primary.withOpacity(0.12),
-                                child: Text(
-                                  avatarText,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
+                return RefreshIndicator(
+                  onRefresh: controller.refreshData,
+                  child: summaries.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                          children: const [
+                            ModuleEmptyState(
+                              icon: Icons.school_outlined,
+                              title: 'No attendance data found',
+                              message:
+                                  'Adjust the filters above to review attendance submissions for students.',
+                            ),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          itemCount: summaries.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final summary = summaries[index];
+                            final latestEntry = summary.subjectEntries.isEmpty
+                                ? null
+                                : summary.subjectEntries.first;
+                            final latestDateLabel = latestEntry == null
+                                ? null
+                                : shortDateFormat.format(latestEntry.date);
+                            final presentCount = summary.presentCount;
+                            final absentCount = summary.absentCount;
+                            final pendingCount = summary.pendingCount;
+                            final totalSubjects = summary.totalSubjects;
+                            final avatarText = summary.childName.isNotEmpty
+                                ? summary.childName[0].toUpperCase()
+                                : '?';
+                            final theme = Theme.of(context);
+                            return ModuleCard(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => AdminChildAttendanceDetailView(
+                                    summary: summary,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      summary.childName,
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      summary.className,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '$totalSubjects subject${totalSubjects == 1 ? '' : 's'} tracked',
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                    if (latestDateLabel != null) ...[
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Latest entry: $latestDateLabel',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 26,
+                                        backgroundColor: theme.colorScheme.primary
+                                            .withOpacity(0.12),
+                                        child: Text(
+                                          avatarText,
+                                          style: theme.textTheme.titleMedium?.copyWith(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              summary.childName,
+                                              style: theme.textTheme.titleMedium?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              summary.className,
+                                              style: theme.textTheme.bodySmall?.copyWith(
+                                                color: theme
+                                                    .colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              '$totalSubjects subject${totalSubjects == 1 ? '' : 's'} tracked',
+                                              style: theme.textTheme.bodySmall,
+                                            ),
+                                            if (latestDateLabel != null) ...[
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Latest entry: $latestDateLabel',
+                                                style: theme.textTheme.bodySmall?.copyWith(
+                                                  color: theme.colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
                                     ],
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      if (presentCount > 0)
+                                        _AttendanceSummaryPill(
+                                          backgroundColor: Colors.green.shade50,
+                                          iconColor: Colors.green.shade600,
+                                          icon: Icons.check_circle,
+                                          label: '$presentCount present',
+                                        ),
+                                      if (absentCount > 0)
+                                        _AttendanceSummaryPill(
+                                          backgroundColor: theme.colorScheme.error
+                                              .withOpacity(0.12),
+                                          iconColor: theme.colorScheme.error,
+                                          icon: Icons.cancel_outlined,
+                                          label: '$absentCount absent',
+                                        ),
+                                      if (pendingCount > 0)
+                                        _AttendanceSummaryPill(
+                                          backgroundColor: theme.colorScheme.primary
+                                              .withOpacity(0.12),
+                                          iconColor: theme.colorScheme.primary,
+                                          icon: Icons.hourglass_empty,
+                                          label: '$pendingCount pending',
+                                        ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              if (presentCount > 0)
-                                _AttendanceSummaryPill(
-                                  backgroundColor: Colors.green.shade50,
-                                  iconColor: Colors.green.shade600,
-                                  icon: Icons.check_circle,
-                                  label: '$presentCount present',
-                                ),
-                              if (absentCount > 0)
-                                _AttendanceSummaryPill(
-                                  backgroundColor:
-                                      theme.colorScheme.error.withOpacity(0.12),
-                                  iconColor: theme.colorScheme.error,
-                                  icon: Icons.cancel_outlined,
-                                  label: '$absentCount absent',
-                                ),
-                              if (pendingCount > 0)
-                                _AttendanceSummaryPill(
-                                  backgroundColor:
-                                      theme.colorScheme.primary.withOpacity(0.12),
-                                  iconColor: theme.colorScheme.primary,
-                                  icon: Icons.hourglass_empty,
-                                  label: '$pendingCount pending',
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            );
+                          },
+                        ),
                 );
               }),
             ),

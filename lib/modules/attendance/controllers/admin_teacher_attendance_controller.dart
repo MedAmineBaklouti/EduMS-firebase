@@ -78,6 +78,44 @@ class AdminTeacherAttendanceController extends GetxController {
     _rebuildEntries();
   }
 
+  Future<void> refreshData() async {
+    try {
+      final results = await Future.wait([
+        _db.firestore.collection('teachers').get(),
+        _db.firestore.collection('classes').get(),
+        _db.firestore.collection('subjects').get(),
+        _db.firestore.collection('teacherAttendanceRecords').get(),
+      ]);
+
+      final teacherSnapshot = results[0];
+      final classSnapshot = results[1];
+      final subjectSnapshot = results[2];
+      final attendanceSnapshot = results[3];
+
+      setTeachers(
+        teacherSnapshot.docs.map(TeacherModel.fromDoc).toList(),
+      );
+      setClasses(
+        classSnapshot.docs.map(SchoolClassModel.fromDoc).toList(),
+      );
+      setSubjects(
+        subjectSnapshot.docs.map(SubjectModel.fromDoc).toList(),
+      );
+      _records.assignAll(
+        attendanceSnapshot.docs.map(TeacherAttendanceRecord.fromDoc).toList(),
+      );
+      _attendanceLoaded = true;
+      _rebuildEntries();
+      _maybeFinishLoading();
+    } catch (error) {
+      Get.snackbar(
+        'Refresh failed',
+        'Unable to refresh teacher attendance data: $error',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
   void setClassFilter(String? classId) {
     classFilter.value = classId == null || classId.isEmpty ? null : classId;
     _rebuildEntries();
