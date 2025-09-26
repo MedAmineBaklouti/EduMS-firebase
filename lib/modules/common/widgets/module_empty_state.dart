@@ -6,11 +6,15 @@ class ModuleEmptyState extends StatelessWidget {
     required this.icon,
     required this.title,
     this.message,
+    this.actionLabel,
+    this.onAction,
   });
 
   final IconData icon;
   final String title;
   final String? message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +52,13 @@ class ModuleEmptyState extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
+          ),
+        ],
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: onAction,
+            child: Text(actionLabel!),
           ),
         ],
       ],
