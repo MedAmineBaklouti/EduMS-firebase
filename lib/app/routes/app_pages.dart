@@ -20,6 +20,7 @@ import '../../modules/homework/views/parent_homework_list_view.dart';
 import '../../modules/homework/views/teacher_homework_list_view.dart';
 import '../../modules/parents_dashboard/views/parent_dashboard_view.dart';
 import '../../modules/pickup/views/admin_archived_pickup_view.dart';
+import '../../modules/messaging/views/messaging_view.dart';
 import '../../modules/pickup/views/admin_pickup_view.dart';
 import '../../modules/pickup/views/parent_pickup_view.dart';
 import '../../modules/pickup/views/teacher_pickup_view.dart';
@@ -53,6 +54,9 @@ abstract class AppPages {
   static const ADMIN_PICKUP_ARCHIVE = '/admin/pickup/archive';
   static const TEACHER_PICKUP = '/teacher/pickup';
   static const PARENT_PICKUP = '/parent/pickup';
+  static const ADMIN_MESSAGING = '/admin/messaging';
+  static const TEACHER_MESSAGING = '/teacher/messaging';
+  static const PARENT_MESSAGING = '/parent/messaging';
 
   static final routes = [
     GetPage(name: SPLASH, page: () => SplashView()),
@@ -100,5 +104,8 @@ abstract class AppPages {
     ),
     GetPage(name: TEACHER_PICKUP, page: () => const TeacherPickupView()),
     GetPage(name: PARENT_PICKUP, page: () => const ParentPickupView()),
+    GetPage(name: ADMIN_MESSAGING, page: () => MessagingView()),
+    GetPage(name: TEACHER_MESSAGING, page: () => MessagingView()),
+    GetPage(name: PARENT_MESSAGING, page: () => MessagingView()),
   ];
 }

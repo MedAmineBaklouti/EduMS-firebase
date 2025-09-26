@@ -23,6 +23,13 @@ class AdminDashboard extends StatelessWidget {
           onTap: () => Get.toNamed(AppPages.ADMIN_ANNOUNCEMENTS),
         ),
         DashboardCard(
+          icon: Icons.chat_bubble_outline,
+          title: 'Messaging',
+          subtitle: 'Connect instantly',
+          color: Colors.lightBlue,
+          onTap: () => Get.toNamed(AppPages.ADMIN_MESSAGING),
+        ),
+        DashboardCard(
           icon: Icons.school,
           title: 'Courses',
           subtitle: 'Manage curriculum',

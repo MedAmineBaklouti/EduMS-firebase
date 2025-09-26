@@ -23,6 +23,13 @@ class ParentDashboard extends StatelessWidget {
           onTap: () => Get.toNamed(AppPages.PARENT_ANNOUNCEMENTS),
         ),
         DashboardCard(
+          icon: Icons.chat_bubble_outline,
+          title: 'Messaging',
+          subtitle: 'Talk to teachers',
+          color: Colors.lightBlue,
+          onTap: () => Get.toNamed(AppPages.PARENT_MESSAGING),
+        ),
+        DashboardCard(
           icon: Icons.menu_book,
           title: 'Courses',
           subtitle: 'View class materials',

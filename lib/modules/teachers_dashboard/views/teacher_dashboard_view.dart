@@ -51,6 +51,13 @@ class TeacherDashboard extends StatelessWidget {
           onTap: () => Get.toNamed(AppPages.TEACHER_ANNOUNCEMENTS),
         ),
         DashboardCard(
+          icon: Icons.chat_bubble_outline,
+          title: 'Messaging',
+          subtitle: 'Reach families fast',
+          color: Colors.lightBlue,
+          onTap: () => Get.toNamed(AppPages.TEACHER_MESSAGING),
+        ),
+        DashboardCard(
           icon: Icons.directions_bus,
           title: 'Pickup',
           subtitle: 'Parent coordination',
