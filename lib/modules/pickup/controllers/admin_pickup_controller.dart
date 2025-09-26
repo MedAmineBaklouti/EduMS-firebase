@@ -126,6 +126,7 @@ class AdminPickupController extends GetxController {
         return bTime.compareTo(aTime);
       });
     tickets.assignAll(filtered);
+    tickets.refresh();
   }
 
   DateTime _ticketSortKey(PickupTicketModel ticket) {

@@ -81,6 +81,7 @@ class ParentPickupController extends GetxController {
     final childId = childFilter.value;
     if (_childIds.isEmpty) {
       tickets.clear();
+      tickets.refresh();
       return;
     }
     final relevantTickets = _allTickets.where((ticket) {
@@ -96,12 +97,14 @@ class ParentPickupController extends GetxController {
 
     if (childId == null || childId.isEmpty) {
       tickets.assignAll(relevantTickets);
+      tickets.refresh();
       return;
     }
 
     tickets.assignAll(
       relevantTickets.where((ticket) => ticket.childId == childId).toList(),
     );
+    tickets.refresh();
   }
 
   Future<void> confirmPickup(PickupTicketModel ticket) async {
