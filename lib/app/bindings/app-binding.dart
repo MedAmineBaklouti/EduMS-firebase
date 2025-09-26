@@ -18,6 +18,8 @@ import '../../modules/homework/controllers/parent_homework_controller.dart';
 import '../../modules/homework/controllers/teacher_homework_controller.dart';
 import '../../modules/pickup/controllers/admin_archived_pickup_controller.dart';
 import '../../modules/pickup/controllers/admin_pickup_controller.dart';
+import '../../modules/messaging/controllers/messaging_controller.dart';
+import '../../modules/messaging/services/messaging_service.dart';
 import '../../modules/pickup/controllers/parent_pickup_controller.dart';
 import '../../modules/pickup/controllers/teacher_pickup_controller.dart';
 import '../../modules/pickup/services/parent_pickup_notification_service.dart';
@@ -45,6 +47,11 @@ class AppBindings extends Bindings {
     final authService = AuthService();
     await authService.init();
     Get.put(authService, permanent: true);
+
+    // Initialize MessagingService
+    final messagingService = MessagingService();
+    await messagingService.init();
+    Get.put(messagingService, permanent: true);
   }
 
   Future<void> _initializeControllers() async {
@@ -69,6 +76,7 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => ParentBehaviorController(), fenix: true);
     Get.lazyPut(() => ParentHomeworkController(), fenix: true);
     Get.lazyPut(() => ParentPickupController(), fenix: true);
+    Get.lazyPut(() => MessagingController(), fenix: true);
     Get.put(ParentPickupNotificationService(), permanent: true);
   }
 }
