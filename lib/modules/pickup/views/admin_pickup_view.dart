@@ -20,55 +20,55 @@ class AdminPickupView extends GetView<AdminPickupController> {
         centerTitle: true,
       ),
       body: ModulePageContainer(
-        child: Column(
-          children: [
-            const _AdminPickupFilters(),
-            Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final tickets = controller.tickets;
-                final items = tickets.toList();
-                return RefreshIndicator(
-                  onRefresh: controller.refreshTickets,
-                  child: items.isEmpty
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
-                            ModuleEmptyState(
-                              icon: Icons.security_outlined,
-                              title: 'No pickups waiting',
-                              message:
-                                  'Parents will appear here after they arrive at the school gate.',
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return Column(
+            children: [
+              const _AdminPickupFilters(),
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    final items = controller.tickets.toList();
+                    return RefreshIndicator(
+                      onRefresh: controller.refreshTickets,
+                      child: items.isEmpty
+                          ? ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
+                              children: const [
+                                ModuleEmptyState(
+                                  icon: Icons.security_outlined,
+                                  title: 'No pickups ready',
+                                  message:
+                                      'Once teachers release a student, the pickup will appear here for your validation.',
+                                ),
+                              ],
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              itemCount: items.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 16),
+                              itemBuilder: (context, index) {
+                                final ticket = items[index];
+                                return PickupQueueCard(
+                                  ticket: ticket,
+                                  timeFormat: timeFormat,
+                                  onValidate: () => controller.finalizeTicket(ticket),
+                                );
+                              },
                             ),
-                          ],
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: BouncingScrollPhysics(),
-                          ),
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final ticket = items[index];
-                            final showAction =
-                                ticket.stage == PickupStage.awaitingAdmin && !ticket.isArchived;
-                            return PickupQueueCard(
-                              ticket: ticket,
-                              timeFormat: timeFormat,
-                              onValidate:
-                                  showAction ? () => controller.finalizeTicket(ticket) : null,
-                            );
-                          },
-                        ),
-                );
-              }),
-            ),
-          ],
-        ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -79,58 +79,36 @@ class _AdminPickupFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AdminPickupController>();
     final theme = Theme.of(context);
+    final controller = Get.find<AdminPickupController>();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(() {
-            final stageValue = controller.stageFilter.value;
-            final hasStageFilter =
-                stageValue != null && stageValue != PickupStage.awaitingAdmin;
-            final hasFilters =
-                (controller.classFilter.value ?? '').isNotEmpty || hasStageFilter;
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Filter pickup tickets',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Filter queue',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                TextButton.icon(
-                  onPressed: hasFilters ? controller.clearFilters : null,
+              ),
+              Obx(() {
+                final hasFilter = (controller.classFilter.value ?? '').isNotEmpty;
+                return TextButton.icon(
+                  onPressed: hasFilter ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
                   label: const Text('Clear'),
-                ),
-              ],
-            );
-          }),
+                );
+              }),
+            ],
+          ),
           const SizedBox(height: 12),
           Obx(() {
-            final chips = <Widget>[];
-            final classId = controller.classFilter.value;
-            final stage = controller.stageFilter.value;
-            if (classId != null && classId.isNotEmpty) {
-              chips.add(
-                _ActiveFilterChip(
-                  label: 'Class: ${controller.className(classId)}',
-                  onRemoved: () => controller.setClassFilter(null),
-                ),
-              );
-            }
-            if (stage != null && stage != PickupStage.awaitingAdmin) {
-              chips.add(
-                _ActiveFilterChip(
-                  label: 'Status: ${_stageFilterLabel(stage)}',
-                  onRemoved: () => controller.setStageFilter(null),
-                ),
-              );
-            }
-            if (chips.isEmpty) {
+            final classFilter = controller.classFilter.value;
+            if (classFilter == null || classFilter.isEmpty) {
               return const SizedBox.shrink();
             }
             return Padding(
@@ -138,104 +116,46 @@ class _AdminPickupFilters extends StatelessWidget {
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: chips,
+                children: [
+                  _ActiveFilterChip(
+                    label: 'Class: ${controller.className(classFilter)}',
+                    onRemoved: controller.clearFilters,
+                  ),
+                ],
               ),
             );
           }),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 720;
-              final fieldWidth = isWide
-                  ? constraints.maxWidth / 2 - 8
-                  : double.infinity;
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: fieldWidth,
-                    child: Obx(() {
-                      final classes = controller.classes;
-                      final value = controller.classFilter.value;
-                      return DropdownButtonFormField<String?>(
-                        value: value,
-                        decoration: const InputDecoration(
-                          labelText: 'Class',
-                          border: OutlineInputBorder(),
-                        ),
-                        hint: const Text('All classes'),
-                        items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('All classes'),
-                          ),
-                          ...classes.map(
-                            (item) => DropdownMenuItem<String?>(
-                              value: item.id,
-                              child: Text(item.name),
-                            ),
-                          ),
-                        ],
-                        onChanged: controller.setClassFilter,
-                      );
-                    }),
+          Obx(() {
+            final classes = controller.classes;
+            final classFilter = controller.classFilter.value;
+            final isDisabled = classes.isEmpty;
+            return DropdownButtonFormField<String?>(
+              value: classFilter,
+              decoration: const InputDecoration(
+                labelText: 'Class',
+                border: OutlineInputBorder(),
+              ),
+              hint: Text(
+                isDisabled ? 'No classes available' : 'All classes',
+              ),
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('All classes'),
+                ),
+                ...classes.map(
+                  (schoolClass) => DropdownMenuItem<String?>(
+                    value: schoolClass.id,
+                    child: Text(schoolClass.name),
                   ),
-                  SizedBox(
-                    width: fieldWidth,
-                    child: Obx(() {
-                      final value = controller.stageFilter.value;
-                      return DropdownButtonFormField<PickupStage?>(
-                        value: value,
-                        decoration: const InputDecoration(
-                          labelText: 'Status',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem<PickupStage?>(
-                            value: null,
-                            child: Text('All statuses'),
-                          ),
-                          DropdownMenuItem<PickupStage?>(
-                            value: PickupStage.awaitingParent,
-                            child: Text('Awaiting parent'),
-                          ),
-                          DropdownMenuItem<PickupStage?>(
-                            value: PickupStage.awaitingTeacher,
-                            child: Text('Awaiting release'),
-                          ),
-                          DropdownMenuItem<PickupStage?>(
-                            value: PickupStage.awaitingAdmin,
-                            child: Text('Awaiting admin'),
-                          ),
-                          DropdownMenuItem<PickupStage?>(
-                            value: PickupStage.completed,
-                            child: Text('Completed'),
-                          ),
-                        ],
-                        onChanged: controller.setStageFilter,
-                      );
-                    }),
-                  ),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+              onChanged: isDisabled ? null : controller.setClassFilter,
+            );
+          }),
         ],
       ),
     );
-  }
-}
-
-String _stageFilterLabel(PickupStage stage) {
-  switch (stage) {
-    case PickupStage.awaitingParent:
-      return 'Awaiting parent';
-    case PickupStage.awaitingTeacher:
-      return 'Awaiting release';
-    case PickupStage.awaitingAdmin:
-      return 'Awaiting admin';
-    case PickupStage.completed:
-      return 'Completed';
   }
 }
 
@@ -249,13 +169,16 @@ class _ActiveFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Chip(
-      label: Text(label),
-      deleteIcon: const Icon(Icons.close, size: 16),
-      onDeleted: onRemoved,
-      backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+      avatar: Icon(
+        Icons.filter_alt_outlined,
+        size: 18,
+        color: theme.colorScheme.primary,
       ),
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemoved,
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       labelStyle: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.primary,
         fontWeight: FontWeight.w600,

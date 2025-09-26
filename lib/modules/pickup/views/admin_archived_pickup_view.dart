@@ -60,6 +60,9 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                                 ticket.archivedAt ?? ticket.adminValidatedAt ?? ticket.createdAt;
                             final parentTime = ticket.parentConfirmedAt;
                             final teacherTime = ticket.teacherValidatedAt;
+                            final adminTime = ticket.adminValidatedAt;
+                            final theme = Theme.of(context);
+                            final colors = theme.colorScheme;
                             return AttendanceDateCard(
                               child: Material(
                                 color: Colors.transparent,
@@ -82,9 +85,7 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                                                 children: [
                                                   Text(
                                                     ticket.childName,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleMedium
+                                                    style: theme.textTheme.titleMedium
                                                         ?.copyWith(
                                                           fontWeight: FontWeight.w700,
                                                         ),
@@ -92,13 +93,9 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                                                   const SizedBox(height: 6),
                                                   Text(
                                                     '${controller.className(ticket.classId)} • ${ticket.parentName}',
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .bodySmall
+                                                    style: theme.textTheme.bodySmall
                                                         ?.copyWith(
-                                                          color: Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
+                                                          color: colors.onSurfaceVariant,
                                                         ),
                                                   ),
                                                 ],
@@ -109,9 +106,7 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                                               children: [
                                                 Text(
                                                   dateFormat.format(archivedAt),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleSmall
+                                                  style: theme.textTheme.titleSmall
                                                       ?.copyWith(
                                                         fontWeight: FontWeight.w600,
                                                       ),
@@ -119,50 +114,54 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   timeFormat.format(archivedAt),
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall
+                                                  style: theme.textTheme.labelMedium
                                                       ?.copyWith(
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .primary,
+                                                        color: colors.onSurfaceVariant,
                                                       ),
                                                 ),
                                               ],
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 20),
                                         Wrap(
                                           spacing: 12,
                                           runSpacing: 12,
                                           children: [
-                                            _ArchiveInfoChip(
+                                            _ArchiveTimelineStep(
                                               icon: Icons.access_time,
-                                              label:
-                                                  'Created: ${archivedFormat.format(ticket.createdAt)}',
+                                              title: 'Ticket created',
+                                              subtitle: archivedFormat.format(ticket.createdAt),
+                                              color: colors.secondary,
                                             ),
                                             if (parentTime != null)
-                                              _ArchiveInfoChip(
+                                              _ArchiveTimelineStep(
                                                 icon: Icons.check_circle_outline,
-                                                label:
-                                                    'Parent confirmed: ${archivedFormat.format(parentTime)}',
+                                                title: 'Parent confirmed',
+                                                subtitle: archivedFormat.format(parentTime),
+                                                color: colors.primary,
                                               ),
                                             if (teacherTime != null)
-                                              _ArchiveInfoChip(
+                                              _ArchiveTimelineStep(
                                                 icon: Icons.verified_outlined,
-                                                label:
-                                                    'Teacher validated: ${archivedFormat.format(teacherTime)}',
+                                                title: ticket.teacherValidatorName.isNotEmpty
+                                                    ? 'Released by ${ticket.teacherValidatorName}'
+                                                    : 'Teacher released',
+                                                subtitle: archivedFormat.format(teacherTime),
+                                                color: colors.tertiary,
                                               ),
-                                            if (ticket.adminValidatedAt != null)
-                                              _ArchiveInfoChip(
+                                            if (adminTime != null)
+                                              _ArchiveTimelineStep(
                                                 icon: Icons.admin_panel_settings_outlined,
-                                                label:
-                                                    'Admin released: ${archivedFormat.format(ticket.adminValidatedAt!)}',
+                                                title: ticket.adminValidatorName.isNotEmpty
+                                                    ? 'Validated by ${ticket.adminValidatorName}'
+                                                    : 'Admin validated',
+                                                subtitle: archivedFormat.format(adminTime),
+                                                color: colors.primary,
                                               ),
                                           ],
                                         ),
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 20),
                                         Align(
                                           alignment: Alignment.centerRight,
                                           child: TextButton.icon(
@@ -350,30 +349,55 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ArchiveInfoChip extends StatelessWidget {
-  const _ArchiveInfoChip({required this.icon, required this.label});
+class _ArchiveTimelineStep extends StatelessWidget {
+  const _ArchiveTimelineStep({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+  });
 
   final IconData icon;
-  final String label;
+  final String title;
+  final String subtitle;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      width: 240,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(16),
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
