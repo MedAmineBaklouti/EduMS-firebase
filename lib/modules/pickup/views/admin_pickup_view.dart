@@ -42,7 +42,7 @@ class AdminPickupView extends GetView<AdminPickupController> {
                                   icon: Icons.security_outlined,
                                   title: 'No pickups ready',
                                   message:
-                                      'Once teachers release a student, the pickup will appear here for your validation.',
+                                      'Once parents confirm their arrival, the pickup will appear here for your validation.',
                                 ),
                               ],
                             )
