@@ -16,6 +16,13 @@ class TeacherDashboard extends StatelessWidget {
       onLogout: _controller.logout,
       cards: [
         DashboardCard(
+          icon: Icons.message,
+          title: 'Messages',
+          subtitle: 'Chat with families',
+          color: Colors.cyan,
+          onTap: () => Get.toNamed(AppPages.MESSAGING),
+        ),
+        DashboardCard(
           icon: Icons.menu_book,
           title: 'Courses',
           subtitle: 'Create and share lessons',
