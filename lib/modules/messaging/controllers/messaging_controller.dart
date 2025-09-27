@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/auth_service.dart';
+import '../../../data/models/conversation_model.dart';
 import '../../../data/models/message_model.dart';
+import '../../../data/models/messaging_contact.dart';
 import '../services/messaging_service.dart';
 
 class MessagingController extends GetxController {
@@ -12,33 +15,52 @@ class MessagingController extends GetxController {
 
   final MessagingService _messagingService = Get.find();
   final AuthService _authService = Get.find();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final RxList<MessageModel> messages = <MessageModel>[].obs;
-  final RxBool isLoading = false.obs;
+  final RxBool isMessagesLoading = false.obs;
   final RxBool isSending = false.obs;
-  final RxnString error = RxnString();
+  final RxnString messageError = RxnString();
+
+  final RxList<ConversationModel> conversations = <ConversationModel>[].obs;
+  final RxList<ConversationModel> filteredConversations =
+      <ConversationModel>[].obs;
+  final RxBool isConversationsLoading = false.obs;
+  final RxnString conversationsError = RxnString();
+
+  final Rxn<ConversationModel> activeConversation = Rxn<ConversationModel>();
+  final RxBool isContactsLoading = false.obs;
+  final RxList<MessagingContact> contacts = <MessagingContact>[].obs;
+  final RxnString contactsError = RxnString();
 
   final TextEditingController composerController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   StreamSubscription<MessageModel>? _messageSubscription;
-  late final String conversationId;
+  String? _pendingConversationId;
 
   @override
   void onInit() {
     super.onInit();
-    conversationId = _resolveConversationId();
+    _pendingConversationId = _resolveConversationId();
+    searchController.addListener(_applyConversationFilter);
     _subscribeToIncomingMessages();
-    _loadInitialMessages();
+    Future.microtask(() async {
+      await _loadConversations();
+      await _initializeActiveConversation();
+      await _loadContacts();
+    });
   }
 
   @override
   void onClose() {
     _messageSubscription?.cancel();
     composerController.dispose();
+    searchController.dispose();
     super.onClose();
   }
 
-  String _resolveConversationId() {
+  String? _resolveConversationId() {
     final parameters = Get.parameters;
     final parameterValue = parameters['conversationId'];
     if (parameterValue != null && parameterValue.isNotEmpty) {
@@ -53,26 +75,122 @@ class MessagingController extends GetxController {
       }
     }
 
-    return 'general';
+    return null;
   }
 
-  Future<void> _loadInitialMessages() async {
+  Future<void> _initializeActiveConversation() async {
+    if (_pendingConversationId == null) {
+      return;
+    }
+
+    final conversationId = _pendingConversationId!;
+    _pendingConversationId = null;
     try {
-      isLoading.value = true;
-      error.value = null;
-      final items = await _messagingService.fetchMessages(conversationId);
-      items.sort((a, b) => a.sentAt.compareTo(b.sentAt));
-      messages.assignAll(items);
-    } catch (e) {
-      error.value = e.toString();
+      final existing = conversations
+          .firstWhereOrNull((item) => item.id == conversationId);
+      if (existing != null) {
+        selectConversation(existing);
+        return;
+      }
+
+      final fetched =
+          await _messagingService.fetchConversation(conversationId);
+      if (fetched != null) {
+        conversations.add(fetched);
+        conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        _applyConversationFilter();
+        selectConversation(fetched);
+      }
+    } catch (error) {
+      messageError.value = error.toString();
+    }
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      isConversationsLoading.value = true;
+      conversationsError.value = null;
+      final items = await _messagingService.fetchConversations();
+      conversations.assignAll(items);
+      final activeId = activeConversation.value?.id;
+      if (activeId != null) {
+        final updatedActive =
+            conversations.firstWhereOrNull((item) => item.id == activeId);
+        if (updatedActive != null) {
+          activeConversation.value = updatedActive;
+        }
+      }
+      _applyConversationFilter();
+    } catch (error) {
+      conversationsError.value = error.toString();
+      filteredConversations.clear();
     } finally {
-      isLoading.value = false;
+      isConversationsLoading.value = false;
+    }
+  }
+
+  Future<void> _loadContacts() async {
+    final user = _authService.currentUser;
+    if (user == null) {
+      contacts.clear();
+      return;
+    }
+
+    final role = _authService.currentRole;
+    if (role == null) {
+      contacts.clear();
+      return;
+    }
+
+    try {
+      isContactsLoading.value = true;
+      contactsError.value = null;
+      final classIds = await _resolveClassIds(role, user.uid);
+      final results = await _messagingService.fetchAllowedContacts(
+        userRole: role,
+        userId: user.uid,
+        classIds: classIds,
+      );
+      final filtered = _filterContactsForRole(results, role, classIds);
+      contacts.assignAll(filtered);
+    } catch (error) {
+      contactsError.value = error.toString();
+      contacts.clear();
+    } finally {
+      isContactsLoading.value = false;
     }
   }
 
   void _subscribeToIncomingMessages() {
     _messageSubscription = _messagingService.messageStream.listen((message) {
-      if (message.conversationId != conversationId) {
+      final existingConversation = conversations
+          .firstWhereOrNull((item) => item.id == message.conversationId);
+
+      if (existingConversation != null) {
+        final updatedConversation = existingConversation.copyWith(
+          lastMessagePreview: message.content,
+          updatedAt: message.sentAt,
+        );
+        conversations
+          ..remove(existingConversation)
+          ..insert(0, updatedConversation);
+        _applyConversationFilter();
+        if (activeConversation.value?.id == message.conversationId) {
+          activeConversation.value = updatedConversation;
+        }
+      } else {
+        final placeholder = ConversationModel(
+          id: message.conversationId,
+          title: message.senderName,
+          lastMessagePreview: message.content,
+          updatedAt: message.sentAt,
+          participants: <ConversationParticipant>[],
+        );
+        conversations.insert(0, placeholder);
+        _applyConversationFilter();
+      }
+
+      if (activeConversation.value?.id != message.conversationId) {
         return;
       }
 
@@ -99,8 +217,35 @@ class MessagingController extends GetxController {
     });
   }
 
+  Future<void> refreshConversations() async {
+    await _loadConversations();
+  }
+
   Future<void> refreshMessages() async {
-    await _loadInitialMessages();
+    final conversationId = activeConversation.value?.id;
+    if (conversationId == null) {
+      return;
+    }
+    await _loadMessagesForConversation(conversationId);
+  }
+
+  Future<void> refreshContacts() async {
+    await _loadContacts();
+  }
+
+  Future<void> _loadMessagesForConversation(String conversationId) async {
+    try {
+      isMessagesLoading.value = true;
+      messageError.value = null;
+      final items = await _messagingService.fetchMessages(conversationId);
+      items.sort((a, b) => a.sentAt.compareTo(b.sentAt));
+      messages.assignAll(items);
+    } catch (error) {
+      messageError.value = error.toString();
+      messages.clear();
+    } finally {
+      isMessagesLoading.value = false;
+    }
   }
 
   Future<void> sendCurrentMessage() async {
@@ -111,13 +256,19 @@ class MessagingController extends GetxController {
 
     final user = _authService.currentUser;
     if (user == null) {
-      error.value = 'You must be signed in to send messages.';
+      messageError.value = 'You must be signed in to send messages.';
+      return;
+    }
+
+    final conversationId = activeConversation.value?.id;
+    if (conversationId == null) {
+      messageError.value = 'Select a conversation before sending messages.';
       return;
     }
 
     try {
       isSending.value = true;
-      error.value = null;
+      messageError.value = null;
       await _messagingService.sendMessage(
         conversationId: conversationId,
         senderId: user.uid,
@@ -125,8 +276,9 @@ class MessagingController extends GetxController {
         content: content,
       );
       composerController.clear();
-    } catch (e) {
-      error.value = e.toString();
+      await refreshConversations();
+    } catch (error) {
+      messageError.value = error.toString();
     } finally {
       isSending.value = false;
     }
@@ -138,5 +290,133 @@ class MessagingController extends GetxController {
       return false;
     }
     return message.senderId == user.uid;
+  }
+
+  void selectConversation(ConversationModel conversation) {
+    activeConversation.value = conversation;
+    _loadMessagesForConversation(conversation.id);
+  }
+
+  void clearActiveConversation() {
+    activeConversation.value = null;
+    messages.clear();
+    composerController.clear();
+    messageError.value = null;
+    isMessagesLoading.value = false;
+  }
+
+  void _applyConversationFilter() {
+    final query = searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      filteredConversations.assignAll(conversations);
+      return;
+    }
+
+    final results = conversations.where((conversation) {
+      final titleMatches = conversation.title.toLowerCase().contains(query);
+      final participantMatches = conversation.participants.any(
+        (participant) => participant.name.toLowerCase().contains(query),
+      );
+      final lastMessageMatches =
+          conversation.lastMessagePreview.toLowerCase().contains(query);
+      return titleMatches || participantMatches || lastMessageMatches;
+    }).toList();
+
+    filteredConversations.assignAll(results);
+  }
+
+  Future<void> startConversationWithContact(MessagingContact contact) async {
+    try {
+      isMessagesLoading.value = true;
+      messageError.value = null;
+      final conversation =
+          await _messagingService.ensureConversationWithContact(contact.id);
+
+      final existingIndex =
+          conversations.indexWhere((item) => item.id == conversation.id);
+      if (existingIndex >= 0) {
+        conversations[existingIndex] = conversation;
+      } else {
+        conversations.insert(0, conversation);
+      }
+      _applyConversationFilter();
+      selectConversation(conversation);
+    } catch (error) {
+      messageError.value = error.toString();
+    } finally {
+      isMessagesLoading.value = false;
+    }
+  }
+
+  Future<List<String>> _resolveClassIds(String role, String userId) async {
+    final normalizedRole = role.toLowerCase();
+    if (normalizedRole == 'teacher') {
+      final snapshot = await _firestore.collection('classes').get();
+      final ids = snapshot.docs.where((doc) {
+        final data = doc.data();
+        final teacherSubjects =
+            (data['teacherSubjects'] as Map<String, dynamic>?) ??
+                <String, dynamic>{};
+        return teacherSubjects.values.contains(userId);
+      }).map((doc) => doc.id);
+      return ids.toList();
+    }
+
+    if (normalizedRole == 'parent') {
+      final snapshot = await _firestore
+          .collection('children')
+          .where('parentId', isEqualTo: userId)
+          .get();
+      final ids = snapshot.docs
+          .map((doc) => (doc.data()['classId'] as String?) ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet();
+      return ids.toList();
+    }
+
+    return <String>[];
+  }
+
+  List<MessagingContact> _filterContactsForRole(
+    List<MessagingContact> items,
+    String role,
+    List<String> myClassIds,
+  ) {
+    switch (role.toLowerCase()) {
+      case 'teacher':
+        final myClasses = myClassIds.toSet();
+        return items.where((contact) {
+          final contactRole = contact.role.toLowerCase();
+          if (contactRole == 'admin' || contactRole == 'teacher') {
+            return true;
+          }
+          if (contactRole == 'parent') {
+            if (myClasses.isEmpty) {
+              return false;
+            }
+            return contact.classIds
+                .any((classId) => myClasses.contains(classId));
+          }
+          return false;
+        }).toList();
+      case 'parent':
+        final myClasses = myClassIds.toSet();
+        return items.where((contact) {
+          final contactRole = contact.role.toLowerCase();
+          if (contactRole == 'admin') {
+            return true;
+          }
+          if (contactRole == 'teacher') {
+            if (myClasses.isEmpty) {
+              return false;
+            }
+            return contact.classIds
+                .any((classId) => myClasses.contains(classId));
+          }
+          return false;
+        }).toList();
+      default:
+        return items;
+    }
   }
 }

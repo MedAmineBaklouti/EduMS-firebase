@@ -25,6 +25,8 @@ class AuthService extends GetxService {
 
   User? get currentUser => _auth.currentUser;
 
+  String? get currentRole => prefs.getString('userRole');
+
   Future<User?> loginWithEmail(String email, String password) async {
     try {
       final credential = await _auth.signInWithEmailAndPassword(
