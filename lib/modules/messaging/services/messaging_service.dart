@@ -7,7 +7,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart' hide Response;
 
 import '../../../app/config/app_config.dart';
+import '../../../data/models/conversation_model.dart';
 import '../../../data/models/message_model.dart';
+import '../../../data/models/messaging_contact.dart';
 import 'messaging_push_handler.dart';
 
 class MessagingService extends GetxService {
@@ -104,6 +106,61 @@ class MessagingService extends GetxService {
     }
   }
 
+  Future<List<ConversationModel>> fetchConversations() async {
+    try {
+      final Response<dynamic> response = await _dio.get<dynamic>(
+        '/conversations',
+      );
+
+      final dynamic body = response.data;
+      if (body == null) {
+        return <ConversationModel>[];
+      }
+
+      List<dynamic>? items;
+      if (body is List) {
+        items = body;
+      } else if (body is Map<String, dynamic>) {
+        final dynamic nested = body['items'] ?? body['conversations'];
+        if (nested is List) {
+          items = nested;
+        }
+      }
+
+      if (items == null) {
+        throw Exception('Unexpected response when fetching conversations.');
+      }
+
+      final conversations = items
+          .whereType<Map<String, dynamic>>()
+          .map(ConversationModel.fromJson)
+          .toList();
+      conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      return conversations;
+    } on DioException catch (error) {
+      final message = error.message ?? 'Unknown error';
+      throw Exception('Failed to load conversations: $message');
+    }
+  }
+
+  Future<ConversationModel?> fetchConversation(String conversationId) async {
+    try {
+      final Response<dynamic> response = await _dio.get<dynamic>(
+        '/conversations/$conversationId',
+      );
+
+      final dynamic body = response.data;
+      if (body is Map<String, dynamic>) {
+        return ConversationModel.fromJson(body);
+      }
+
+      return null;
+    } on DioException catch (error) {
+      final message = error.message ?? 'Unknown error';
+      throw Exception('Failed to load conversation: $message');
+    }
+  }
+
   Future<MessageModel> sendMessage({
     required String conversationId,
     required String senderId,
@@ -131,6 +188,72 @@ class MessagingService extends GetxService {
     } on DioException catch (error) {
       final message = error.message ?? 'Unknown error';
       throw Exception('Failed to send message: $message');
+    }
+  }
+
+  Future<ConversationModel> ensureConversationWithContact(String contactId) async {
+    try {
+      final Response<dynamic> response = await _dio.post<dynamic>(
+        '/conversations',
+        data: <String, dynamic>{
+          'participantIds': <String>[contactId],
+        },
+      );
+
+      final dynamic body = response.data;
+      if (body is Map<String, dynamic>) {
+        final conversation = ConversationModel.fromJson(body);
+        return conversation;
+      }
+
+      throw Exception('Unexpected response when starting conversation.');
+    } on DioException catch (error) {
+      final message = error.message ?? 'Unknown error';
+      throw Exception('Failed to start conversation: $message');
+    }
+  }
+
+  Future<List<MessagingContact>> fetchAllowedContacts({
+    required String userRole,
+    required String userId,
+    List<String>? classIds,
+  }) async {
+    try {
+      final Response<dynamic> response = await _dio.get<dynamic>(
+        '/messaging/contacts',
+        queryParameters: <String, dynamic>{
+          'role': userRole,
+          'userId': userId,
+          if (classIds != null && classIds.isNotEmpty) 'classIds': classIds,
+        },
+      );
+
+      final dynamic body = response.data;
+      if (body == null) {
+        return <MessagingContact>[];
+      }
+
+      List<dynamic>? items;
+      if (body is List) {
+        items = body;
+      } else if (body is Map<String, dynamic>) {
+        final dynamic nested = body['items'] ?? body['contacts'];
+        if (nested is List) {
+          items = nested;
+        }
+      }
+
+      if (items == null) {
+        throw Exception('Unexpected response when fetching contacts.');
+      }
+
+      return items
+          .whereType<Map<String, dynamic>>()
+          .map(MessagingContact.fromJson)
+          .toList();
+    } on DioException catch (error) {
+      final message = error.message ?? 'Unknown error';
+      throw Exception('Failed to load contacts: $message');
     }
   }
 
