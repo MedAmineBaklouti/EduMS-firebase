@@ -39,6 +39,7 @@ class MessagingService extends GetxService {
   );
 
   static const String _messagingRoute = '/messaging';
+  static const List<String> _nestedDataKeys = <String>['data', 'result'];
 
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
 
@@ -73,7 +74,7 @@ class MessagingService extends GetxService {
         '/conversations/$conversationId/messages',
       );
 
-      final dynamic body = response.data;
+      final dynamic body = _unwrapData(response.data);
       if (body == null) {
         return <MessageModel>[];
       }
@@ -112,7 +113,7 @@ class MessagingService extends GetxService {
         '/conversations',
       );
 
-      final dynamic body = response.data;
+      final dynamic body = _unwrapData(response.data);
       if (body == null) {
         return <ConversationModel>[];
       }
@@ -149,7 +150,7 @@ class MessagingService extends GetxService {
         '/conversations/$conversationId',
       );
 
-      final dynamic body = response.data;
+      final dynamic body = _unwrapData(response.data);
       if (body is Map<String, dynamic>) {
         return ConversationModel.fromJson(body);
       }
@@ -228,7 +229,7 @@ class MessagingService extends GetxService {
         },
       );
 
-      final dynamic body = response.data;
+      final dynamic body = _unwrapData(response.data);
       if (body == null) {
         return <MessagingContact>[];
       }
@@ -255,6 +256,20 @@ class MessagingService extends GetxService {
       final message = error.message ?? 'Unknown error';
       throw Exception('Failed to load contacts: $message');
     }
+  }
+
+  dynamic _unwrapData(dynamic body) {
+    if (body is Map<String, dynamic>) {
+      for (final key in _nestedDataKeys) {
+        if (body.containsKey(key)) {
+          final dynamic value = body[key];
+          if (value != null) {
+            return _unwrapData(value);
+          }
+        }
+      }
+    }
+    return body;
   }
 
   Future<void> _initializePushNotifications() async {
