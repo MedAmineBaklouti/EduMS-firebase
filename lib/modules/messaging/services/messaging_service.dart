@@ -23,7 +23,7 @@ class MessagingService extends GetxService {
             localNotifications ?? FlutterLocalNotificationsPlugin();
 
   final Dio? _providedDio;
-  late final Dio _dio;
+  Dio? _dio;
   final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications;
 
@@ -44,21 +44,28 @@ class MessagingService extends GetxService {
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
 
   Future<MessagingService> init() async {
-    _dio = _providedDio ??
-        Dio(
-          BaseOptions(
-            baseUrl: AppConfig.apiBaseUrl,
-            connectTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 15),
-            receiveDataWhenStatusError: true,
-            headers: <String, dynamic>{
-              'Content-Type': 'application/json',
-              if (AppConfig.apiKey.isNotEmpty) 'x-api-key': AppConfig.apiKey,
-            },
-          ),
-        );
+    final baseUrl = AppConfig.apiBaseUrl.trim();
 
-    _dio.interceptors.add(
+    if (_providedDio != null) {
+      _dio = _providedDio;
+    } else if (baseUrl.isNotEmpty) {
+      _dio = Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          receiveDataWhenStatusError: true,
+          headers: <String, dynamic>{
+            'Content-Type': 'application/json',
+            if (AppConfig.apiKey.isNotEmpty) 'x-api-key': AppConfig.apiKey,
+          },
+        ),
+      );
+    } else {
+      _dio = null;
+    }
+
+    _dio?.interceptors.add(
       LogInterceptor(requestBody: true, responseBody: true),
     );
 
@@ -69,8 +76,9 @@ class MessagingService extends GetxService {
   }
 
   Future<List<MessageModel>> fetchMessages(String conversationId) async {
+    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await _dio.get<dynamic>(
+      final Response<dynamic> response = await dio.get<dynamic>(
         '/conversations/$conversationId/messages',
       );
 
@@ -108,8 +116,9 @@ class MessagingService extends GetxService {
   }
 
   Future<List<ConversationModel>> fetchConversations() async {
+    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await _dio.get<dynamic>(
+      final Response<dynamic> response = await dio.get<dynamic>(
         '/conversations',
       );
 
@@ -145,8 +154,9 @@ class MessagingService extends GetxService {
   }
 
   Future<ConversationModel?> fetchConversation(String conversationId) async {
+    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await _dio.get<dynamic>(
+      final Response<dynamic> response = await dio.get<dynamic>(
         '/conversations/$conversationId',
       );
 
@@ -168,8 +178,9 @@ class MessagingService extends GetxService {
     required String senderName,
     required String content,
   }) async {
+    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await _dio.post<dynamic>(
+      final Response<dynamic> response = await dio.post<dynamic>(
         '/conversations/$conversationId/messages',
         data: <String, dynamic>{
           'senderId': senderId,
@@ -193,8 +204,9 @@ class MessagingService extends GetxService {
   }
 
   Future<ConversationModel> ensureConversationWithContact(String contactId) async {
+    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await _dio.post<dynamic>(
+      final Response<dynamic> response = await dio.post<dynamic>(
         '/conversations',
         data: <String, dynamic>{
           'participantIds': <String>[contactId],
@@ -219,8 +231,9 @@ class MessagingService extends GetxService {
     required String userId,
     List<String>? classIds,
   }) async {
+    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await _dio.get<dynamic>(
+      final Response<dynamic> response = await dio.get<dynamic>(
         '/messaging/contacts',
         queryParameters: <String, dynamic>{
           'role': userRole,
@@ -256,6 +269,17 @@ class MessagingService extends GetxService {
       final message = error.message ?? 'Unknown error';
       throw Exception('Failed to load contacts: $message');
     }
+  }
+
+  Dio _requireApiClient() {
+    final dio = _dio;
+    if (dio != null) {
+      return dio;
+    }
+
+    throw StateError(
+      'Messaging API is not configured. Backend-dependent messaging features are disabled because API_URL is empty.',
+    );
   }
 
   dynamic _unwrapData(dynamic body) {
