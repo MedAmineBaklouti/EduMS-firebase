@@ -44,10 +44,27 @@ class MessagingService extends GetxService {
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
 
   Future<MessagingService> init() async {
+    late final String baseUrl;
+    try {
+      baseUrl = AppConfig.apiBaseUrl;
+    } on FormatException catch (error) {
+      throw StateError(
+        'Invalid API_URL configuration: ${error.message}. Provide a full '
+        'URL that includes the protocol and host.',
+      );
+    }
+
+    if (baseUrl.isEmpty) {
+      throw StateError(
+        'Missing API_URL configuration. Please set the messaging API base '
+        'URL in your environment (e.g. via a .env file or --dart-define).',
+      );
+    }
+
     _dio = _providedDio ??
         Dio(
           BaseOptions(
-            baseUrl: AppConfig.apiBaseUrl,
+            baseUrl: baseUrl,
             connectTimeout: const Duration(seconds: 15),
             receiveTimeout: const Duration(seconds: 15),
             receiveDataWhenStatusError: true,
