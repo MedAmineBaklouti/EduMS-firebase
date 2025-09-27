@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AppConfig {
   static String get apiBaseUrl => _readEnv('API_URL');
   static String get apiKey => _readEnv('API_KEY');
+  static String get fcmServerKey => _readEnv('FCM_SERVER_KEY');
 
   static String _readEnv(String key) {
     if (dotenv.isInitialized) {

@@ -274,6 +274,7 @@ class MessagingController extends GetxController {
         senderId: user.uid,
         senderName: user.displayName ?? user.email ?? 'User',
         content: content,
+        participants: activeConversation.value?.participants,
       );
       composerController.clear();
       await refreshConversations();

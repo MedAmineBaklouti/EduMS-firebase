@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart' hide Response;
 
 import '../../../app/config/app_config.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../data/models/conversation_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../../data/models/messaging_contact.dart';
@@ -17,18 +22,34 @@ class MessagingService extends GetxService {
     Dio? dio,
     FirebaseMessaging? messaging,
     FlutterLocalNotificationsPlugin? localNotifications,
+    FirebaseFirestore? firestore,
+    AuthService? authService,
+    Dio? pushClient,
   })  : _providedDio = dio,
         _messaging = messaging ?? FirebaseMessaging.instance,
         _localNotifications =
-            localNotifications ?? FlutterLocalNotificationsPlugin();
+            localNotifications ?? FlutterLocalNotificationsPlugin(),
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _authService = authService ?? Get.find<AuthService>(),
+        _pushClient = pushClient ?? _createPushClient();
 
   final Dio? _providedDio;
   Dio? _dio;
   final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications;
+  final FirebaseFirestore _firestore;
+  final AuthService _authService;
+  final Dio? _pushClient;
 
   final StreamController<MessageModel> _messageStreamController =
       StreamController<MessageModel>.broadcast();
+
+  StreamSubscription<String>? _tokenRefreshSubscription;
+  StreamSubscription<User?>? _authSubscription;
+  String? _lastKnownToken;
+  String? _pendingToken;
+  String? _lastKnownUserId;
+  bool _pushPermissionGranted = false;
 
   static const AndroidNotificationChannel _androidChannel =
       AndroidNotificationChannel(
@@ -40,6 +61,27 @@ class MessagingService extends GetxService {
 
   static const String _messagingRoute = '/messaging';
   static const List<String> _nestedDataKeys = <String>['data', 'result'];
+  static const String _tokenCollection = 'userPushTokens';
+  static const int _firestoreBatchLimit = 10;
+
+  static Dio? _createPushClient() {
+    final serverKey = AppConfig.fcmServerKey.trim();
+    if (serverKey.isEmpty) {
+      return null;
+    }
+
+    return Dio(
+      BaseOptions(
+        baseUrl: 'https://fcm.googleapis.com',
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: <String, dynamic>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$serverKey',
+        },
+      ),
+    );
+  }
 
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
 
@@ -71,6 +113,11 @@ class MessagingService extends GetxService {
 
     await _setupLocalNotifications();
     await _initializePushNotifications();
+    _authSubscription?.cancel();
+    _authSubscription = _authService.user.listen(_handleAuthStateChanged);
+    if (_pushPermissionGranted) {
+      await _ensureTokenForCurrentUser();
+    }
 
     return this;
   }
@@ -177,6 +224,7 @@ class MessagingService extends GetxService {
     required String senderId,
     required String senderName,
     required String content,
+    List<ConversationParticipant>? participants,
   }) async {
     final dio = _requireApiClient();
     try {
@@ -193,6 +241,9 @@ class MessagingService extends GetxService {
       if (body is Map<String, dynamic>) {
         final message = MessageModel.fromJson(body);
         _messageStreamController.add(message);
+        if (participants != null && participants.isNotEmpty) {
+          unawaited(_sendPushNotification(message, participants));
+        }
         return message;
       }
 
@@ -296,6 +347,161 @@ class MessagingService extends GetxService {
     return body;
   }
 
+  void _handleAuthStateChanged(User? user) {
+    if (user == null) {
+      unawaited(_handleUserSignedOut());
+    } else {
+      unawaited(_handleUserSignedIn(user));
+    }
+  }
+
+  Future<void> _handleUserSignedIn(User user) async {
+    _lastKnownUserId = user.uid;
+    if (!_pushPermissionGranted) {
+      return;
+    }
+
+    final pending = _pendingToken;
+    if (pending != null && pending.isNotEmpty) {
+      await _registerTokenForUser(user.uid, pending);
+      return;
+    }
+
+    await _ensureTokenForUser(user.uid);
+  }
+
+  Future<void> _handleUserSignedOut() async {
+    final userId = _lastKnownUserId;
+    final token = _lastKnownToken;
+    _lastKnownUserId = null;
+    _pendingToken = null;
+    if (userId == null || token == null || token.isEmpty) {
+      _lastKnownToken = null;
+      return;
+    }
+
+    await _removeTokenFromFirestore(userId, token);
+    _lastKnownToken = null;
+  }
+
+  Future<void> _ensureTokenForCurrentUser() async {
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      return;
+    }
+    await _ensureTokenForUser(userId);
+  }
+
+  Future<void> _ensureTokenForUser(String userId) async {
+    if (!_pushPermissionGranted) {
+      return;
+    }
+
+    try {
+      final token = await _messaging.getToken();
+      if (token != null && token.isNotEmpty) {
+        await _registerTokenForUser(userId, token);
+      }
+    } catch (error) {
+      debugPrint('Failed to retrieve FCM token: $error');
+    }
+  }
+
+  void _handleNewToken(String token) {
+    if (token.isEmpty) {
+      return;
+    }
+    _pendingToken = token;
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      return;
+    }
+
+    unawaited(_registerTokenForUser(userId, token));
+  }
+
+  Future<void> _registerTokenForUser(String userId, String token) async {
+    if (token.isEmpty) {
+      return;
+    }
+
+    try {
+      final previousToken = _lastKnownToken;
+      await _saveTokenToFirestore(userId, token);
+      if (previousToken != null && previousToken.isNotEmpty &&
+          previousToken != token) {
+        await _removeTokenFromFirestore(userId, previousToken);
+      }
+      _lastKnownToken = token;
+      _pendingToken = null;
+      _lastKnownUserId = userId;
+    } catch (error) {
+      debugPrint('Failed to register FCM token: $error');
+    }
+  }
+
+  Future<void> _saveTokenToFirestore(String userId, String token) async {
+    try {
+      final doc = _firestore.collection(_tokenCollection).doc(userId);
+      await doc.set(
+        <String, dynamic>{
+          'tokens': FieldValue.arrayUnion(<String>[token]),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'lastPlatform': defaultTargetPlatform.name,
+        },
+        SetOptions(merge: true),
+      );
+    } catch (error) {
+      debugPrint('Failed to store FCM token: $error');
+    }
+  }
+
+  Future<void> _removeTokenFromFirestore(String userId, String token) async {
+    try {
+      final doc = _firestore.collection(_tokenCollection).doc(userId);
+      await doc.set(
+        <String, dynamic>{
+          'tokens': FieldValue.arrayRemove(<String>[token]),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    } catch (error) {
+      debugPrint('Failed to remove FCM token: $error');
+    }
+  }
+
+  Future<List<String>> _fetchTokensForUsers(List<String> userIds) async {
+    if (userIds.isEmpty) {
+      return <String>[];
+    }
+
+    final results = <String>{};
+    for (var index = 0; index < userIds.length; index += _firestoreBatchLimit) {
+      final end = math.min(index + _firestoreBatchLimit, userIds.length);
+      final batch = userIds.sublist(index, end);
+      try {
+        final snapshot = await _firestore
+            .collection(_tokenCollection)
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          final dynamic tokens = data['tokens'];
+          if (tokens is Iterable) {
+            results.addAll(
+              tokens.whereType<String>().where((token) => token.isNotEmpty),
+            );
+          }
+        }
+      } catch (error) {
+        debugPrint('Failed to fetch tokens for users: $error');
+      }
+    }
+
+    return results.toList();
+  }
+
   Future<void> _initializePushNotifications() async {
     final settings = await _messaging.requestPermission(
       alert: true,
@@ -306,15 +512,26 @@ class MessagingService extends GetxService {
 
     FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
 
-    if (settings.authorizationStatus == AuthorizationStatus.denied) {
+    final status = settings.authorizationStatus;
+    if (status == AuthorizationStatus.denied ||
+        status == AuthorizationStatus.notDetermined) {
+      _pushPermissionGranted = false;
       return;
     }
+
+    _pushPermissionGranted = true;
 
     await _messaging.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
     );
+
+    _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription =
+        _messaging.onTokenRefresh.listen(_handleNewToken, onError: (Object error) {
+      debugPrint('Failed to refresh FCM token: $error');
+    });
 
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
   }
@@ -367,6 +584,55 @@ class MessagingService extends GetxService {
     _showForegroundNotification(message);
   }
 
+  Future<void> _sendPushNotification(
+    MessageModel message,
+    List<ConversationParticipant> participants,
+  ) async {
+    if (_pushClient == null || participants.isEmpty) {
+      return;
+    }
+
+    final recipientIds = participants
+        .map((participant) => participant.id)
+        .where((id) => id.isNotEmpty && id != message.senderId)
+        .toSet()
+        .toList();
+
+    if (recipientIds.isEmpty) {
+      return;
+    }
+
+    try {
+      final tokens = await _fetchTokensForUsers(recipientIds);
+      if (tokens.isEmpty) {
+        return;
+      }
+
+      await _pushClient!.post<dynamic>(
+        '/fcm/send',
+        data: <String, dynamic>{
+          'registration_ids': tokens,
+          'notification': <String, dynamic>{
+            'title': message.senderName,
+            'body': message.content,
+          },
+          'data': <String, dynamic>{
+            'conversationId': message.conversationId,
+            'messageId': message.id,
+            'senderId': message.senderId,
+            'senderName': message.senderName,
+            'content': message.content,
+            'sentAt': message.sentAt.toIso8601String(),
+          },
+        },
+      );
+    } on DioException catch (error) {
+      debugPrint('Failed to send FCM push: ${error.message ?? error.error}');
+    } catch (error) {
+      debugPrint('Failed to send FCM push: $error');
+    }
+  }
+
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
     final data = message.data;
@@ -401,6 +667,8 @@ class MessagingService extends GetxService {
 
   @override
   void onClose() {
+    _tokenRefreshSubscription?.cancel();
+    _authSubscription?.cancel();
     _messageStreamController.close();
     super.onClose();
   }
