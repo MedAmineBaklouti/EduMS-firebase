@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -514,6 +515,143 @@ class MessagingController extends GetxController {
     }
 
     _applyConversationFilter();
+  }
+
+  String resolveConversationTitle(ConversationModel conversation) {
+    final others = _otherParticipants(conversation);
+    if (others.isNotEmpty) {
+      final names = others
+          .map((participant) {
+            final contact = _findContact(participant.id);
+            final candidate = contact?.name ?? participant.name;
+            return _prettifyName(candidate);
+          })
+          .where((name) => name.isNotEmpty)
+          .toList();
+      if (names.isNotEmpty) {
+        return _formatList(names);
+      }
+    }
+    final fallback = _prettifyName(conversation.title);
+    if (fallback.isNotEmpty) {
+      return fallback;
+    }
+    return 'Conversation';
+  }
+
+  String? resolveConversationContext(ConversationModel conversation) {
+    final others = _otherParticipants(conversation);
+    if (others.isEmpty) {
+      return null;
+    }
+    if (others.length == 1) {
+      final participant = others.first;
+      final contact = _findContact(participant.id);
+      final relationship = contact?.relationship?.trim();
+      if (relationship != null && relationship.isNotEmpty) {
+        return relationship;
+      }
+      final roleLabel = _prettifyRole(participant.role);
+      return roleLabel.isEmpty ? null : roleLabel;
+    }
+
+    final labels = others
+        .map((participant) => _prettifyRole(participant.role))
+        .where((label) => label.isNotEmpty)
+        .toSet()
+        .toList();
+    if (labels.isEmpty) {
+      return null;
+    }
+    return _formatList(labels);
+  }
+
+  String resolveConversationParticipantsLabel(
+    ConversationModel conversation,
+  ) {
+    final currentUserId = _authService.currentUser?.uid;
+    final names = conversation.participants.map((participant) {
+      if (participant.id == currentUserId) {
+        return 'You';
+      }
+      final contact = _findContact(participant.id);
+      final candidate = contact?.name ?? participant.name;
+      return _prettifyName(candidate);
+    }).where((name) => name.isNotEmpty).toList();
+    return _formatList(names);
+  }
+
+  List<ConversationParticipant> _otherParticipants(
+    ConversationModel conversation,
+  ) {
+    final currentUserId = _authService.currentUser?.uid;
+    return conversation.participants.where((participant) {
+      if (currentUserId == null) {
+        return true;
+      }
+      return participant.id != currentUserId;
+    }).toList();
+  }
+
+  MessagingContact? _findContact(String participantId) {
+    return contacts.firstWhereOrNull((contact) => contact.id == participantId);
+  }
+
+  String _prettifyName(String? value) {
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) {
+      return '';
+    }
+    if (raw.contains('@')) {
+      final localPart = raw.split('@').first;
+      final sanitized =
+          localPart.replaceAll(RegExp(r'[._]+'), ' ').replaceAll('-', ' ').trim();
+      if (sanitized.isEmpty) {
+        return raw;
+      }
+      final words = sanitized.split(RegExp(r'\s+'));
+      return words
+          .map((word) =>
+              word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+          .join(' ');
+    }
+    return raw;
+  }
+
+  String _prettifyRole(String? value) {
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) {
+      return '';
+    }
+    return raw[0].toUpperCase() + raw.substring(1).toLowerCase();
+  }
+
+  String _formatList(Iterable<String> values) {
+    final seen = LinkedHashSet<String>();
+    for (final value in values) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+      seen.add(trimmed);
+    }
+    if (seen.isEmpty) {
+      return '';
+    }
+    if (seen.length == 1) {
+      return seen.first;
+    }
+    if (seen.length == 2) {
+      final iterator = seen.iterator;
+      iterator.moveNext();
+      final first = iterator.current;
+      iterator.moveNext();
+      final second = iterator.current;
+      return '$first & $second';
+    }
+    final items = seen.toList();
+    final last = items.removeLast();
+    return '${items.join(', ')} & $last';
   }
 
   bool isMessageReadByOthers(MessageModel message) {

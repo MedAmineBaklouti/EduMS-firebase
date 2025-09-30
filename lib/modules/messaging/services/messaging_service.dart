@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -288,11 +289,11 @@ class MessagingService extends GetxService {
       }
 
       final now = DateTime.now().toUtc();
-      final displayName = user.displayName?.trim();
-      final currentUserName =
-          (displayName != null && displayName.isNotEmpty)
-              ? displayName
-              : (user.email ?? 'User');
+      final currentUserName = _formatDisplayName(
+        user.displayName,
+        user.email,
+        'User',
+      );
       final currentRole = (_authService.currentRole ?? 'user').toLowerCase();
 
       final participants = <ConversationParticipant>[
@@ -354,7 +355,7 @@ class MessagingService extends GetxService {
     try {
       final normalizedRole = userRole.toLowerCase();
       final filterClassIds =
-          classIds?.where((id) => id.isNotEmpty).toSet();
+          classIds?.where((id) => id.isNotEmpty).toSet() ?? <String>{};
 
       final classesFuture =
           _firestore.collection(_classesCollection).get();
@@ -382,6 +383,8 @@ class MessagingService extends GetxService {
       final QuerySnapshot adminsSnapshot = results[4] as QuerySnapshot;
 
       final Map<String, Set<String>> teacherClassMap = <String, Set<String>>{};
+      final Map<String, Map<String, Set<String>>> teacherSubjectsByClass =
+          <String, Map<String, Set<String>>>{};
       for (final doc in classesSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
         final teacherSubjects =
@@ -392,28 +395,40 @@ class MessagingService extends GetxService {
           if (teacherId is String && teacherId.isNotEmpty) {
             teacherClassMap.putIfAbsent(teacherId, () => <String>{});
             teacherClassMap[teacherId]!.add(doc.id);
+            final subjectKey = entry.key;
+            if (subjectKey is String && subjectKey.trim().isNotEmpty) {
+              final formattedSubject = _prettifyDisplayValue(subjectKey);
+              if (formattedSubject.isNotEmpty) {
+                teacherSubjectsByClass.putIfAbsent(
+                    teacherId, () => <String, Set<String>>{});
+                final subjectsForClass = teacherSubjectsByClass[teacherId]!
+                    .putIfAbsent(doc.id, () => <String>{});
+                subjectsForClass.add(formattedSubject);
+              }
+            }
           }
         }
       }
 
       final Map<String, Set<String>> parentClassMap = <String, Set<String>>{};
-      final Map<String, List<String>> parentChildNames =
-          <String, List<String>>{};
+      final Map<String, List<_ChildInfo>> parentChildren =
+          <String, List<_ChildInfo>>{};
       for (final doc in childrenSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
-        final parentId = data['parentId'] as String?;
+        final parentId = (data['parentId'] as String?)?.trim();
         if (parentId == null || parentId.isEmpty) {
           continue;
         }
         parentClassMap.putIfAbsent(parentId, () => <String>{});
-        final classId = data['classId'] as String?;
+        final classId = (data['classId'] as String?)?.trim();
         if (classId != null && classId.isNotEmpty) {
           parentClassMap[parentId]!.add(classId);
         }
-        final childName = data['name'] as String?;
+        final childName = (data['name'] as String?)?.trim();
         if (childName != null && childName.isNotEmpty) {
-          parentChildNames.putIfAbsent(parentId, () => <String>[]);
-          parentChildNames[parentId]!.add(childName);
+          parentChildren.putIfAbsent(parentId, () => <_ChildInfo>[]);
+          parentChildren[parentId]!
+              .add(_ChildInfo(name: childName, classId: classId));
         }
       }
 
@@ -433,25 +448,54 @@ class MessagingService extends GetxService {
         final id = doc.id;
         final name = (data['name'] as String?)?.trim();
         final email = (data['email'] as String?)?.trim();
-        final displayName =
-            (name != null && name.isNotEmpty)
-                ? name
-                : (email != null && email.isNotEmpty ? email : 'Teacher');
+        final displayName = _formatDisplayName(name, email, 'Teacher');
         final teacherClassIds =
             List<String>.from(teacherClassMap[id] ?? <String>{});
         final teacherClassSet = teacherClassIds.toSet();
-        if (filterClassIds != null &&
-            filterClassIds.isNotEmpty &&
+        if (filterClassIds.isNotEmpty &&
             normalizedRole != 'admin' &&
             teacherClassSet.isNotEmpty &&
             teacherClassSet.intersection(filterClassIds).isEmpty) {
           continue;
+        }
+        String? relationship;
+        if (normalizedRole == 'parent') {
+          final myChildren = parentChildren[userId] ?? <_ChildInfo>[];
+          final relevantChildren = myChildren
+              .where((child) =>
+                  child.classId != null &&
+                  teacherClassSet.contains(child.classId!))
+              .toList();
+          if (relevantChildren.isNotEmpty) {
+            final childNames = relevantChildren
+                .map((child) => _prettifyDisplayValue(child.name))
+                .where((name) => name.isNotEmpty)
+                .toList();
+            final subjectLabels = <String>{};
+            for (final child in relevantChildren) {
+              final classId = child.classId;
+              if (classId == null) {
+                continue;
+              }
+              final subjects =
+                  teacherSubjectsByClass[id]?[classId] ?? const <String>{};
+              subjectLabels.addAll(subjects);
+            }
+            final formattedChildren = _formatList(childNames);
+            final formattedSubjects = _formatList(subjectLabels);
+            if (formattedChildren.isNotEmpty) {
+              relationship = formattedSubjects.isNotEmpty
+                  ? '$formattedSubjects teacher of $formattedChildren'
+                  : 'Teacher of $formattedChildren';
+            }
+          }
         }
         addContact(MessagingContact(
           id: id,
           name: displayName,
           role: 'teacher',
           classIds: teacherClassIds,
+          relationship: relationship,
         ));
       }
 
@@ -460,26 +504,34 @@ class MessagingService extends GetxService {
         final id = doc.id;
         final name = (data['name'] as String?)?.trim();
         final email = (data['email'] as String?)?.trim();
-        final displayName =
-            (name != null && name.isNotEmpty)
-                ? name
-                : (email != null && email.isNotEmpty ? email : 'Parent');
-        final childrenNames = parentChildNames[id] ?? <String>[];
+        final displayName = _formatDisplayName(name, email, 'Parent');
         final parentClassIds =
             List<String>.from(parentClassMap[id] ?? <String>{});
         final parentClassSet = parentClassIds.toSet();
-        if (filterClassIds != null &&
-            filterClassIds.isNotEmpty &&
+        if (filterClassIds.isNotEmpty &&
             normalizedRole != 'admin' &&
             parentClassSet.isNotEmpty &&
             parentClassSet.intersection(filterClassIds).isEmpty) {
           continue;
         }
-        final relationship = childrenNames.isEmpty
+        Iterable<_ChildInfo> relevantChildren =
+            parentChildren[id] ?? <_ChildInfo>[];
+        if (normalizedRole == 'teacher' && filterClassIds.isNotEmpty) {
+          relevantChildren = relevantChildren.where((child) {
+            final classId = child.classId;
+            if (classId == null || classId.isEmpty) {
+              return false;
+            }
+            return filterClassIds.contains(classId);
+          });
+        }
+        final childNames = relevantChildren
+            .map((child) => _prettifyDisplayValue(child.name))
+            .where((name) => name.isNotEmpty)
+            .toList();
+        final relationship = childNames.isEmpty
             ? null
-            : (childrenNames.length == 1
-                ? 'Parent of ${childrenNames.first}'
-                : 'Parent of ${childrenNames.join(', ')}');
+            : 'Parent of ${_formatList(childNames)}';
         addContact(MessagingContact(
           id: id,
           name: displayName,
@@ -495,9 +547,7 @@ class MessagingService extends GetxService {
         final name = (data['name'] as String?)?.trim();
         final email = (data['email'] as String?)?.trim();
         final displayName =
-            (name != null && name.isNotEmpty)
-                ? name
-                : (email != null && email.isNotEmpty ? email : 'Administrator');
+            _formatDisplayName(name, email, 'Administrator');
         addContact(MessagingContact(
           id: id,
           name: displayName,
@@ -575,7 +625,7 @@ class MessagingService extends GetxService {
     final title = (data['title'] as String?)?.trim();
     final resolvedTitle =
         (title != null && title.isNotEmpty)
-            ? title
+            ? _prettifyDisplayValue(title)
             : _deriveTitleFromParticipants(participants);
 
     final unreadCount = _resolveUnreadCount(data);
@@ -607,6 +657,72 @@ class MessagingService extends GetxService {
       return fallback.toInt();
     }
     return 0;
+  }
+
+  String _formatDisplayName(String? name, String? email, String fallback) {
+    final cleanedName = _prettifyDisplayValue(name);
+    if (cleanedName.isNotEmpty) {
+      return cleanedName;
+    }
+    final cleanedEmail = _prettifyDisplayValue(email);
+    if (cleanedEmail.isNotEmpty) {
+      return cleanedEmail;
+    }
+    return fallback;
+  }
+
+  String _prettifyDisplayValue(String? value) {
+    final raw = value?.trim() ?? '';
+    if (raw.isEmpty) {
+      return '';
+    }
+    if (raw.contains('@')) {
+      final localPart = raw.split('@').first;
+      final sanitized =
+          localPart.replaceAll(RegExp(r'[._]+'), ' ').replaceAll('-', ' ').trim();
+      if (sanitized.isEmpty) {
+        return raw;
+      }
+      final words = sanitized.split(RegExp(r'\s+'));
+      return words.map(_capitalize).join(' ');
+    }
+    return raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  String _formatList(Iterable<String> values) {
+    final seen = LinkedHashSet<String>();
+    for (final value in values) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+      seen.add(trimmed);
+    }
+    if (seen.isEmpty) {
+      return '';
+    }
+    if (seen.length == 1) {
+      return seen.first;
+    }
+    if (seen.length == 2) {
+      final iterator = seen.iterator;
+      iterator.moveNext();
+      final first = iterator.current;
+      iterator.moveNext();
+      final second = iterator.current;
+      return '$first & $second';
+    }
+    final items = seen.toList();
+    final last = items.removeLast();
+    return '${items.join(', ')} & $last';
+  }
+
+  String _capitalize(String value) {
+    if (value.isEmpty) {
+      return value;
+    }
+    final lower = value.toLowerCase();
+    return '${lower[0].toUpperCase()}${lower.substring(1)}';
   }
 
   Future<void> markConversationAsRead({
@@ -653,18 +769,18 @@ class MessagingService extends GetxService {
     final currentUserId = _authService.currentUser?.uid;
     final otherNames = participants
         .where((participant) => participant.id != currentUserId)
-        .map((participant) => participant.name)
+        .map((participant) => _prettifyDisplayValue(participant.name))
         .where((name) => name.isNotEmpty)
         .toList();
     if (otherNames.isNotEmpty) {
-      return otherNames.join(', ');
+      return _formatList(otherNames);
     }
     final allNames = participants
-        .map((participant) => participant.name)
+        .map((participant) => _prettifyDisplayValue(participant.name))
         .where((name) => name.isNotEmpty)
         .toList();
     if (allNames.isNotEmpty) {
-      return allNames.join(', ');
+      return _formatList(allNames);
     }
     return 'Conversation';
   }
@@ -994,4 +1110,11 @@ class MessagingService extends GetxService {
     _messageStreamController.close();
     super.onClose();
   }
+}
+
+class _ChildInfo {
+  _ChildInfo({required this.name, required this.classId});
+
+  final String name;
+  final String? classId;
 }
