@@ -38,6 +38,7 @@ class MessagingController extends GetxController {
   final TextEditingController searchController = TextEditingController();
 
   StreamSubscription<MessageModel>? _messageSubscription;
+  StreamSubscription<List<ConversationModel>>? _conversationsSubscription;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
       _conversationMessagesSubscription;
   String? _pendingConversationId;
@@ -48,6 +49,7 @@ class MessagingController extends GetxController {
     _pendingConversationId = _resolveConversationId();
     searchController.addListener(_applyConversationFilter);
     _subscribeToIncomingMessages();
+    _listenToConversations();
     Future.microtask(() async {
       await _loadConversations();
       await _initializeActiveConversation();
@@ -58,6 +60,7 @@ class MessagingController extends GetxController {
   @override
   void onClose() {
     _messageSubscription?.cancel();
+    _conversationsSubscription?.cancel();
     _conversationMessagesSubscription?.cancel();
     composerController.dispose();
     searchController.dispose();
@@ -226,6 +229,28 @@ class MessagingController extends GetxController {
         unawaited(_markConversationAsRead(message.conversationId));
       }
     });
+  }
+
+  void _listenToConversations() {
+    _conversationsSubscription?.cancel();
+    _conversationsSubscription = _messagingService.watchConversations().listen(
+      (items) {
+        conversationsError.value = null;
+        conversations.assignAll(items);
+        final activeId = activeConversation.value?.id;
+        if (activeId != null) {
+          final updatedActive =
+              items.firstWhereOrNull((conversation) => conversation.id == activeId);
+          if (updatedActive != null) {
+            activeConversation.value = updatedActive;
+          }
+        }
+        _applyConversationFilter();
+      },
+      onError: (error) {
+        conversationsError.value = error.toString();
+      },
+    );
   }
 
   Future<void> refreshConversations() async {
