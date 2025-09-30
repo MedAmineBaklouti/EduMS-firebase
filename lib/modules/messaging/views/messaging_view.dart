@@ -618,14 +618,13 @@ class _ConversationThread extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      return Column(
-        children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: controller.refreshMessages,
-              edgeOffset: 12,
-              child: Obx(() {
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: controller.refreshMessages,
+            edgeOffset: 12,
+            child: Obx(() {
                 if (controller.isMessagesLoading.value) {
                   return const _ScrollablePlaceholder(
                     child: CircularProgressIndicator(),
@@ -841,7 +840,6 @@ class _ConversationThread extends StatelessWidget {
           _MessageComposer(controller: controller),
         ],
       );
-    });
   }
 }
 
