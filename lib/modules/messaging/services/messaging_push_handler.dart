@@ -16,7 +16,7 @@ bool _backgroundNotificationsInitialized = false;
 @pragma('vm:entry-point')
 Future<void> messagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  DartPluginRegistrant.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
   if (!_backgroundNotificationsInitialized) {
     const initializationSettings = InitializationSettings(
