@@ -12,20 +12,31 @@ class MessagingView extends GetView<MessagingController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final controller = this.controller;
+    final navigator = Navigator.of(context);
+    final canPop = navigator.canPop();
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: Obx(() {
           final active = controller.activeConversation.value;
-          if (active == null) {
-            return const SizedBox.shrink();
+          if (active != null) {
+            return IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to conversations',
+              onPressed: controller.clearActiveConversation,
+            );
           }
-          return IconButton(
-            icon: const Icon(Icons.arrow_back),
-            tooltip: 'Back to conversations',
-            onPressed: controller.clearActiveConversation,
-          );
+          if (canPop) {
+            return IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back',
+              onPressed: () {
+                navigator.maybePop();
+              },
+            );
+          }
+          return const SizedBox.shrink();
         }),
         title: Obx(() {
           final active = controller.activeConversation.value;
