@@ -166,21 +166,23 @@ class MessagingController extends GetxController {
 
   void _subscribeToIncomingMessages() {
     _messageSubscription = _messagingService.messageStream.listen((message) {
+      final currentUserId = _authService.currentUser?.uid;
       final existingConversation = conversations
           .firstWhereOrNull((item) => item.id == message.conversationId);
+
+      final isMine = currentUserId != null && message.senderId == currentUserId;
+      final shouldIncrementUnread =
+          !isMine && activeConversation.value?.id != message.conversationId;
 
       if (existingConversation != null) {
         final updatedConversation = existingConversation.copyWith(
           lastMessagePreview: message.content,
           updatedAt: message.sentAt,
+          unreadCount: shouldIncrementUnread
+              ? existingConversation.unreadCount + 1
+              : 0,
         );
-        conversations
-          ..remove(existingConversation)
-          ..insert(0, updatedConversation);
-        _applyConversationFilter();
-        if (activeConversation.value?.id == message.conversationId) {
-          activeConversation.value = updatedConversation;
-        }
+        _replaceConversation(existingConversation, updatedConversation);
       } else {
         final placeholder = ConversationModel(
           id: message.conversationId,
@@ -188,6 +190,7 @@ class MessagingController extends GetxController {
           lastMessagePreview: message.content,
           updatedAt: message.sentAt,
           participants: <ConversationParticipant>[],
+          unreadCount: shouldIncrementUnread ? 1 : 0,
         );
         conversations.insert(0, placeholder);
         _applyConversationFilter();
@@ -217,6 +220,10 @@ class MessagingController extends GetxController {
 
       messages.add(message);
       messages.sort((a, b) => a.sentAt.compareTo(b.sentAt));
+
+      if (!isMine) {
+        unawaited(_markConversationAsRead(message.conversationId));
+      }
     });
   }
 
@@ -244,6 +251,7 @@ class MessagingController extends GetxController {
       items.sort((a, b) => a.sentAt.compareTo(b.sentAt));
       messages.assignAll(items);
       _listenToConversationMessages(conversationId);
+      await _markConversationAsRead(conversationId);
     } catch (error) {
       messageError.value = error.toString();
       messages.clear();
@@ -287,6 +295,7 @@ class MessagingController extends GetxController {
           ..add(message)
           ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
       }
+      _updateConversationUnreadLocally(conversationId, 0);
       await refreshConversations();
     } catch (error) {
       messageError.value = error.toString();
@@ -433,6 +442,111 @@ class MessagingController extends GetxController {
     }
   }
 
+  Future<void> _markConversationAsRead(String conversationId) async {
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      return;
+    }
+
+    final unreadMessages = messages.where((message) {
+      return message.senderId != userId && !message.readBy.contains(userId);
+    }).toList();
+
+    final messageIds = unreadMessages
+        .map((message) => message.id)
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    try {
+      await _messagingService.markConversationAsRead(
+        conversationId: conversationId,
+        userId: userId,
+        messageIds: messageIds,
+      );
+
+      for (final message in unreadMessages) {
+        final index = messages.indexOf(message);
+        if (index >= 0) {
+          final updated = message.copyWith(
+            readBy: {...message.readBy, userId},
+          );
+          messages[index] = updated;
+        }
+      }
+
+      _updateConversationUnreadLocally(conversationId, 0);
+    } catch (error) {
+      debugPrint('Failed to update read status: $error');
+    }
+  }
+
+  void _updateConversationUnreadLocally(
+    String conversationId,
+    int unreadCount,
+  ) {
+    final index = conversations.indexWhere((item) => item.id == conversationId);
+    if (index >= 0) {
+      conversations[index] =
+          conversations[index].copyWith(unreadCount: unreadCount);
+    }
+
+    final active = activeConversation.value;
+    if (active?.id == conversationId) {
+      activeConversation.value = active?.copyWith(unreadCount: unreadCount);
+    }
+
+    _applyConversationFilter();
+  }
+
+  void _replaceConversation(
+    ConversationModel original,
+    ConversationModel replacement,
+  ) {
+    final index = conversations.indexOf(original);
+    if (index >= 0) {
+      conversations[index] = replacement;
+    }
+
+    conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+    if (activeConversation.value?.id == replacement.id) {
+      activeConversation.value = replacement;
+    }
+
+    _applyConversationFilter();
+  }
+
+  bool isMessageReadByOthers(MessageModel message) {
+    final conversation = activeConversation.value;
+    if (conversation == null) {
+      return false;
+    }
+
+    final others = conversation.participants
+        .map((participant) => participant.id)
+        .where((id) => id != message.senderId)
+        .toSet();
+
+    if (others.isEmpty) {
+      return false;
+    }
+
+    return others.every(message.readBy.contains);
+  }
+
+  bool isMessageUnread(MessageModel message) {
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      return false;
+    }
+
+    if (message.senderId == userId) {
+      return false;
+    }
+
+    return !message.readBy.contains(userId);
+  }
+
   void _listenToConversationMessages(String conversationId) {
     _conversationMessagesSubscription?.cancel();
     _conversationMessagesSubscription = _firestore
@@ -452,12 +566,14 @@ class MessagingController extends GetxController {
             'senderName': data['senderName'] ?? '',
             'content': data['content'] ?? '',
             'sentAt': (data['sentAt'] as Timestamp?)?.toDate(),
+            'readBy': data['readBy'],
           };
           return MessageModel.fromJson(payload);
         }).toList();
         mapped.sort((a, b) => a.sentAt.compareTo(b.sentAt));
         messageError.value = null;
         messages.assignAll(mapped);
+        unawaited(_markConversationAsRead(conversationId));
       },
       onError: (error) {
         messageError.value = 'Failed to load messages: $error';

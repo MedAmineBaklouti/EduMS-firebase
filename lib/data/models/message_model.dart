@@ -9,7 +9,8 @@ class MessageModel {
     required this.senderName,
     required this.content,
     required this.sentAt,
-  });
+    Set<String>? readBy,
+  }) : readBy = readBy ?? <String>{};
 
   final String id;
   final String conversationId;
@@ -17,6 +18,7 @@ class MessageModel {
   final String senderName;
   final String content;
   final DateTime sentAt;
+  final Set<String> readBy;
 
   /// Builds a [MessageModel] from a JSON map returned by the API.
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class MessageModel {
       senderName: (json['senderName'] ?? json['sender_name'] ?? 'User') as String,
       content: (json['content'] ?? json['text'] ?? '') as String,
       sentAt: _parseDateTime(json['sentAt'] ?? json['sent_at']),
+      readBy: _parseReadBy(json['readBy'] ?? json['read_by']),
     );
   }
 
@@ -49,6 +52,7 @@ class MessageModel {
               '')
           as String,
       sentAt: _parseDateTime(data['sentAt'] ?? data['sent_at']),
+      readBy: _parseReadBy(data['readBy'] ?? data['read_by']),
     );
   }
 
@@ -60,8 +64,25 @@ class MessageModel {
       'senderName': senderName,
       'content': content,
       'sentAt': sentAt.toUtc().toIso8601String(),
+      'readBy': readBy.toList(),
     };
   }
+
+  MessageModel copyWith({
+    Set<String>? readBy,
+  }) {
+    return MessageModel(
+      id: id,
+      conversationId: conversationId,
+      senderId: senderId,
+      senderName: senderName,
+      content: content,
+      sentAt: sentAt,
+      readBy: readBy ?? this.readBy,
+    );
+  }
+
+  bool isReadBy(String userId) => readBy.contains(userId);
 
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) {
@@ -77,5 +98,12 @@ class MessageModel {
       return DateTime.tryParse(value)?.toUtc() ?? DateTime.now().toUtc();
     }
     return DateTime.now().toUtc();
+  }
+
+  static Set<String> _parseReadBy(dynamic value) {
+    if (value is Iterable) {
+      return value.whereType<String>().toSet();
+    }
+    return <String>{};
   }
 }
