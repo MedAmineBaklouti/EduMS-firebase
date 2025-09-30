@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../data/models/message_model.dart';
+
 import '../../common/widgets/module_empty_state.dart';
 import '../controllers/messaging_controller.dart';
 
@@ -607,7 +609,7 @@ class _ScrollablePlaceholder extends StatelessWidget {
   }
 }
 
-class _ConversationThread extends StatelessWidget {
+class _ConversationThread extends StatefulWidget {
   const _ConversationThread({
     required this.controller,
     required this.theme,
@@ -617,7 +619,123 @@ class _ConversationThread extends StatelessWidget {
   final ThemeData theme;
 
   @override
+  State<_ConversationThread> createState() => _ConversationThreadState();
+}
+
+class _ConversationThreadState extends State<_ConversationThread>
+    with WidgetsBindingObserver {
+  final ScrollController _scrollController = ScrollController();
+  Worker? _messagesWorker;
+  String? _lastScrollSignature;
+
+  MessagingController get _controller => widget.controller;
+  ThemeData get _theme => widget.theme;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _messagesWorker = ever<List<MessageModel>>(
+      _controller.messages,
+      _handleMessagesUpdated,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _scrollToBottom(immediate: true, force: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _messagesWorker?.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+      if (bottomInset > 0) {
+        _scrollToBottom(force: true);
+      }
+    });
+  }
+
+  bool get _isNearBottom {
+    if (!_scrollController.hasClients) {
+      return true;
+    }
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final current = _scrollController.position.pixels;
+    return (maxScroll - current) <= 120;
+  }
+
+  void _handleMessagesUpdated(List<MessageModel> messages) {
+    if (!mounted) {
+      return;
+    }
+
+    if (messages.isEmpty) {
+      _lastScrollSignature = null;
+      return;
+    }
+
+    final latest = messages.last;
+    final signature =
+        '${latest.id}_${messages.length}_${latest.sentAt.millisecondsSinceEpoch}';
+
+    if (_lastScrollSignature == signature) {
+      return;
+    }
+
+    _lastScrollSignature = signature;
+    final shouldForce = _isNearBottom;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _scrollToBottom(force: shouldForce);
+    });
+  }
+
+  void _scrollToBottom({bool immediate = false, bool force = false}) {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final position = _scrollController.position;
+    final maxScroll = position.maxScrollExtent;
+
+    if (!force && !_isNearBottom) {
+      return;
+    }
+
+    if (immediate) {
+      _scrollController.jumpTo(maxScroll);
+      return;
+    }
+
+    _scrollController.animateTo(
+      maxScroll,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final controller = _controller;
+    final theme = _theme;
+
     return Column(
       children: [
         Expanded(
@@ -655,6 +773,7 @@ class _ConversationThread extends StatelessWidget {
                 }
 
                 return ListView.separated(
+                  controller: _scrollController,
                   physics: const BouncingScrollPhysics(
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
