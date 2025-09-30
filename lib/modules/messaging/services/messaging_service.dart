@@ -1050,6 +1050,16 @@ class MessagingService extends GetxService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(_androidChannel);
+    await androidPlugin?.requestNotificationsPermission();
+
+    final darwinPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<
+            DarwinFlutterLocalNotificationsPlugin>();
+    await darwinPlugin?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
   void _handleForegroundMessage(RemoteMessage message) {

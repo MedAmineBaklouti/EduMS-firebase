@@ -856,40 +856,41 @@ class _MessageComposer extends StatelessWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: theme.shadowColor.withOpacity(0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
+        child: Material(
+          color: theme.colorScheme.surface,
+          elevation: 6,
+          borderRadius: BorderRadius.circular(28),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Container(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant.withOpacity(0.35),
+                      color:
+                          theme.colorScheme.surfaceVariant.withOpacity(0.35),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: controller.composerController,
-                      minLines: 1,
-                      maxLines: 5,
-                      textInputAction: TextInputAction.send,
-                      decoration: const InputDecoration(
-                        hintText: 'Write a message…',
-                        border: InputBorder.none,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TextField(
+                          controller: controller.composerController,
+                          minLines: 1,
+                          maxLines: 6,
+                          textAlignVertical: TextAlignVertical.center,
+                          keyboardType: TextInputType.multiline,
+                          textCapitalization: TextCapitalization.sentences,
+                          textInputAction: TextInputAction.send,
+                          decoration: const InputDecoration(
+                            hintText: 'Write a message…',
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: (_) => controller.sendCurrentMessage(),
+                        ),
                       ),
-                      onSubmitted: (_) => controller.sendCurrentMessage(),
                     ),
                   ),
                 ),
