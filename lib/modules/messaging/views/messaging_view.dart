@@ -619,83 +619,12 @@ class _ConversationThread extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final active = controller.activeConversation.value;
-      final contextLabel = active == null
-          ? null
-          : controller.resolveConversationContext(active);
-      final participantsLabel = active == null
-          ? ''
-          : controller.resolveConversationParticipantsLabel(active);
-      final showHeader = (contextLabel != null && contextLabel.isNotEmpty) ||
-          participantsLabel.isNotEmpty;
-
-      final header = showHeader
-          ? Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.people_alt_outlined,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (contextLabel != null &&
-                                contextLabel.isNotEmpty)
-                              Text(
-                                contextLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            if (participantsLabel.isNotEmpty)
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  top: contextLabel != null &&
-                                          contextLabel.isNotEmpty
-                                      ? 4
-                                      : 0,
-                                ),
-                                child: Text(
-                                  participantsLabel,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          : null;
-
       return Column(
         children: [
-          if (header != null) header,
           Expanded(
             child: RefreshIndicator(
               onRefresh: controller.refreshMessages,
-              edgeOffset: header == null ? 12 : 0,
+              edgeOffset: 12,
               child: Obx(() {
                 if (controller.isMessagesLoading.value) {
                   return const _ScrollablePlaceholder(
