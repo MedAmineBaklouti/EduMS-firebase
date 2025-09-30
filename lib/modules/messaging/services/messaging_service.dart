@@ -1052,10 +1052,10 @@ class MessagingService extends GetxService {
     await androidPlugin?.createNotificationChannel(_androidChannel);
     await androidPlugin?.requestNotificationsPermission();
 
-    final darwinPlugin = _localNotifications
+    final iosPlugin = _localNotifications
         .resolvePlatformSpecificImplementation<
-            DarwinFlutterLocalNotificationsPlugin>();
-    await darwinPlugin?.requestPermissions(
+            IOSFlutterLocalNotificationsPlugin>();
+    await iosPlugin?.requestPermissions(
       alert: true,
       badge: true,
       sound: true,
