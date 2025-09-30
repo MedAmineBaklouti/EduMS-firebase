@@ -159,6 +159,25 @@ class MessagingService extends GetxService {
     }
   }
 
+  Stream<List<ConversationModel>> watchConversations() {
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      return Stream<List<ConversationModel>>.value(<ConversationModel>[]);
+    }
+
+    return _firestore
+        .collection(_conversationsCollection)
+        .where('participantIds', arrayContains: userId)
+        .snapshots()
+        .map((snapshot) {
+      final conversations = snapshot.docs
+          .map((doc) => _conversationFromData(doc.id, doc.data()))
+          .toList();
+      conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      return conversations;
+    });
+  }
+
   Future<ConversationModel?> fetchConversation(String conversationId) async {
     try {
       final doc = await _firestore
