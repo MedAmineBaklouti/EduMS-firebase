@@ -16,6 +16,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../data/models/conversation_model.dart';
 import '../../../data/models/message_model.dart';
 import '../../../data/models/messaging_contact.dart';
+import 'messaging_notification_channel.dart';
 import 'messaging_push_handler.dart';
 
 class MessagingService extends GetxService {
@@ -47,14 +48,6 @@ class MessagingService extends GetxService {
   String? _pendingToken;
   String? _lastKnownUserId;
   bool _pushPermissionGranted = false;
-
-  static const AndroidNotificationChannel _androidChannel =
-      AndroidNotificationChannel(
-    'messaging_channel',
-    'Messaging notifications',
-    description: 'Notifications for new chat messages.',
-    importance: Importance.high,
-  );
 
   static const String _messagingRoute = '/messaging';
   static const String _tokenCollection = 'userPushTokens';
@@ -1049,7 +1042,7 @@ class MessagingService extends GetxService {
     final androidPlugin = _localNotifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.createNotificationChannel(_androidChannel);
+    await androidPlugin?.createNotificationChannel(messagingAndroidChannel);
     await androidPlugin?.requestNotificationsPermission();
 
     final iosPlugin = _localNotifications
@@ -1127,18 +1120,14 @@ class MessagingService extends GetxService {
       notification?.body ?? data['content'] ?? data['text'] ?? '',
       NotificationDetails(
         android: AndroidNotificationDetails(
-          _androidChannel.id,
-          _androidChannel.name,
-          channelDescription: _androidChannel.description,
+          messagingAndroidChannel.id,
+          messagingAndroidChannel.name,
+          channelDescription: messagingAndroidChannel.description,
           importance: Importance.high,
           priority: Priority.high,
           styleInformation: const DefaultStyleInformation(true, true),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
+        iOS: messagingDarwinNotificationDetails,
       ),
       payload: jsonEncode(<String, dynamic>{
         ...data,
