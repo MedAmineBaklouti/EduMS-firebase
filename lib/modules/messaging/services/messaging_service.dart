@@ -117,6 +117,7 @@ class MessagingService extends GetxService {
           'senderName': data['senderName'] ?? '',
           'content': data['content'] ?? '',
           'sentAt': (data['sentAt'] as Timestamp?)?.toDate(),
+          'readBy': data['readBy'],
         };
         return MessageModel.fromJson(payload);
       }).toList();
@@ -206,6 +207,9 @@ class MessagingService extends GetxService {
         'lastMessagePreview': content,
         'updatedAt': Timestamp.fromDate(now),
         'participantIds': FieldValue.arrayUnion(participantIds.toList()),
+        'unreadBy': <String, dynamic>{
+          senderId: 0,
+        },
       };
 
       if (resolvedParticipants.isNotEmpty) {
@@ -220,6 +224,19 @@ class MessagingService extends GetxService {
 
       await conversationRef.set(updateData, SetOptions(merge: true));
 
+      final unreadFieldUpdates = <String, Object>{};
+      for (final participant in resolvedParticipants) {
+        if (participant.id == senderId || participant.id.isEmpty) {
+          continue;
+        }
+        unreadFieldUpdates['unreadBy.${participant.id}'] =
+            FieldValue.increment(1);
+      }
+
+      if (unreadFieldUpdates.isNotEmpty) {
+        await conversationRef.update(unreadFieldUpdates);
+      }
+
       final message = MessageModel(
         id: messageRef.id,
         conversationId: conversationId,
@@ -227,6 +244,7 @@ class MessagingService extends GetxService {
         senderName: senderName,
         content: content,
         sentAt: now,
+        readBy: <String>{senderId},
       );
 
       _messageStreamController.add(message);
@@ -306,6 +324,10 @@ class MessagingService extends GetxService {
         'createdAt': Timestamp.fromDate(now),
         'updatedAt': Timestamp.fromDate(now),
         'unreadCount': 0,
+        'unreadBy': <String, dynamic>{
+          user.uid: 0,
+          contact.id: 0,
+        },
       });
 
       return ConversationModel(
@@ -314,6 +336,7 @@ class MessagingService extends GetxService {
         lastMessagePreview: '',
         updatedAt: now,
         participants: participants,
+        unreadCount: 0,
       );
     } on FirebaseException catch (error) {
       final message = error.message ?? error.code;
@@ -555,14 +578,70 @@ class MessagingService extends GetxService {
             ? title
             : _deriveTitleFromParticipants(participants);
 
+    final unreadCount = _resolveUnreadCount(data);
+
     return ConversationModel(
       id: id,
       title: resolvedTitle,
       lastMessagePreview: (data['lastMessagePreview'] as String?) ?? '',
       updatedAt: updatedAt,
       participants: participants,
-      unreadCount: (data['unreadCount'] as num?)?.toInt() ?? 0,
+      unreadCount: unreadCount,
     );
+  }
+
+  int _resolveUnreadCount(Map<String, dynamic> data) {
+    final currentUserId = _authService.currentUser?.uid;
+    if (currentUserId != null) {
+      final unreadBy = data['unreadBy'];
+      if (unreadBy is Map<String, dynamic>) {
+        final value = unreadBy[currentUserId];
+        if (value is num) {
+          return value.toInt();
+        }
+      }
+    }
+
+    final fallback = data['unreadCount'];
+    if (fallback is num) {
+      return fallback.toInt();
+    }
+    return 0;
+  }
+
+  Future<void> markConversationAsRead({
+    required String conversationId,
+    required String userId,
+    List<String>? messageIds,
+  }) async {
+    final conversationRef =
+        _firestore.collection(_conversationsCollection).doc(conversationId);
+    final batch = _firestore.batch();
+
+    batch.set(
+      conversationRef,
+      <String, dynamic>{
+        'unreadBy': <String, dynamic>{
+          userId: 0,
+        },
+      },
+      SetOptions(merge: true),
+    );
+
+    final ids = messageIds?.where((id) => id.isNotEmpty).toSet() ?? <String>{};
+    for (final id in ids) {
+      final messageRef =
+          conversationRef.collection(_messagesCollection).doc(id);
+      batch.set(
+        messageRef,
+        <String, dynamic>{
+          'readBy': FieldValue.arrayUnion(<String>[userId]),
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    await batch.commit();
   }
 
   String _deriveTitleFromParticipants(
