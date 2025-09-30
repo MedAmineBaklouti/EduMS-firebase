@@ -61,6 +61,7 @@ class MessagingService extends GetxService {
   static const String _conversationsCollection = 'conversations';
   static const String _messagesCollection = 'messages';
   static const String _classesCollection = 'classes';
+  static const String _subjectsCollection = 'subjects';
   static const String _parentsCollection = 'parents';
   static const String _teachersCollection = 'teachers';
   static const String _adminsCollection = 'admins';
@@ -367,6 +368,8 @@ class MessagingService extends GetxService {
           _firestore.collection(_teachersCollection).get();
       final adminsFuture =
           _firestore.collection(_adminsCollection).get();
+      final subjectsFuture =
+          _firestore.collection(_subjectsCollection).get();
 
       final results = await Future.wait([
         classesFuture,
@@ -374,6 +377,7 @@ class MessagingService extends GetxService {
         parentsFuture,
         teachersFuture,
         adminsFuture,
+        subjectsFuture,
       ]);
 
       final QuerySnapshot classesSnapshot = results[0] as QuerySnapshot;
@@ -381,6 +385,16 @@ class MessagingService extends GetxService {
       final QuerySnapshot parentsSnapshot = results[2] as QuerySnapshot;
       final QuerySnapshot teachersSnapshot = results[3] as QuerySnapshot;
       final QuerySnapshot adminsSnapshot = results[4] as QuerySnapshot;
+      final QuerySnapshot subjectsSnapshot = results[5] as QuerySnapshot;
+
+      final Map<String, String> subjectNames = <String, String>{};
+      for (final doc in subjectsSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+        final name = (data['name'] as String?)?.trim();
+        if (name != null && name.isNotEmpty) {
+          subjectNames[doc.id] = name;
+        }
+      }
 
       final Map<String, Set<String>> teacherClassMap = <String, Set<String>>{};
       final Map<String, Map<String, Set<String>>> teacherSubjectsByClass =
@@ -397,14 +411,17 @@ class MessagingService extends GetxService {
             teacherClassMap[teacherId]!.add(doc.id);
             final subjectKey = entry.key;
             if (subjectKey is String && subjectKey.trim().isNotEmpty) {
-              final formattedSubject = _prettifyDisplayValue(subjectKey);
-              if (formattedSubject.isNotEmpty) {
-                teacherSubjectsByClass.putIfAbsent(
-                    teacherId, () => <String, Set<String>>{});
-                final subjectsForClass = teacherSubjectsByClass[teacherId]!
-                    .putIfAbsent(doc.id, () => <String>{});
-                subjectsForClass.add(formattedSubject);
+              final subjectId = subjectKey.trim();
+              final resolvedSubjectName =
+                  subjectNames[subjectId] ?? _prettifyDisplayValue(subjectId);
+              if (resolvedSubjectName.isEmpty) {
+                continue;
               }
+              teacherSubjectsByClass.putIfAbsent(
+                  teacherId, () => <String, Set<String>>{});
+              final subjectsForClass = teacherSubjectsByClass[teacherId]!
+                  .putIfAbsent(doc.id, () => <String>{});
+              subjectsForClass.add(resolvedSubjectName);
             }
           }
         }
