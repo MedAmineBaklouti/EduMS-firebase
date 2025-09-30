@@ -914,6 +914,8 @@ class _ConversationThread extends StatelessWidget {
       );
     });
   }
+}
+
 class _MessageComposer extends StatelessWidget {
   const _MessageComposer({required this.controller});
 
