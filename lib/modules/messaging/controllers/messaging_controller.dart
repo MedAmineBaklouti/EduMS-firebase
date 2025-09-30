@@ -37,6 +37,8 @@ class MessagingController extends GetxController {
   final TextEditingController searchController = TextEditingController();
 
   StreamSubscription<MessageModel>? _messageSubscription;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _conversationMessagesSubscription;
   String? _pendingConversationId;
 
   @override
@@ -55,6 +57,7 @@ class MessagingController extends GetxController {
   @override
   void onClose() {
     _messageSubscription?.cancel();
+    _conversationMessagesSubscription?.cancel();
     composerController.dispose();
     searchController.dispose();
     super.onClose();
@@ -240,6 +243,7 @@ class MessagingController extends GetxController {
       final items = await _messagingService.fetchMessages(conversationId);
       items.sort((a, b) => a.sentAt.compareTo(b.sentAt));
       messages.assignAll(items);
+      _listenToConversationMessages(conversationId);
     } catch (error) {
       messageError.value = error.toString();
       messages.clear();
@@ -269,7 +273,7 @@ class MessagingController extends GetxController {
     try {
       isSending.value = true;
       messageError.value = null;
-      await _messagingService.sendMessage(
+      final message = await _messagingService.sendMessage(
         conversationId: conversationId,
         senderId: user.uid,
         senderName: user.displayName ?? user.email ?? 'User',
@@ -277,6 +281,12 @@ class MessagingController extends GetxController {
         participants: activeConversation.value?.participants,
       );
       composerController.clear();
+      final alreadyExists = messages.any((item) => item.id == message.id);
+      if (!alreadyExists) {
+        messages
+          ..add(message)
+          ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+      }
       await refreshConversations();
     } catch (error) {
       messageError.value = error.toString();
@@ -300,6 +310,8 @@ class MessagingController extends GetxController {
 
   void clearActiveConversation() {
     activeConversation.value = null;
+    _conversationMessagesSubscription?.cancel();
+    _conversationMessagesSubscription = null;
     messages.clear();
     composerController.clear();
     messageError.value = null;
@@ -419,5 +431,37 @@ class MessagingController extends GetxController {
       default:
         return items;
     }
+  }
+
+  void _listenToConversationMessages(String conversationId) {
+    _conversationMessagesSubscription?.cancel();
+    _conversationMessagesSubscription = _firestore
+        .collection('conversations')
+        .doc(conversationId)
+        .collection('messages')
+        .orderBy('sentAt')
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final mapped = snapshot.docs.map((doc) {
+          final data = doc.data();
+          final payload = <String, dynamic>{
+            'id': doc.id,
+            'conversationId': conversationId,
+            'senderId': data['senderId'] ?? '',
+            'senderName': data['senderName'] ?? '',
+            'content': data['content'] ?? '',
+            'sentAt': (data['sentAt'] as Timestamp?)?.toDate(),
+          };
+          return MessageModel.fromJson(payload);
+        }).toList();
+        mapped.sort((a, b) => a.sentAt.compareTo(b.sentAt));
+        messageError.value = null;
+        messages.assignAll(mapped);
+      },
+      onError: (error) {
+        messageError.value = 'Failed to load messages: $error';
+      },
+    );
   }
 }
