@@ -331,7 +331,7 @@ class MessagingController extends GetxController {
       isMessagesLoading.value = true;
       messageError.value = null;
       final conversation =
-          await _messagingService.ensureConversationWithContact(contact.id);
+          await _messagingService.ensureConversationWithContact(contact);
 
       final existingIndex =
           conversations.indexWhere((item) => item.id == conversation.id);

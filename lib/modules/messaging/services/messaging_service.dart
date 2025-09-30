@@ -19,22 +19,18 @@ import 'messaging_push_handler.dart';
 
 class MessagingService extends GetxService {
   MessagingService({
-    Dio? dio,
     FirebaseMessaging? messaging,
     FlutterLocalNotificationsPlugin? localNotifications,
     FirebaseFirestore? firestore,
     AuthService? authService,
     Dio? pushClient,
-  })  : _providedDio = dio,
-        _messaging = messaging ?? FirebaseMessaging.instance,
+  })  : _messaging = messaging ?? FirebaseMessaging.instance,
         _localNotifications =
             localNotifications ?? FlutterLocalNotificationsPlugin(),
         _firestore = firestore ?? FirebaseFirestore.instance,
         _authService = authService ?? Get.find<AuthService>(),
         _pushClient = pushClient ?? _createPushClient();
 
-  final Dio? _providedDio;
-  Dio? _dio;
   final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications;
   final FirebaseFirestore _firestore;
@@ -60,8 +56,14 @@ class MessagingService extends GetxService {
   );
 
   static const String _messagingRoute = '/messaging';
-  static const List<String> _nestedDataKeys = <String>['data', 'result'];
   static const String _tokenCollection = 'userPushTokens';
+  static const String _conversationsCollection = 'conversations';
+  static const String _messagesCollection = 'messages';
+  static const String _classesCollection = 'classes';
+  static const String _parentsCollection = 'parents';
+  static const String _teachersCollection = 'teachers';
+  static const String _adminsCollection = 'admins';
+  static const String _childrenCollection = 'children';
   static const int _firestoreBatchLimit = 10;
 
   static Dio? _createPushClient() {
@@ -86,31 +88,6 @@ class MessagingService extends GetxService {
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
 
   Future<MessagingService> init() async {
-    final baseUrl = AppConfig.apiBaseUrl.trim();
-
-    if (_providedDio != null) {
-      _dio = _providedDio;
-    } else if (baseUrl.isNotEmpty) {
-      _dio = Dio(
-        BaseOptions(
-          baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
-          receiveDataWhenStatusError: true,
-          headers: <String, dynamic>{
-            'Content-Type': 'application/json',
-            if (AppConfig.apiKey.isNotEmpty) 'x-api-key': AppConfig.apiKey,
-          },
-        ),
-      );
-    } else {
-      _dio = null;
-    }
-
-    _dio?.interceptors.add(
-      LogInterceptor(requestBody: true, responseBody: true),
-    );
-
     await _setupLocalNotifications();
     await _initializePushNotifications();
     _authSubscription?.cancel();
@@ -123,99 +100,78 @@ class MessagingService extends GetxService {
   }
 
   Future<List<MessageModel>> fetchMessages(String conversationId) async {
-    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await dio.get<dynamic>(
-        '/conversations/$conversationId/messages',
-      );
+      final snapshot = await _firestore
+          .collection(_conversationsCollection)
+          .doc(conversationId)
+          .collection(_messagesCollection)
+          .orderBy('sentAt')
+          .get();
 
-      final dynamic body = _unwrapData(response.data);
-      if (body == null) {
-        return <MessageModel>[];
-      }
+      final messages = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final Map<String, dynamic> payload = <String, dynamic>{
+          'id': doc.id,
+          'conversationId': conversationId,
+          'senderId': data['senderId'] ?? '',
+          'senderName': data['senderName'] ?? '',
+          'content': data['content'] ?? '',
+          'sentAt': (data['sentAt'] as Timestamp?)?.toDate(),
+        };
+        return MessageModel.fromJson(payload);
+      }).toList();
 
-      List<dynamic>? items;
-      if (body is List) {
-        items = body;
-      } else if (body is Map<String, dynamic>) {
-        final dynamic nested = body['items'] ?? body['messages'];
-        if (nested is List) {
-          items = nested;
-        } else if (body.containsKey('id')) {
-          items = <dynamic>[body];
-        }
-      }
-
-      if (items == null) {
-        throw Exception('Unexpected response shape when fetching messages.');
-      }
-
-      final results = items
-          .whereType<Map<String, dynamic>>()
-          .map(MessageModel.fromJson)
-          .toList();
-      results.sort((a, b) => a.sentAt.compareTo(b.sentAt));
-      return results;
-    } on DioException catch (error) {
-      final message = error.message ?? 'Unknown error';
+      messages.sort((a, b) => a.sentAt.compareTo(b.sentAt));
+      return messages;
+    } on FirebaseException catch (error) {
+      final message = error.message ?? error.code;
       throw Exception('Failed to load messages: $message');
+    } catch (error) {
+      throw Exception('Failed to load messages: $error');
     }
   }
 
   Future<List<ConversationModel>> fetchConversations() async {
-    final dio = _requireApiClient();
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      return <ConversationModel>[];
+    }
+
     try {
-      final Response<dynamic> response = await dio.get<dynamic>(
-        '/conversations',
-      );
+      final snapshot = await _firestore
+          .collection(_conversationsCollection)
+          .where('participantIds', arrayContains: userId)
+          .get();
 
-      final dynamic body = _unwrapData(response.data);
-      if (body == null) {
-        return <ConversationModel>[];
-      }
-
-      List<dynamic>? items;
-      if (body is List) {
-        items = body;
-      } else if (body is Map<String, dynamic>) {
-        final dynamic nested = body['items'] ?? body['conversations'];
-        if (nested is List) {
-          items = nested;
-        }
-      }
-
-      if (items == null) {
-        throw Exception('Unexpected response when fetching conversations.');
-      }
-
-      final conversations = items
-          .whereType<Map<String, dynamic>>()
-          .map(ConversationModel.fromJson)
+      final conversations = snapshot.docs
+          .map((doc) => _conversationFromData(doc.id, doc.data()))
           .toList();
       conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       return conversations;
-    } on DioException catch (error) {
-      final message = error.message ?? 'Unknown error';
+    } on FirebaseException catch (error) {
+      final message = error.message ?? error.code;
       throw Exception('Failed to load conversations: $message');
+    } catch (error) {
+      throw Exception('Failed to load conversations: $error');
     }
   }
 
   Future<ConversationModel?> fetchConversation(String conversationId) async {
-    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await dio.get<dynamic>(
-        '/conversations/$conversationId',
-      );
-
-      final dynamic body = _unwrapData(response.data);
-      if (body is Map<String, dynamic>) {
-        return ConversationModel.fromJson(body);
+      final doc = await _firestore
+          .collection(_conversationsCollection)
+          .doc(conversationId)
+          .get();
+      final data = doc.data();
+      if (data == null) {
+        return null;
       }
-
-      return null;
-    } on DioException catch (error) {
-      final message = error.message ?? 'Unknown error';
+      return _conversationFromData(doc.id, data);
+    } on FirebaseException catch (error) {
+      final message = error.message ?? error.code;
       throw Exception('Failed to load conversation: $message');
+    } catch (error) {
+      throw Exception('Failed to load conversation: $error');
     }
   }
 
@@ -226,54 +182,144 @@ class MessagingService extends GetxService {
     required String content,
     List<ConversationParticipant>? participants,
   }) async {
-    final dio = _requireApiClient();
-    try {
-      final Response<dynamic> response = await dio.post<dynamic>(
-        '/conversations/$conversationId/messages',
-        data: <String, dynamic>{
-          'senderId': senderId,
-          'senderName': senderName,
-          'content': content,
-        },
-      );
+    final now = DateTime.now().toUtc();
+    final conversationRef =
+        _firestore.collection(_conversationsCollection).doc(conversationId);
+    final messageRef = conversationRef.collection(_messagesCollection).doc();
 
-      final dynamic body = response.data;
-      if (body is Map<String, dynamic>) {
-        final message = MessageModel.fromJson(body);
-        _messageStreamController.add(message);
-        if (participants != null && participants.isNotEmpty) {
-          unawaited(_sendPushNotification(message, participants));
-        }
-        return message;
+    try {
+      await messageRef.set(<String, dynamic>{
+        'conversationId': conversationId,
+        'senderId': senderId,
+        'senderName': senderName,
+        'content': content,
+        'sentAt': Timestamp.fromDate(now),
+      });
+
+      final resolvedParticipants =
+          await _resolveParticipants(conversationId, participants);
+
+      final participantIds = <String>{senderId};
+      participantIds.addAll(resolvedParticipants.map((participant) => participant.id));
+
+      final updateData = <String, dynamic>{
+        'lastMessagePreview': content,
+        'updatedAt': Timestamp.fromDate(now),
+        'participantIds': FieldValue.arrayUnion(participantIds.toList()),
+      };
+
+      if (resolvedParticipants.isNotEmpty) {
+        updateData['participants'] = resolvedParticipants
+            .map((participant) => <String, dynamic>{
+                  'id': participant.id,
+                  'name': participant.name,
+                  'role': participant.role,
+                })
+            .toList();
       }
 
-      throw Exception('Unexpected response when sending message.');
-    } on DioException catch (error) {
-      final message = error.message ?? 'Unknown error';
+      await conversationRef.set(updateData, SetOptions(merge: true));
+
+      final message = MessageModel(
+        id: messageRef.id,
+        conversationId: conversationId,
+        senderId: senderId,
+        senderName: senderName,
+        content: content,
+        sentAt: now,
+      );
+
+      _messageStreamController.add(message);
+
+      if (resolvedParticipants.isNotEmpty) {
+        unawaited(_sendPushNotification(message, resolvedParticipants));
+      }
+
+      return message;
+    } on FirebaseException catch (error) {
+      final message = error.message ?? error.code;
       throw Exception('Failed to send message: $message');
+    } catch (error) {
+      throw Exception('Failed to send message: $error');
     }
   }
 
-  Future<ConversationModel> ensureConversationWithContact(String contactId) async {
-    final dio = _requireApiClient();
-    try {
-      final Response<dynamic> response = await dio.post<dynamic>(
-        '/conversations',
-        data: <String, dynamic>{
-          'participantIds': <String>[contactId],
-        },
-      );
+  Future<ConversationModel> ensureConversationWithContact(
+    MessagingContact contact,
+  ) async {
+    final user = _authService.currentUser;
+    if (user == null) {
+      throw Exception('You must be signed in to start a conversation.');
+    }
 
-      final dynamic body = response.data;
-      if (body is Map<String, dynamic>) {
-        final conversation = ConversationModel.fromJson(body);
-        return conversation;
+    try {
+      final existingSnapshot = await _firestore
+          .collection(_conversationsCollection)
+          .where('participantIds', arrayContains: user.uid)
+          .get();
+
+      for (final doc in existingSnapshot.docs) {
+        final data = doc.data();
+        final participantIds = (data['participantIds'] as Iterable?)
+                ?.whereType<String>()
+                .toSet() ??
+            <String>{};
+        if (participantIds.contains(contact.id)) {
+          return _conversationFromData(doc.id, data);
+        }
       }
 
-      throw Exception('Unexpected response when starting conversation.');
-    } on DioException catch (error) {
-      final message = error.message ?? 'Unknown error';
+      final now = DateTime.now().toUtc();
+      final displayName = user.displayName?.trim();
+      final currentUserName =
+          (displayName != null && displayName.isNotEmpty)
+              ? displayName
+              : (user.email ?? 'User');
+      final currentRole = (_authService.currentRole ?? 'user').toLowerCase();
+
+      final participants = <ConversationParticipant>[
+        ConversationParticipant(
+          id: user.uid,
+          name: currentUserName,
+          role: currentRole,
+        ),
+        ConversationParticipant(
+          id: contact.id,
+          name: contact.name,
+          role: contact.role,
+        ),
+      ];
+
+      final docRef =
+          _firestore.collection(_conversationsCollection).doc();
+      await docRef.set(<String, dynamic>{
+        'title': contact.name,
+        'lastMessagePreview': '',
+        'participantIds': <String>{user.uid, contact.id}.toList(),
+        'participants': participants
+            .map((participant) => <String, dynamic>{
+                  'id': participant.id,
+                  'name': participant.name,
+                  'role': participant.role,
+                })
+            .toList(),
+        'createdAt': Timestamp.fromDate(now),
+        'updatedAt': Timestamp.fromDate(now),
+        'unreadCount': 0,
+      });
+
+      return ConversationModel(
+        id: docRef.id,
+        title: contact.name,
+        lastMessagePreview: '',
+        updatedAt: now,
+        participants: participants,
+      );
+    } on FirebaseException catch (error) {
+      final message = error.message ?? error.code;
       throw Exception('Failed to start conversation: $message');
+    } catch (error) {
+      throw Exception('Failed to start conversation: $error');
     }
   }
 
@@ -282,72 +328,269 @@ class MessagingService extends GetxService {
     required String userId,
     List<String>? classIds,
   }) async {
-    final dio = _requireApiClient();
     try {
-      final Response<dynamic> response = await dio.get<dynamic>(
-        '/messaging/contacts',
-        queryParameters: <String, dynamic>{
-          'role': userRole,
-          'userId': userId,
-          if (classIds != null && classIds.isNotEmpty) 'classIds': classIds,
-        },
-      );
+      final normalizedRole = userRole.toLowerCase();
+      final filterClassIds =
+          classIds?.where((id) => id.isNotEmpty).toSet();
 
-      final dynamic body = _unwrapData(response.data);
-      if (body == null) {
-        return <MessagingContact>[];
-      }
+      final classesFuture =
+          _firestore.collection(_classesCollection).get();
+      final childrenFuture =
+          _firestore.collection(_childrenCollection).get();
+      final parentsFuture =
+          _firestore.collection(_parentsCollection).get();
+      final teachersFuture =
+          _firestore.collection(_teachersCollection).get();
+      final adminsFuture =
+          _firestore.collection(_adminsCollection).get();
 
-      List<dynamic>? items;
-      if (body is List) {
-        items = body;
-      } else if (body is Map<String, dynamic>) {
-        final dynamic nested = body['items'] ?? body['contacts'];
-        if (nested is List) {
-          items = nested;
-        }
-      }
+      final results = await Future.wait([
+        classesFuture,
+        childrenFuture,
+        parentsFuture,
+        teachersFuture,
+        adminsFuture,
+      ]);
 
-      if (items == null) {
-        throw Exception('Unexpected response when fetching contacts.');
-      }
+      final QuerySnapshot classesSnapshot = results[0] as QuerySnapshot;
+      final QuerySnapshot childrenSnapshot = results[1] as QuerySnapshot;
+      final QuerySnapshot parentsSnapshot = results[2] as QuerySnapshot;
+      final QuerySnapshot teachersSnapshot = results[3] as QuerySnapshot;
+      final QuerySnapshot adminsSnapshot = results[4] as QuerySnapshot;
 
-      return items
-          .whereType<Map<String, dynamic>>()
-          .map(MessagingContact.fromJson)
-          .toList();
-    } on DioException catch (error) {
-      final message = error.message ?? 'Unknown error';
-      throw Exception('Failed to load contacts: $message');
-    }
-  }
-
-  Dio _requireApiClient() {
-    final dio = _dio;
-    if (dio != null) {
-      return dio;
-    }
-
-    throw StateError(
-      'Messaging API is not configured. Backend-dependent messaging features are disabled because API_URL is empty.',
-    );
-  }
-
-  dynamic _unwrapData(dynamic body) {
-    if (body is Map<String, dynamic>) {
-      for (final key in _nestedDataKeys) {
-        if (body.containsKey(key)) {
-          final dynamic value = body[key];
-          if (value != null) {
-            return _unwrapData(value);
+      final Map<String, Set<String>> teacherClassMap = <String, Set<String>>{};
+      for (final doc in classesSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+        final teacherSubjects =
+            (data['teacherSubjects'] as Map<String, dynamic>?) ??
+                <String, dynamic>{};
+        for (final entry in teacherSubjects.entries) {
+          final teacherId = entry.value;
+          if (teacherId is String && teacherId.isNotEmpty) {
+            teacherClassMap.putIfAbsent(teacherId, () => <String>{});
+            teacherClassMap[teacherId]!.add(doc.id);
           }
         }
       }
+
+      final Map<String, Set<String>> parentClassMap = <String, Set<String>>{};
+      final Map<String, List<String>> parentChildNames =
+          <String, List<String>>{};
+      for (final doc in childrenSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+        final parentId = data['parentId'] as String?;
+        if (parentId == null || parentId.isEmpty) {
+          continue;
+        }
+        parentClassMap.putIfAbsent(parentId, () => <String>{});
+        final classId = data['classId'] as String?;
+        if (classId != null && classId.isNotEmpty) {
+          parentClassMap[parentId]!.add(classId);
+        }
+        final childName = data['name'] as String?;
+        if (childName != null && childName.isNotEmpty) {
+          parentChildNames.putIfAbsent(parentId, () => <String>[]);
+          parentChildNames[parentId]!.add(childName);
+        }
+      }
+
+      final List<MessagingContact> contacts = <MessagingContact>[];
+      final Set<String> seenIds = <String>{userId};
+
+      void addContact(MessagingContact contact) {
+        if (seenIds.contains(contact.id)) {
+          return;
+        }
+        seenIds.add(contact.id);
+        contacts.add(contact);
+      }
+
+      for (final doc in teachersSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+        final id = doc.id;
+        final name = (data['name'] as String?)?.trim();
+        final email = (data['email'] as String?)?.trim();
+        final displayName =
+            (name != null && name.isNotEmpty)
+                ? name
+                : (email != null && email.isNotEmpty ? email : 'Teacher');
+        final teacherClassIds =
+            List<String>.from(teacherClassMap[id] ?? <String>{});
+        final teacherClassSet = teacherClassIds.toSet();
+        if (filterClassIds != null &&
+            filterClassIds.isNotEmpty &&
+            normalizedRole != 'admin' &&
+            teacherClassSet.isNotEmpty &&
+            teacherClassSet.intersection(filterClassIds).isEmpty) {
+          continue;
+        }
+        addContact(MessagingContact(
+          id: id,
+          name: displayName,
+          role: 'teacher',
+          classIds: teacherClassIds,
+        ));
+      }
+
+      for (final doc in parentsSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+        final id = doc.id;
+        final name = (data['name'] as String?)?.trim();
+        final email = (data['email'] as String?)?.trim();
+        final displayName =
+            (name != null && name.isNotEmpty)
+                ? name
+                : (email != null && email.isNotEmpty ? email : 'Parent');
+        final childrenNames = parentChildNames[id] ?? <String>[];
+        final parentClassIds =
+            List<String>.from(parentClassMap[id] ?? <String>{});
+        final parentClassSet = parentClassIds.toSet();
+        if (filterClassIds != null &&
+            filterClassIds.isNotEmpty &&
+            normalizedRole != 'admin' &&
+            parentClassSet.isNotEmpty &&
+            parentClassSet.intersection(filterClassIds).isEmpty) {
+          continue;
+        }
+        final relationship = childrenNames.isEmpty
+            ? null
+            : (childrenNames.length == 1
+                ? 'Parent of ${childrenNames.first}'
+                : 'Parent of ${childrenNames.join(', ')}');
+        addContact(MessagingContact(
+          id: id,
+          name: displayName,
+          role: 'parent',
+          classIds: parentClassIds,
+          relationship: relationship,
+        ));
+      }
+
+      for (final doc in adminsSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+        final id = doc.id;
+        final name = (data['name'] as String?)?.trim();
+        final email = (data['email'] as String?)?.trim();
+        final displayName =
+            (name != null && name.isNotEmpty)
+                ? name
+                : (email != null && email.isNotEmpty ? email : 'Administrator');
+        addContact(MessagingContact(
+          id: id,
+          name: displayName,
+          role: 'admin',
+        ));
+      }
+
+      contacts.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return contacts;
+    } on FirebaseException catch (error) {
+      final message = error.message ?? error.code;
+      throw Exception('Failed to load contacts: $message');
+    } catch (error) {
+      throw Exception('Failed to load contacts: $error');
     }
-    return body;
   }
 
-  void _handleAuthStateChanged(User? user) {
+  Future<List<ConversationParticipant>> _resolveParticipants(
+    String conversationId,
+    List<ConversationParticipant>? participants,
+  ) async {
+    if (participants != null && participants.isNotEmpty) {
+      return participants;
+    }
+
+    try {
+      final doc = await _firestore
+          .collection(_conversationsCollection)
+          .doc(conversationId)
+          .get();
+      final data = doc.data();
+      if (data == null) {
+        return <ConversationParticipant>[];
+      }
+      final rawParticipants = data['participants'];
+      if (rawParticipants is Iterable) {
+        return rawParticipants
+            .whereType<Map<String, dynamic>>()
+            .map(ConversationParticipant.fromJson)
+            .toList();
+      }
+      final participantIds =
+          (data['participantIds'] as Iterable?)?.whereType<String>() ??
+              <String>[];
+      if (participantIds.isEmpty) {
+        return <ConversationParticipant>[];
+      }
+      return participantIds
+          .map(
+            (id) => ConversationParticipant(
+              id: id,
+              name: id == _authService.currentUser?.uid ? 'You' : id,
+              role: 'user',
+            ),
+          )
+          .toList();
+    } on FirebaseException {
+      return <ConversationParticipant>[];
+    }
+  }
+
+  ConversationModel _conversationFromData(
+    String id,
+    Map<String, dynamic> data,
+  ) {
+    final participantsRaw = data['participants'];
+    final participants = participantsRaw is Iterable
+        ? participantsRaw
+            .whereType<Map<String, dynamic>>()
+            .map(ConversationParticipant.fromJson)
+            .toList()
+        : <ConversationParticipant>[];
+    final updatedAt =
+        (data['updatedAt'] as Timestamp?)?.toDate().toUtc() ?? DateTime.now().toUtc();
+    final title = (data['title'] as String?)?.trim();
+    final resolvedTitle =
+        (title != null && title.isNotEmpty)
+            ? title
+            : _deriveTitleFromParticipants(participants);
+
+    return ConversationModel(
+      id: id,
+      title: resolvedTitle,
+      lastMessagePreview: (data['lastMessagePreview'] as String?) ?? '',
+      updatedAt: updatedAt,
+      participants: participants,
+      unreadCount: (data['unreadCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  String _deriveTitleFromParticipants(
+    List<ConversationParticipant> participants,
+  ) {
+    if (participants.isEmpty) {
+      return 'Conversation';
+    }
+    final currentUserId = _authService.currentUser?.uid;
+    final otherNames = participants
+        .where((participant) => participant.id != currentUserId)
+        .map((participant) => participant.name)
+        .where((name) => name.isNotEmpty)
+        .toList();
+    if (otherNames.isNotEmpty) {
+      return otherNames.join(', ');
+    }
+    final allNames = participants
+        .map((participant) => participant.name)
+        .where((name) => name.isNotEmpty)
+        .toList();
+    if (allNames.isNotEmpty) {
+      return allNames.join(', ');
+    }
+    return 'Conversation';
+  }
+
+  Future<void> _handleAuthStateChanged(User? user) async {
     if (user == null) {
       unawaited(_handleUserSignedOut());
     } else {
