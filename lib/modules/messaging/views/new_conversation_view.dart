@@ -5,9 +5,14 @@ import '../../common/widgets/module_empty_state.dart';
 import '../controllers/messaging_controller.dart';
 
 class NewConversationView extends StatefulWidget {
-  const NewConversationView({super.key, required this.controller});
+  const NewConversationView({
+    super.key,
+    required this.controller,
+    this.onClose,
+  });
 
   final MessagingController controller;
+  final VoidCallback? onClose;
 
   @override
   State<NewConversationView> createState() => _NewConversationViewState();
@@ -295,8 +300,11 @@ class _NewConversationViewState extends State<NewConversationView> {
                           color: Colors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(24),
-                            onTap: () =>
-                                _controller.startConversationWithContact(contact),
+                            onTap: () async {
+                              await _controller
+                                  .startConversationWithContact(contact);
+                              widget.onClose?.call();
+                            },
                             child: Ink(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(24),

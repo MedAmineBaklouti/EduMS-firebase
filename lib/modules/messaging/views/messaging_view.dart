@@ -21,14 +21,39 @@ class MessagingView extends GetView<MessagingController> {
       final viewMode = controller.activeView.value;
       final activeConversation = controller.activeConversation.value;
 
+      Future<void> openNewConversationDialog() async {
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          builder: (dialogContext) {
+            final mediaQuery = MediaQuery.of(dialogContext);
+            final size = mediaQuery.size;
+            final width = size.width * 0.95;
+            final dialogWidth = width > 640 ? 640.0 : width;
+            final heightLimit = size.height * 0.85;
+            final dialogHeight = heightLimit > 720 ? 720.0 : heightLimit;
+            return Dialog(
+              clipBehavior: Clip.antiAlias,
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              backgroundColor: theme.colorScheme.surface,
+              child: SizedBox(
+                width: dialogWidth,
+                height: dialogHeight,
+                child: NewConversationView(
+                  controller: controller,
+                  onClose: () => Navigator.of(dialogContext).pop(),
+                ),
+              ),
+            );
+          },
+        );
+      }
+
       return WillPopScope(
         onWillPop: () async {
           if (viewMode == MessagingViewMode.conversationThread) {
             controller.clearActiveConversation();
-            return false;
-          }
-          if (viewMode == MessagingViewMode.newConversation) {
-            controller.showConversationListView();
             return false;
           }
           return true;
@@ -45,13 +70,6 @@ class MessagingView extends GetView<MessagingController> {
                   icon: const Icon(Icons.arrow_back),
                   tooltip: 'Back to conversations',
                   onPressed: controller.clearActiveConversation,
-                );
-              }
-              if (viewMode == MessagingViewMode.newConversation) {
-                return IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Back to conversations',
-                  onPressed: controller.showConversationListView,
                 );
               }
               if (canPop) {
@@ -78,23 +96,6 @@ class MessagingView extends GetView<MessagingController> {
                       ),
                       Text(
                         'Stay connected with your school community',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  );
-                case MessagingViewMode.newConversation:
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'New message',
-                        style: theme.textTheme.titleMedium,
-                      ),
-                      Text(
-                        'Choose who you want to reach out to',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -153,8 +154,6 @@ class MessagingView extends GetView<MessagingController> {
             switch (viewMode) {
               case MessagingViewMode.conversationList:
                 return ConversationHistoryView(controller: controller);
-              case MessagingViewMode.newConversation:
-                return NewConversationView(controller: controller);
               case MessagingViewMode.conversationThread:
                 if (activeConversation == null) {
                   return const ScrollablePlaceholder(
@@ -168,7 +167,7 @@ class MessagingView extends GetView<MessagingController> {
               viewMode == MessagingViewMode.conversationList
                   ? FloatingActionButton(
                       tooltip: 'Start a new conversation',
-                      onPressed: controller.showNewConversationView,
+                      onPressed: openNewConversationDialog,
                       child: const Icon(Icons.add_comment_rounded),
                     )
                   : null,

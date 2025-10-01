@@ -13,7 +13,6 @@ import '../services/messaging_service.dart';
 
 enum MessagingViewMode {
   conversationList,
-  newConversation,
   conversationThread,
 }
 
@@ -358,10 +357,6 @@ class MessagingController extends GetxController {
 
   void showConversationListView() {
     activeView.value = MessagingViewMode.conversationList;
-  }
-
-  void showNewConversationView() {
-    activeView.value = MessagingViewMode.newConversation;
   }
 
   Future<void> startConversationWithAdministration() async {
