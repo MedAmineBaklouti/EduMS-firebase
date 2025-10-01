@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../../data/models/conversation_model.dart';
 import '../../../data/models/message_model.dart';
 
 import '../../common/widgets/module_empty_state.dart';
@@ -17,368 +18,415 @@ class MessagingView extends GetView<MessagingController> {
     final navigator = Navigator.of(context);
     final canPop = navigator.canPop();
 
-    return WillPopScope(
-      onWillPop: () async {
-        final activeConversation = controller.activeConversation.value;
-        if (activeConversation != null) {
-          controller.clearActiveConversation();
-          return false;
-        }
-        return true;
-      },
-      child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          elevation: 0,
+    return Obx(() {
+      final viewMode = controller.activeView.value;
+      final activeConversation = controller.activeConversation.value;
+
+      return WillPopScope(
+        onWillPop: () async {
+          if (viewMode == MessagingViewMode.conversationThread) {
+            controller.clearActiveConversation();
+            return false;
+          }
+          if (viewMode == MessagingViewMode.newConversation) {
+            controller.showConversationListView();
+            return false;
+          }
+          return true;
+        },
+        child: Scaffold(
           backgroundColor: theme.colorScheme.surface,
-          leading: Obx(() {
-          final active = controller.activeConversation.value;
-          if (active != null) {
-            return IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back to conversations',
-              onPressed: controller.clearActiveConversation,
-            );
-          }
-          if (canPop) {
-            return IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back',
-              onPressed: () {
-                navigator.maybePop();
-              },
-            );
-          }
-          return const SizedBox.shrink();
-        }),
-        title: Obx(() {
-          final _ = controller.contacts.length;
-          final active = controller.activeConversation.value;
-          if (active == null) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Messaging',
-                  style: theme.textTheme.titleMedium,
-                ),
-                Text(
-                  'Stay connected with your school community',
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-              ],
-            );
-          }
-
-          final titleText = controller.resolveConversationTitle(active);
-          final contextText = controller.resolveConversationContext(active);
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                titleText,
-                style: theme.textTheme.titleMedium,
-              ),
-              if (contextText != null && contextText.isNotEmpty)
-                Text(
-                  contextText,
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-            ],
-          );
-        }),
-        ),
-        body: Obx(() {
-          final active = controller.activeConversation.value;
-          if (active == null) {
-            return _ConversationHistory(controller: controller);
-          }
-          return _ConversationThread(controller: controller, theme: theme);
-        }),
-        floatingActionButton: Obx(() {
-          final active = controller.activeConversation.value;
-          if (active != null) {
-            return const SizedBox.shrink();
-          }
-          return FloatingActionButton(
-            tooltip: 'Start a new conversation',
-            onPressed: () => _showNewConversationSheet(context, controller),
-            child: const Icon(Icons.add_comment_rounded),
-          );
-        }),
-      ),
-    );
-  }
-
-  void _showNewConversationSheet(
-    BuildContext context,
-    MessagingController controller,
-  ) {
-    final searchController = TextEditingController();
-    final query = ValueNotifier<String>('');
-
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final theme = Theme.of(context);
-        final mediaQuery = MediaQuery.of(context);
-
-        Color resolveRoleColor(String role) {
-          final normalized = role.toLowerCase();
-          switch (normalized) {
-            case 'teacher':
-              return theme.colorScheme.primary;
-            case 'parent':
-              return theme.colorScheme.tertiary;
-            case 'admin':
-              return theme.colorScheme.secondary;
-            default:
-              return theme.colorScheme.primary;
-          }
-        }
-
-        String resolveRoleLabel(String role) {
-          if (role.isEmpty) {
-            return 'Contact';
-          }
-          return role[0].toUpperCase() + role.substring(1).toLowerCase();
-        }
-
-        return GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 12,
-              bottom: mediaQuery.viewInsets.bottom + 16,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.shadowColor.withOpacity(0.12),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Container(
-                      width: 48,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(12),
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            elevation: 0,
+            backgroundColor: theme.colorScheme.surface,
+            leading: () {
+              if (viewMode == MessagingViewMode.conversationThread) {
+                return IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Back to conversations',
+                  onPressed: controller.clearActiveConversation,
+                );
+              }
+              if (viewMode == MessagingViewMode.newConversation) {
+                return IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Back to conversations',
+                  onPressed: controller.showConversationListView,
+                );
+              }
+              if (canPop) {
+                return IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Back',
+                  onPressed: () {
+                    navigator.maybePop();
+                  },
+                );
+              }
+              return null;
+            }(),
+            title: () {
+              switch (viewMode) {
+                case MessagingViewMode.conversationList:
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Messaging',
+                        style: theme.textTheme.titleMedium,
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Start a conversation',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      Text(
+                        'Stay connected with your school community',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(height: 4),
+                      ),
+                    ],
+                  );
+                case MessagingViewMode.newConversation:
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'New message',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      Text(
+                        'Choose who you want to reach out to',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  );
+                case MessagingViewMode.conversationThread:
+                  if (activeConversation == null) {
+                    return const SizedBox.shrink();
+                  }
+                  var titleText =
+                      controller.resolveConversationTitle(activeConversation);
+                  final hasAdministrationParticipant = activeConversation
+                      .participants
+                      .any((participant) =>
+                          participant.role.toLowerCase() == 'admin');
+                  if (hasAdministrationParticipant) {
+                    titleText = 'Administration';
+                  }
+                  final contextText =
+                      controller.resolveConversationContext(activeConversation);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        titleText,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      if (contextText != null && contextText.isNotEmpty)
                         Text(
-                          'Search by name, role, or relationship to connect instantly.',
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          contextText,
+                          style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                      ],
+                    ],
+                  );
+              }
+            }(),
+            actions: [
+              if (controller.shouldShowAdministrationAction)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: TextButton(
+                    onPressed: controller.startConversationWithAdministration,
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.primary,
+                    ),
+                    child: const Text('Administration'),
+                  ),
+                ),
+            ],
+          ),
+          body: () {
+            switch (viewMode) {
+              case MessagingViewMode.conversationList:
+                return _ConversationHistory(controller: controller);
+              case MessagingViewMode.newConversation:
+                return _NewConversationView(controller: controller);
+              case MessagingViewMode.conversationThread:
+                if (activeConversation == null) {
+                  return const _ScrollablePlaceholder(
+                    child: Text('Select a conversation to get started.'),
+                  );
+                }
+                return _ConversationThread(controller: controller, theme: theme);
+            }
+          }(),
+          floatingActionButton:
+              viewMode == MessagingViewMode.conversationList
+                  ? FloatingActionButton(
+                      tooltip: 'Start a new conversation',
+                      onPressed: controller.showNewConversationView,
+                      child: const Icon(Icons.add_comment_rounded),
+                    )
+                  : null,
+        ),
+      );
+    });
+
+  }
+
+
+
+class _NewConversationView extends StatefulWidget {
+  const _NewConversationView({required this.controller});
+
+  final MessagingController controller;
+
+  @override
+  State<_NewConversationView> createState() => _NewConversationViewState();
+}
+
+class _NewConversationViewState extends State<_NewConversationView> {
+  late final TextEditingController _searchController;
+  String _query = '';
+
+  MessagingController get _controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _searchController.addListener(_handleSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_handleSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleSearchChanged() {
+    setState(() {
+      _query = _searchController.text.toLowerCase().trim();
+    });
+  }
+
+  Color _resolveRoleColor(ThemeData theme, String role) {
+    switch (role.toLowerCase()) {
+      case 'teacher':
+        return theme.colorScheme.primary;
+      case 'parent':
+        return theme.colorScheme.tertiary;
+      case 'admin':
+        return theme.colorScheme.secondary;
+      default:
+        return theme.colorScheme.primary;
+    }
+  }
+
+  String _resolveRoleLabel(String role) {
+    if (role.isEmpty) {
+      return 'Contact';
+    }
+    return role[0].toUpperCase() + role.substring(1).toLowerCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      top: false,
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Start a conversation',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.search_rounded),
-                        hintText: 'Search contacts…',
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.4),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onChanged: (value) => query.value = value.toLowerCase().trim(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ValueListenableBuilder<String>(
-                      valueListenable: query,
-                      builder: (context, filter, _) {
-                        return Obx(() {
-                          if (controller.isContactsLoading.value) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-
-                          final error = controller.contactsError.value;
-                          if (error != null) {
-                            return ModuleEmptyState(
-                              icon: Icons.error_outline,
-                              title: 'Unable to load contacts',
-                              message: error,
-                              actionLabel: 'Retry',
-                              onAction: controller.refreshContacts,
-                            );
-                          }
-
-                          final contacts = controller.contacts;
-                          if (contacts.isEmpty) {
-                            return const ModuleEmptyState(
-                              icon: Icons.people_outline,
-                              title: 'No available contacts',
-                              message:
-                                  'You currently do not have anyone to message based on your assignments.',
-                            );
-                          }
-
-                          final lowerFilter = filter.trim();
-                          final filtered = lowerFilter.isEmpty
-                              ? contacts.toList()
-                              : contacts.where((contact) {
-                                  final name = contact.name.toLowerCase();
-                                  final role = contact.role.toLowerCase();
-                                  final relationship =
-                                      contact.relationship?.toLowerCase() ?? '';
-                                  return name.contains(lowerFilter) ||
-                                      role.contains(lowerFilter) ||
-                                      relationship.contains(lowerFilter);
-                                }).toList();
-
-                          if (filtered.isEmpty) {
-                            return ModuleEmptyState(
-                              icon: Icons.search_off_rounded,
-                              title: 'No matches found',
-                              message: 'Try searching with a different name or role.',
-                            );
-                          }
-
-                          return ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 16),
-                            itemBuilder: (context, index) {
-                              final contact = filtered[index];
-                              final roleLabel = resolveRoleLabel(contact.role);
-                              final accentColor = resolveRoleColor(contact.role);
-                              final relationship = contact.relationship;
-                              final initial = contact.name.isEmpty
-                                  ? '?'
-                                  : contact.name.characters.first.toUpperCase();
-
-                              return Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(22),
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    controller.startConversationWithContact(contact);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 16,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.surfaceVariant
-                                          .withOpacity(0.45),
-                                      borderRadius: BorderRadius.circular(22),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        CircleAvatar(
-                                          backgroundColor: accentColor.withOpacity(0.18),
-                                          foregroundColor: accentColor,
-                                          radius: 26,
-                                          child: Text(initial),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                contact.name,
-                                                style: theme.textTheme.titleMedium?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                              if (relationship != null &&
-                                                  relationship.isNotEmpty)
-                                                Padding(
-                                                  padding: const EdgeInsets.only(top: 4),
-                                                  child: Text(
-                                                    relationship,
-                                                    style: theme.textTheme.bodySmall?.copyWith(
-                                                      color: accentColor,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                              Padding(
-                                                padding: const EdgeInsets.only(top: 4),
-                                                child: Text(
-                                                  roleLabel,
-                                                  style: theme.textTheme.labelSmall?.copyWith(
-                                                    color: theme.colorScheme.onSurfaceVariant,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.chevron_right_rounded,
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        });
-                      },
+                  const SizedBox(height: 4),
+                  Text(
+                    'Search by name, role, or relationship to connect instantly.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      },
-    ).whenComplete(() {
-      searchController.dispose();
-      query.dispose();
-    });
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  hintText: 'Search contacts…',
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Obx(() {
+                if (_controller.isContactsLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final error = _controller.contactsError.value;
+                if (error != null) {
+                  return ModuleEmptyState(
+                    icon: Icons.error_outline,
+                    title: 'Unable to load contacts',
+                    message: error,
+                    actionLabel: 'Retry',
+                    onAction: _controller.refreshContacts,
+                  );
+                }
+
+                final contacts = _controller.contacts;
+                if (contacts.isEmpty) {
+                  return const ModuleEmptyState(
+                    icon: Icons.people_outline,
+                    title: 'No available contacts',
+                    message:
+                        'You currently do not have anyone to message based on your assignments.',
+                  );
+                }
+
+                final filtered = _query.isEmpty
+                    ? contacts.toList()
+                    : contacts.where((contact) {
+                        final name = contact.name.toLowerCase();
+                        final role = contact.role.toLowerCase();
+                        final relationship =
+                            contact.relationship?.toLowerCase() ?? '';
+                        return name.contains(_query) ||
+                            role.contains(_query) ||
+                            relationship.contains(_query);
+                      }).toList();
+
+                if (filtered.isEmpty) {
+                  return const ModuleEmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'No matches found',
+                    message: 'Try searching with a different name or role.',
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final contact = filtered[index];
+                    final accentColor =
+                        _resolveRoleColor(theme, contact.role);
+                    final relationship = contact.relationship;
+                    final initial = contact.name.isEmpty
+                        ? '?'
+                        : contact.name.characters.first.toUpperCase();
+
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(22),
+                        onTap: () =>
+                            _controller.startConversationWithContact(contact),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceVariant
+                                .withOpacity(0.45),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: accentColor.withOpacity(0.18),
+                                foregroundColor: accentColor,
+                                radius: 26,
+                                child: Text(initial),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      contact.name,
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    if (relationship != null &&
+                                        relationship.isNotEmpty)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          relationship,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: accentColor,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        _resolveRoleLabel(contact.role),
+                                        style:
+                                            theme.textTheme.labelSmall?.copyWith(
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -626,6 +674,7 @@ class _ConversationThreadState extends State<_ConversationThread>
     with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   Worker? _messagesWorker;
+  Worker? _conversationWorker;
   String? _lastScrollSignature;
 
   MessagingController get _controller => widget.controller;
@@ -639,6 +688,10 @@ class _ConversationThreadState extends State<_ConversationThread>
       _controller.messages,
       _handleMessagesUpdated,
     );
+    _conversationWorker = ever<ConversationModel?>(
+      _controller.activeConversation,
+      _handleActiveConversationChanged,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -651,6 +704,7 @@ class _ConversationThreadState extends State<_ConversationThread>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _messagesWorker?.dispose();
+    _conversationWorker?.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -697,13 +751,28 @@ class _ConversationThreadState extends State<_ConversationThread>
     }
 
     _lastScrollSignature = signature;
-    final shouldForce = _isNearBottom;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _scrollToBottom(force: true);
+    });
+  }
+
+  void _handleActiveConversationChanged(ConversationModel? conversation) {
+    if (!mounted) {
+      return;
+    }
+    if (conversation == null) {
+      _lastScrollSignature = null;
+      return;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
-      _scrollToBottom(force: shouldForce);
+      _scrollToBottom(immediate: true, force: true);
     });
   }
 
@@ -1003,9 +1072,19 @@ class _MessageComposer extends StatelessWidget {
                           keyboardType: TextInputType.multiline,
                           textCapitalization: TextCapitalization.sentences,
                           textInputAction: TextInputAction.send,
-                          decoration: const InputDecoration(
+                          cursorColor: theme.colorScheme.primary,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          decoration: InputDecoration(
                             hintText: 'Write a message…',
+                            hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                             border: InputBorder.none,
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            isDense: true,
                           ),
                           onSubmitted: (_) => controller.sendCurrentMessage(),
                         ),
