@@ -178,7 +178,7 @@ class MessagingView extends GetView<MessagingController> {
     });
 
   }
-
+}
 
 
 class _NewConversationView extends StatefulWidget {
