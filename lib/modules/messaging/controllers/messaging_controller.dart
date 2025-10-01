@@ -547,7 +547,11 @@ class MessagingController extends GetxController {
     if (others.isNotEmpty) {
       final names = others
           .map((participant) {
-            final contact = _findContact(participant.id);
+            final contact = _findContact(
+              participant.userId.isNotEmpty
+                  ? participant.userId
+                  : participant.id,
+            );
             final candidate = contact?.name ?? participant.name;
             return _prettifyName(candidate);
           })
@@ -571,7 +575,9 @@ class MessagingController extends GetxController {
     }
     if (others.length == 1) {
       final participant = others.first;
-      final contact = _findContact(participant.id);
+      final contact = _findContact(
+        participant.userId.isNotEmpty ? participant.userId : participant.id,
+      );
       final relationship = contact?.relationship?.trim();
       if (relationship != null && relationship.isNotEmpty) {
         return relationship;
@@ -596,10 +602,12 @@ class MessagingController extends GetxController {
   ) {
     final currentUserId = _authService.currentUser?.uid;
     final names = conversation.participants.map((participant) {
-      if (participant.id == currentUserId) {
+      final participantUserId =
+          participant.userId.isNotEmpty ? participant.userId : participant.id;
+      if (participantUserId == currentUserId) {
         return 'You';
       }
-      final contact = _findContact(participant.id);
+      final contact = _findContact(participantUserId);
       final candidate = contact?.name ?? participant.name;
       return _prettifyName(candidate);
     }).where((name) => name.isNotEmpty).toList();
@@ -614,12 +622,17 @@ class MessagingController extends GetxController {
       if (currentUserId == null) {
         return true;
       }
-      return participant.id != currentUserId;
+      final participantUserId =
+          participant.userId.isNotEmpty ? participant.userId : participant.id;
+      return participantUserId != currentUserId;
     }).toList();
   }
 
   MessagingContact? _findContact(String participantId) {
-    return contacts.firstWhereOrNull((contact) => contact.id == participantId);
+    return contacts.firstWhereOrNull(
+      (contact) =>
+          contact.id == participantId || contact.userId == participantId,
+    );
   }
 
   String _prettifyName(String? value) {
@@ -686,7 +699,8 @@ class MessagingController extends GetxController {
     }
 
     final others = conversation.participants
-        .map((participant) => participant.id)
+        .map((participant) =>
+            participant.userId.isNotEmpty ? participant.userId : participant.id)
         .where((id) => id != message.senderId)
         .toSet();
 
