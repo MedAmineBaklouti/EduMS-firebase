@@ -16,10 +16,10 @@ class NetworkService extends GetxService {
 
   Future<void> init() async {
     final status = await _connectivity.checkConnectivity();
-    await _handleStatusChange(status, initial: true);
+    await _handleStatusChange(status as ConnectivityResult, initial: true);
 
     _subscription =
-        _connectivity.onConnectivityChanged.listen(_handleStatusChange);
+        _connectivity.onConnectivityChanged.listen(_handleStatusChange as void Function(List<ConnectivityResult> event)?) as StreamSubscription<ConnectivityResult>?;
   }
 
   Future<void> _handleStatusChange(ConnectivityResult status,
