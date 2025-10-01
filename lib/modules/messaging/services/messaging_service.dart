@@ -10,6 +10,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart' hide Response;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
@@ -48,6 +49,9 @@ class MessagingService extends GetxService {
   String? _pendingToken;
   String? _lastKnownUserId;
   bool _pushPermissionGranted = false;
+  SharedPreferences? _preferences;
+  String? _deviceId;
+  bool _deviceTokenRestored = false;
 
   static const String _messagingRoute = '/messaging';
   static const String _tokenCollection = 'userPushTokens';
@@ -60,6 +64,7 @@ class MessagingService extends GetxService {
   static const String _adminsCollection = 'admins';
   static const String _childrenCollection = 'children';
   static const int _firestoreBatchLimit = 10;
+  static const String _deviceIdPrefsKey = 'messaging_device_id';
 
   static Dio? _createPushClient() {
     final serverKey = AppConfig.fcmServerKey.trim();
@@ -83,6 +88,7 @@ class MessagingService extends GetxService {
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
 
   Future<MessagingService> init() async {
+    await _ensureDeviceId();
     await _setupLocalNotifications();
     await _initializePushNotifications();
     _authSubscription?.cancel();
@@ -875,10 +881,12 @@ class MessagingService extends GetxService {
 
   Future<void> _handleUserSignedIn(User user) async {
     _lastKnownUserId = user.uid;
+    _deviceTokenRestored = false;
     if (!_pushPermissionGranted) {
       return;
     }
 
+    await _restoreDeviceToken(user.uid);
     final pending = _pendingToken;
     if (pending != null && pending.isNotEmpty) {
       await _registerTokenForUser(user.uid, pending);
@@ -893,12 +901,17 @@ class MessagingService extends GetxService {
     final token = _lastKnownToken;
     _lastKnownUserId = null;
     _pendingToken = null;
+    _deviceTokenRestored = false;
     if (userId == null || token == null || token.isEmpty) {
       _lastKnownToken = null;
       return;
     }
 
-    await _removeTokenFromFirestore(userId, token);
+    await _removeTokenFromFirestore(
+      userId,
+      token,
+      removeDeviceAssociation: true,
+    );
     _lastKnownToken = null;
   }
 
@@ -916,6 +929,7 @@ class MessagingService extends GetxService {
     }
 
     try {
+      await _restoreDeviceToken(userId);
       final token = await _messaging.getToken();
       if (token != null && token.isNotEmpty) {
         await _registerTokenForUser(userId, token);
@@ -961,12 +975,19 @@ class MessagingService extends GetxService {
   Future<void> _saveTokenToFirestore(String userId, String token) async {
     try {
       final doc = _firestore.collection(_tokenCollection).doc(userId);
+      final deviceId = _deviceId;
+      final updates = <String, dynamic>{
+        'tokens': FieldValue.arrayUnion(<String>[token]),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'lastPlatform': defaultTargetPlatform.name,
+      };
+      if (deviceId != null && deviceId.isNotEmpty) {
+        updates['deviceTokens.$deviceId'] = token;
+        updates['devicePlatforms.$deviceId'] = defaultTargetPlatform.name;
+        updates['deviceUpdatedAt.$deviceId'] = FieldValue.serverTimestamp();
+      }
       await doc.set(
-        <String, dynamic>{
-          'tokens': FieldValue.arrayUnion(<String>[token]),
-          'updatedAt': FieldValue.serverTimestamp(),
-          'lastPlatform': defaultTargetPlatform.name,
-        },
+        updates,
         SetOptions(merge: true),
       );
     } catch (error) {
@@ -974,18 +995,82 @@ class MessagingService extends GetxService {
     }
   }
 
-  Future<void> _removeTokenFromFirestore(String userId, String token) async {
+  Future<void> _removeTokenFromFirestore(
+    String userId,
+    String token, {
+    bool removeDeviceAssociation = false,
+  }) async {
     try {
       final doc = _firestore.collection(_tokenCollection).doc(userId);
+      final updates = <String, dynamic>{
+        'tokens': FieldValue.arrayRemove(<String>[token]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (removeDeviceAssociation) {
+        final deviceId = _deviceId;
+        if (deviceId != null && deviceId.isNotEmpty) {
+          updates['deviceTokens.$deviceId'] = FieldValue.delete();
+          updates['devicePlatforms.$deviceId'] = FieldValue.delete();
+          updates['deviceUpdatedAt.$deviceId'] = FieldValue.delete();
+        }
+      }
       await doc.set(
-        <String, dynamic>{
-          'tokens': FieldValue.arrayRemove(<String>[token]),
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
+        updates,
         SetOptions(merge: true),
       );
     } catch (error) {
       debugPrint('Failed to remove FCM token: $error');
+    }
+  }
+
+  Future<void> _ensureDeviceId() async {
+    if (_deviceId != null && _deviceId!.isNotEmpty) {
+      return;
+    }
+    _preferences ??= await SharedPreferences.getInstance();
+    final stored = _preferences?.getString(_deviceIdPrefsKey);
+    if (stored != null && stored.isNotEmpty) {
+      _deviceId = stored;
+      return;
+    }
+    final generated = _generateDeviceId();
+    await _preferences?.setString(_deviceIdPrefsKey, generated);
+    _deviceId = generated;
+  }
+
+  String _generateDeviceId() {
+    final random = math.Random();
+    final timestamp = DateTime.now().millisecondsSinceEpoch.toRadixString(16);
+    final randomBytes = List<int>.generate(6, (_) => random.nextInt(16));
+    final randomPart = randomBytes.map((value) => value.toRadixString(16)).join();
+    return 'device-$timestamp-$randomPart';
+  }
+
+  Future<void> _restoreDeviceToken(String userId) async {
+    if (_deviceTokenRestored) {
+      return;
+    }
+    final deviceId = _deviceId;
+    if (deviceId == null || deviceId.isEmpty) {
+      return;
+    }
+
+    try {
+      final snapshot =
+          await _firestore.collection(_tokenCollection).doc(userId).get();
+      final data = snapshot.data();
+      if (data != null) {
+        final deviceTokens = data['deviceTokens'];
+        if (deviceTokens is Map<String, dynamic>) {
+          final storedToken = deviceTokens[deviceId];
+          if (storedToken is String && storedToken.isNotEmpty) {
+            _lastKnownToken = storedToken;
+          }
+        }
+      }
+      _deviceTokenRestored = true;
+    } catch (error) {
+      debugPrint('Failed to restore device token: $error');
     }
   }
 
