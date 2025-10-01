@@ -79,9 +79,10 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
     if (!_scrollController.hasClients) {
       return true;
     }
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final current = _scrollController.position.pixels;
-    return (maxScroll - current) <= 120;
+    final position = _scrollController.position;
+    final distanceFromStart =
+        (position.pixels - position.minScrollExtent).abs();
+    return distanceFromStart <= 120;
   }
 
   void _handleMessagesUpdated(List<MessageModel> messages) {
@@ -134,19 +135,19 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
     }
 
     final position = _scrollController.position;
-    final maxScroll = position.maxScrollExtent;
+    final target = position.minScrollExtent;
 
     if (!force && !_isNearBottom) {
       return;
     }
 
     if (immediate) {
-      _scrollController.jumpTo(maxScroll);
+      _scrollController.jumpTo(target);
       return;
     }
 
     _scrollController.animateTo(
-      maxScroll,
+      target,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
     );
@@ -193,16 +194,19 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
                 );
               }
 
+              final messages = controller.messages;
+
               return ListView.separated(
                 controller: _scrollController,
+                reverse: true,
                 physics: const BouncingScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                itemCount: controller.messages.length,
+                itemCount: messages.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final message = controller.messages[index];
+                  final message = messages[messages.length - 1 - index];
                   final isMine = controller.isOwnMessage(message);
                   final isUnread = controller.isMessageUnread(message);
                   final timestamp = DateFormat('MMM d, h:mm a')
