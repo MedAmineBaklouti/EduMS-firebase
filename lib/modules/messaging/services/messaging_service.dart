@@ -45,6 +45,8 @@ class MessagingService extends GetxService {
 
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  StreamSubscription<RemoteMessage>? _messageOpenedAppSubscription;
   String? _lastKnownToken;
   String? _pendingToken;
   String? _lastKnownUserId;
@@ -91,6 +93,7 @@ class MessagingService extends GetxService {
     await _ensureDeviceId();
     await _setupLocalNotifications();
     await _initializePushNotifications();
+    await _handleInitialMessage();
     _authSubscription?.cancel();
     _authSubscription = _authService.user.listen(_handleAuthStateChanged);
     if (_pushPermissionGranted) {
@@ -1136,7 +1139,12 @@ class MessagingService extends GetxService {
       debugPrint('Failed to refresh FCM token: $error');
     });
 
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _foregroundMessageSubscription?.cancel();
+    _foregroundMessageSubscription =
+        FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _messageOpenedAppSubscription?.cancel();
+    _messageOpenedAppSubscription =
+        FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -1157,18 +1165,9 @@ class MessagingService extends GetxService {
         }
 
         try {
-          final data = jsonDecode(payload) as Map<String, dynamic>;
-          final conversationId =
-              (data['conversationId'] ?? data['conversation_id'])?.toString();
-          if (conversationId != null && conversationId.isNotEmpty) {
-            Get.toNamed(
-              _messagingRoute,
-              parameters: <String, String>{
-                'conversationId': conversationId,
-              },
-              arguments: data,
-            );
-          }
+          final data =
+              Map<String, dynamic>.from(jsonDecode(payload) as Map<String, dynamic>);
+          _openConversationFromPayload(data);
         } catch (_) {
           // Ignore invalid payloads.
         }
@@ -1195,6 +1194,54 @@ class MessagingService extends GetxService {
     final model = MessageModel.fromRemoteMessage(message);
     _messageStreamController.add(model);
     _showForegroundNotification(message);
+  }
+
+  void _handleMessageOpenedApp(RemoteMessage message) {
+    final payload = <String, dynamic>{
+      ...message.data,
+      if (message.notification?.title != null)
+        'title': message.notification!.title,
+      if (message.notification?.body != null)
+        'body': message.notification!.body,
+      if (message.messageId != null) 'messageId': message.messageId,
+      if (!message.data.containsKey('conversationId') &&
+          message.data['conversation_id'] != null)
+        'conversationId': message.data['conversation_id'],
+    };
+
+    _openConversationFromPayload(payload);
+  }
+
+  Future<void> _handleInitialMessage() async {
+    if (!_pushPermissionGranted) {
+      return;
+    }
+    try {
+      final initialMessage = await _messaging.getInitialMessage();
+      if (initialMessage != null) {
+        _handleMessageOpenedApp(initialMessage);
+      }
+    } catch (error) {
+      debugPrint('Failed to handle initial push notification: $error');
+    }
+  }
+
+  void _openConversationFromPayload(Map<String, dynamic> data) {
+    final conversationId =
+        (data['conversationId'] ?? data['conversation_id'])?.toString();
+    if (conversationId == null || conversationId.isEmpty) {
+      return;
+    }
+
+    Future<void>.microtask(() {
+      Get.toNamed(
+        _messagingRoute,
+        parameters: <String, String>{
+          'conversationId': conversationId,
+        },
+        arguments: data,
+      );
+    });
   }
 
   Future<void> _sendPushNotification(
@@ -1279,6 +1326,8 @@ class MessagingService extends GetxService {
   void onClose() {
     _tokenRefreshSubscription?.cancel();
     _authSubscription?.cancel();
+    _foregroundMessageSubscription?.cancel();
+    _messageOpenedAppSubscription?.cancel();
     _messageStreamController.close();
     super.onClose();
   }
