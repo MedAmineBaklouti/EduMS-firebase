@@ -11,6 +11,12 @@ import '../../../data/models/message_model.dart';
 import '../../../data/models/messaging_contact.dart';
 import '../services/messaging_service.dart';
 
+enum MessagingViewMode {
+  conversationList,
+  newConversation,
+  conversationThread,
+}
+
 class MessagingController extends GetxController {
   MessagingController();
 
@@ -30,6 +36,8 @@ class MessagingController extends GetxController {
   final RxnString conversationsError = RxnString();
 
   final Rxn<ConversationModel> activeConversation = Rxn<ConversationModel>();
+  final Rx<MessagingViewMode> activeView =
+      MessagingViewMode.conversationList.obs;
   final RxBool isContactsLoading = false.obs;
   final RxList<MessagingContact> contacts = <MessagingContact>[].obs;
   final RxnString contactsError = RxnString();
@@ -338,12 +346,44 @@ class MessagingController extends GetxController {
     return message.senderId == user.uid;
   }
 
+  bool get isTeacher =>
+      (_authService.currentRole ?? '').toLowerCase() == 'teacher';
+
+  bool get shouldShowAdministrationAction {
+    if (!isTeacher) {
+      return false;
+    }
+    return contacts.any((contact) => contact.role.toLowerCase() == 'admin');
+  }
+
+  void showConversationListView() {
+    activeView.value = MessagingViewMode.conversationList;
+  }
+
+  void showNewConversationView() {
+    activeView.value = MessagingViewMode.newConversation;
+  }
+
+  Future<void> startConversationWithAdministration() async {
+    final adminContact = contacts.firstWhereOrNull(
+      (contact) => contact.role.toLowerCase() == 'admin',
+    );
+    if (adminContact == null) {
+      messageError.value =
+          'No administration contact is currently available.';
+      return;
+    }
+    await startConversationWithContact(adminContact);
+  }
+
   void selectConversation(ConversationModel conversation) {
     activeConversation.value = conversation;
+    activeView.value = MessagingViewMode.conversationThread;
     _loadMessagesForConversation(conversation.id);
   }
 
   void clearActiveConversation() {
+    activeView.value = MessagingViewMode.conversationList;
     activeConversation.value = null;
     _conversationMessagesSubscription?.cancel();
     _conversationMessagesSubscription = null;
