@@ -215,7 +215,14 @@ class MessagingService extends GetxService {
           await _resolveParticipants(conversationId, participants);
 
       final participantIds = <String>{senderId};
-      participantIds.addAll(resolvedParticipants.map((participant) => participant.id));
+      for (final participant in resolvedParticipants) {
+        if (participant.userId.isNotEmpty) {
+          participantIds.add(participant.userId);
+        }
+        if (participant.id.isNotEmpty) {
+          participantIds.add(participant.id);
+        }
+      }
 
       final updateData = <String, dynamic>{
         'lastMessagePreview': content,
@@ -230,6 +237,7 @@ class MessagingService extends GetxService {
         updateData['participants'] = resolvedParticipants
             .map((participant) => <String, dynamic>{
                   'id': participant.id,
+                  'userId': participant.userId,
                   'name': participant.name,
                   'role': participant.role,
                 })
@@ -240,11 +248,12 @@ class MessagingService extends GetxService {
 
       final unreadFieldUpdates = <String, Object>{};
       for (final participant in resolvedParticipants) {
-        if (participant.id == senderId || participant.id.isEmpty) {
+        final unreadKey =
+            participant.userId.isNotEmpty ? participant.userId : participant.id;
+        if (unreadKey.isEmpty || unreadKey == senderId) {
           continue;
         }
-        unreadFieldUpdates['unreadBy.${participant.id}'] =
-            FieldValue.increment(1);
+        unreadFieldUpdates['unreadBy.$unreadKey'] = FieldValue.increment(1);
       }
 
       if (unreadFieldUpdates.isNotEmpty) {
@@ -296,7 +305,9 @@ class MessagingService extends GetxService {
                 ?.whereType<String>()
                 .toSet() ??
             <String>{};
-        if (participantIds.contains(contact.id)) {
+        if (participantIds.contains(contact.id) ||
+            (contact.userId.isNotEmpty &&
+                participantIds.contains(contact.userId))) {
           return _conversationFromData(doc.id, data);
         }
       }
@@ -314,23 +325,33 @@ class MessagingService extends GetxService {
           id: user.uid,
           name: currentUserName,
           role: currentRole,
+          userId: user.uid,
         ),
         ConversationParticipant(
           id: contact.id,
           name: contact.name,
           role: contact.role,
+          userId: contact.userId,
         ),
       ];
 
       final docRef =
           _firestore.collection(_conversationsCollection).doc();
+      final participantIds = <String>{user.uid};
+      if (contact.userId.isNotEmpty) {
+        participantIds.add(contact.userId);
+      }
+      if (contact.id.isNotEmpty) {
+        participantIds.add(contact.id);
+      }
       await docRef.set(<String, dynamic>{
         'title': contact.name,
         'lastMessagePreview': '',
-        'participantIds': <String>{user.uid, contact.id}.toList(),
+        'participantIds': participantIds.toList(),
         'participants': participants
             .map((participant) => <String, dynamic>{
                   'id': participant.id,
+                  'userId': participant.userId,
                   'name': participant.name,
                   'role': participant.role,
                 })
@@ -340,7 +361,7 @@ class MessagingService extends GetxService {
         'unreadCount': 0,
         'unreadBy': <String, dynamic>{
           user.uid: 0,
-          contact.id: 0,
+          if (contact.userId.isNotEmpty) contact.userId: 0,
         },
       });
 
@@ -358,6 +379,21 @@ class MessagingService extends GetxService {
     } catch (error) {
       throw Exception('Failed to start conversation: $error');
     }
+  }
+
+  String _resolveUserId(Map<String, dynamic>? data, String fallback) {
+    if (data != null) {
+      for (final key in const ['userId', 'uid', 'authId', 'user_id', 'firebaseUid']) {
+        final value = data[key];
+        if (value is String) {
+          final trimmed = value.trim();
+          if (trimmed.isNotEmpty) {
+            return trimmed;
+          }
+        }
+      }
+    }
+    return fallback;
   }
 
   Future<List<MessagingContact>> fetchAllowedContacts({
@@ -465,21 +501,25 @@ class MessagingService extends GetxService {
       final Set<String> seenIds = <String>{userId};
 
       void addContact(MessagingContact contact) {
-        if (seenIds.contains(contact.id)) {
+        final dedupeKey =
+            contact.userId.isNotEmpty ? contact.userId : contact.id;
+        if (seenIds.contains(dedupeKey)) {
           return;
         }
-        seenIds.add(contact.id);
+        seenIds.add(dedupeKey);
         contacts.add(contact);
       }
 
       for (final doc in teachersSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
         final id = doc.id;
+        final resolvedUserId = _resolveUserId(data, id);
         final name = (data['name'] as String?)?.trim();
         final email = (data['email'] as String?)?.trim();
         final displayName = _formatDisplayName(name, email, 'Teacher');
-        final teacherClassIds =
-            List<String>.from(teacherClassMap[id] ?? <String>{});
+        final teacherClassIds = List<String>.from(
+          teacherClassMap[resolvedUserId] ?? teacherClassMap[id] ?? <String>{},
+        );
         final teacherClassSet = teacherClassIds.toSet();
         if (filterClassIds.isNotEmpty &&
             normalizedRole != 'admin' &&
@@ -507,7 +547,9 @@ class MessagingService extends GetxService {
                 continue;
               }
               final subjects =
-                  teacherSubjectsByClass[id]?[classId] ?? const <String>{};
+                  teacherSubjectsByClass[resolvedUserId]?[classId] ??
+                      teacherSubjectsByClass[id]?[classId] ??
+                      const <String>{};
               subjectLabels.addAll(subjects);
             }
             final formattedChildren = _formatList(childNames);
@@ -521,6 +563,7 @@ class MessagingService extends GetxService {
         }
         addContact(MessagingContact(
           id: id,
+          userId: resolvedUserId,
           name: displayName,
           role: 'teacher',
           classIds: teacherClassIds,
@@ -531,11 +574,13 @@ class MessagingService extends GetxService {
       for (final doc in parentsSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
         final id = doc.id;
+        final resolvedUserId = _resolveUserId(data, id);
         final name = (data['name'] as String?)?.trim();
         final email = (data['email'] as String?)?.trim();
         final displayName = _formatDisplayName(name, email, 'Parent');
-        final parentClassIds =
-            List<String>.from(parentClassMap[id] ?? <String>{});
+        final parentClassIds = List<String>.from(
+          parentClassMap[resolvedUserId] ?? parentClassMap[id] ?? <String>{},
+        );
         final parentClassSet = parentClassIds.toSet();
         if (filterClassIds.isNotEmpty &&
             normalizedRole != 'admin' &&
@@ -544,7 +589,9 @@ class MessagingService extends GetxService {
           continue;
         }
         Iterable<_ChildInfo> relevantChildren =
-            parentChildren[id] ?? <_ChildInfo>[];
+            parentChildren[resolvedUserId] ??
+                parentChildren[id] ??
+                <_ChildInfo>[];
         if (normalizedRole == 'teacher' && filterClassIds.isNotEmpty) {
           relevantChildren = relevantChildren.where((child) {
             final classId = child.classId;
@@ -563,6 +610,7 @@ class MessagingService extends GetxService {
             : 'Parent of ${_formatList(childNames)}';
         addContact(MessagingContact(
           id: id,
+          userId: resolvedUserId,
           name: displayName,
           role: 'parent',
           classIds: parentClassIds,
@@ -573,12 +621,14 @@ class MessagingService extends GetxService {
       for (final doc in adminsSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
         final id = doc.id;
+        final resolvedUserId = _resolveUserId(data, id);
         final name = (data['name'] as String?)?.trim();
         final email = (data['email'] as String?)?.trim();
         final displayName =
             _formatDisplayName(name, email, 'Administrator');
         addContact(MessagingContact(
           id: id,
+          userId: resolvedUserId,
           name: displayName,
           role: 'admin',
         ));
@@ -630,6 +680,7 @@ class MessagingService extends GetxService {
               id: id,
               name: id == _authService.currentUser?.uid ? 'You' : id,
               role: 'user',
+              userId: id,
             ),
           )
           .toList();
@@ -1070,7 +1121,8 @@ class MessagingService extends GetxService {
     }
 
     final recipientIds = participants
-        .map((participant) => participant.id)
+        .map((participant) =>
+            participant.userId.isNotEmpty ? participant.userId : participant.id)
         .where((id) => id.isNotEmpty && id != message.senderId)
         .toSet()
         .toList();

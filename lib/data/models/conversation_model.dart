@@ -83,18 +83,24 @@ class ConversationParticipant {
     required this.id,
     required this.name,
     required this.role,
-  });
+    String? userId,
+  }) : userId = userId ?? id;
 
   final String id;
   final String name;
   final String role;
+  final String userId;
 
   factory ConversationParticipant.fromJson(Map<String, dynamic> json) {
+    final rawId = (json['id'] ?? json['userId'] ?? '').toString();
+    final resolvedUserId =
+        (json['userId'] ?? json['uid'] ?? rawId).toString();
     return ConversationParticipant(
-      id: (json['id'] ?? json['userId'] ?? '') as String,
+      id: rawId,
       name: (json['name'] ?? json['displayName'] ?? json['email'] ?? 'User')
           as String,
       role: (json['role'] ?? 'user') as String,
+      userId: resolvedUserId,
     );
   }
 }
