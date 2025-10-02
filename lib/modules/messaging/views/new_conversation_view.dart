@@ -290,7 +290,6 @@ class _NewConversationViewState extends State<NewConversationView> {
                       final showRelationshipChip = relationship != null &&
                           relationship.isNotEmpty &&
                           !shouldHideRelationship;
-                      final isAdminContact = normalizedRole == 'admin';
                       final initial = contact.name.isEmpty
                           ? '?'
                           : contact.name.characters.first.toUpperCase();
@@ -324,20 +323,16 @@ class _NewConversationViewState extends State<NewConversationView> {
                                 children: [
                                   CircleAvatar(
                                     radius: 28,
-                                    backgroundColor: accentColor.withOpacity(0.18),
+                                    backgroundColor:
+                                        accentColor.withOpacity(0.18),
                                     foregroundColor: accentColor,
-                                    backgroundImage: isAdminContact
-                                        ? const AssetImage('assets/icon/icon.png')
-                                        : null,
-                                    child: isAdminContact
-                                        ? null
-                                        : Text(
-                                            initial,
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
+                                    child: Text(
+                                      initial,
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(width: 18),
                                   Expanded(
