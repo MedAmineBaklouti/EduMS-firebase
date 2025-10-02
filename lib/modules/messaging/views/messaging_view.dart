@@ -118,21 +118,47 @@ class MessagingView extends GetView<MessagingController> {
                   }
                   final contextText =
                       controller.resolveConversationContext(activeConversation);
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                  final titleInitial = titleText.isEmpty
+                      ? '?'
+                      : titleText.characters.first.toUpperCase();
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        titleText,
-                        style: theme.textTheme.titleMedium,
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: hasAdministrationParticipant
+                            ? Colors.transparent
+                            : theme.colorScheme.primary.withOpacity(0.12),
+                        foregroundColor: theme.colorScheme.primary,
+                        backgroundImage: hasAdministrationParticipant
+                            ? const AssetImage('assets/icon/icon.png')
+                            : null,
+                        child: hasAdministrationParticipant
+                            ? null
+                            : Text(titleInitial),
                       ),
-                      if (contextText != null && contextText.isNotEmpty)
-                        Text(
-                          contextText,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              titleText,
+                              style: theme.textTheme.titleMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (contextText != null && contextText.isNotEmpty)
+                              Text(
+                                contextText,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
                         ),
+                      ),
                     ],
                   );
               }
