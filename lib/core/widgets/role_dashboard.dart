@@ -15,6 +15,7 @@ class RoleDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text('$roleName Dashboard'),
@@ -26,11 +27,16 @@ class RoleDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/splash/background.png'),
-            fit: BoxFit.cover,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primary.withOpacity(0.12),
+              colorScheme.secondary.withOpacity(0.08),
+              colorScheme.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: GridView.count(
