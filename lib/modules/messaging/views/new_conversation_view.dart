@@ -87,6 +87,7 @@ class _NewConversationViewState extends State<NewConversationView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isCurrentTeacher = _controller.isTeacher;
 
     final quickFilters = <({String label, String value, IconData icon})>[
       (label: 'Teachers', value: 'teacher', icon: Icons.school_rounded),
@@ -283,6 +284,13 @@ class _NewConversationViewState extends State<NewConversationView> {
                       final contact = filtered[index];
                       final accentColor = _resolveRoleColor(theme, contact.role);
                       final relationship = contact.relationship;
+                      final normalizedRole = contact.role.toLowerCase();
+                      final shouldHideRelationship =
+                          isCurrentTeacher && normalizedRole == 'teacher';
+                      final showRelationshipChip = relationship != null &&
+                          relationship.isNotEmpty &&
+                          !shouldHideRelationship;
+                      final isAdminContact = normalizedRole == 'admin';
                       final initial = contact.name.isEmpty
                           ? '?'
                           : contact.name.characters.first.toUpperCase();
@@ -318,12 +326,18 @@ class _NewConversationViewState extends State<NewConversationView> {
                                     radius: 28,
                                     backgroundColor: accentColor.withOpacity(0.18),
                                     foregroundColor: accentColor,
-                                    child: Text(
-                                      initial,
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
+                                    backgroundImage: isAdminContact
+                                        ? const AssetImage('assets/icon/icon.png')
+                                        : null,
+                                    child: isAdminContact
+                                        ? null
+                                        : Text(
+                                            initial,
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
                                   ),
                                   const SizedBox(width: 18),
                                   Expanded(
@@ -368,8 +382,7 @@ class _NewConversationViewState extends State<NewConversationView> {
                                                 ),
                                               ),
                                             ),
-                                            if (relationship != null &&
-                                                relationship.isNotEmpty) ...[
+                                            if (showRelationshipChip) ...[
                                               const SizedBox(height: 6),
                                               Chip(
                                                 materialTapTargetSize:

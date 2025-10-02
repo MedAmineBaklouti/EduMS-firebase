@@ -125,7 +125,8 @@ class MessagingController extends GetxController {
       isConversationsLoading.value = true;
       conversationsError.value = null;
       final items = await _messagingService.fetchConversations();
-      conversations.assignAll(items);
+      final filteredItems = _filterConversationsForDisplay(items);
+      conversations.assignAll(filteredItems);
       final activeId = activeConversation.value?.id;
       if (activeId != null) {
         final updatedActive =
@@ -243,11 +244,13 @@ class MessagingController extends GetxController {
     _conversationsSubscription = _messagingService.watchConversations().listen(
       (items) {
         conversationsError.value = null;
-        conversations.assignAll(items);
+        final filteredItems = _filterConversationsForDisplay(items);
+        conversations.assignAll(filteredItems);
         final activeId = activeConversation.value?.id;
         if (activeId != null) {
           final updatedActive =
-              items.firstWhereOrNull((conversation) => conversation.id == activeId);
+              filteredItems.firstWhereOrNull(
+                  (conversation) => conversation.id == activeId);
           if (updatedActive != null) {
             activeConversation.value = updatedActive;
           }
@@ -417,9 +420,15 @@ class MessagingController extends GetxController {
 
       final existingIndex =
           conversations.indexWhere((item) => item.id == conversation.id);
+      final hasMessages =
+          conversation.lastMessagePreview.trim().isNotEmpty;
       if (existingIndex >= 0) {
-        conversations[existingIndex] = conversation;
-      } else {
+        if (hasMessages) {
+          conversations[existingIndex] = conversation;
+        } else {
+          conversations.removeAt(existingIndex);
+        }
+      } else if (hasMessages) {
         conversations.insert(0, conversation);
       }
       _applyConversationFilter();
@@ -429,6 +438,15 @@ class MessagingController extends GetxController {
     } finally {
       isMessagesLoading.value = false;
     }
+  }
+
+  List<ConversationModel> _filterConversationsForDisplay(
+    Iterable<ConversationModel> items,
+  ) {
+    return items
+        .where((conversation) =>
+            conversation.lastMessagePreview.trim().isNotEmpty)
+        .toList();
   }
 
   Future<List<String>> _resolveClassIds(String role, String userId) async {
@@ -615,6 +633,10 @@ class MessagingController extends GetxController {
       );
       final relationship = contact?.relationship?.trim();
       if (relationship != null && relationship.isNotEmpty) {
+        final participantRole = participant.role.toLowerCase();
+        if (isTeacher && participantRole == 'teacher') {
+          return _prettifyRole(participant.role);
+        }
         return relationship;
       }
       final roleLabel = _prettifyRole(participant.role);

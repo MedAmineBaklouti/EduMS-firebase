@@ -64,6 +64,7 @@ class MessagingView extends GetView<MessagingController> {
             automaticallyImplyLeading: false,
             elevation: 0,
             backgroundColor: theme.colorScheme.surface,
+            centerTitle: false,
             leading: () {
               if (viewMode == MessagingViewMode.conversationThread) {
                 return IconButton(
