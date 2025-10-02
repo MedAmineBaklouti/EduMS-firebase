@@ -361,10 +361,16 @@ class MessagingController extends GetxController {
   }
 
   bool shouldUseAdministrationAvatar(ConversationModel conversation) {
-    if (!isTeacher && !isParent) {
+    if (hasAdministrationParticipant(conversation)) {
+      return true;
+    }
+
+    final normalizedTitle = conversation.title.trim().toLowerCase();
+    if (normalizedTitle.isEmpty) {
       return false;
     }
-    return hasAdministrationParticipant(conversation);
+
+    return normalizedTitle.contains('admin');
   }
 
   bool get shouldShowAdministrationAction {
