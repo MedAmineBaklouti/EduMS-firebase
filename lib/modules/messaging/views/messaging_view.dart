@@ -109,10 +109,10 @@ class MessagingView extends GetView<MessagingController> {
                   }
                   var titleText =
                       controller.resolveConversationTitle(activeConversation);
-                  final hasAdministrationParticipant = activeConversation
-                      .participants
-                      .any((participant) =>
-                          participant.role.toLowerCase() == 'admin');
+                  final hasAdministrationParticipant = controller
+                      .hasAdministrationParticipant(activeConversation);
+                  final showAdministrationAvatar = controller
+                      .shouldUseAdministrationAvatar(activeConversation);
                   if (hasAdministrationParticipant) {
                     titleText = 'Administration';
                   }
@@ -126,10 +126,17 @@ class MessagingView extends GetView<MessagingController> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor:
-                            theme.colorScheme.primary.withOpacity(0.12),
-                        foregroundColor: theme.colorScheme.primary,
-                        child: Text(titleInitial),
+                        backgroundColor: showAdministrationAvatar
+                            ? Colors.transparent
+                            : theme.colorScheme.primary.withOpacity(0.12),
+                        foregroundColor: showAdministrationAvatar
+                            ? Colors.transparent
+                            : theme.colorScheme.primary,
+                        backgroundImage: showAdministrationAvatar
+                            ? const AssetImage('assets/icon/icon.png')
+                            : null,
+                        child:
+                            showAdministrationAvatar ? null : Text(titleInitial),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
