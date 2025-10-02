@@ -158,54 +158,11 @@ class _NewConversationViewState extends State<NewConversationView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Start a conversation',
+                          'Start a new conversation',
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: theme.colorScheme.onPrimaryContainer,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Search by name, role, or relationship to connect instantly.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withOpacity(0.9),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          children: [
-                            for (final filter in quickFilters)
-                              FilterChip(
-                                selected: _activeQuickFilterValue == filter.value,
-                                onSelected: (_) =>
-                                    _handleQuickFilterSelected(filter.value),
-                                avatar: Icon(
-                                  filter.icon,
-                                  size: 18,
-                                  color: _activeQuickFilterValue == filter.value
-                                      ? theme.colorScheme.onPrimary
-                                      : theme.colorScheme.onPrimaryContainer,
-                                ),
-                                label: Text(filter.label),
-                                labelStyle: theme.textTheme.labelMedium?.copyWith(
-                                  color: _activeQuickFilterValue == filter.value
-                                      ? theme.colorScheme.onPrimary
-                                      : theme.colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                backgroundColor: theme.colorScheme.onPrimary
-                                    .withOpacity(0.08),
-                                selectedColor: theme.colorScheme.primary,
-                                side: BorderSide(
-                                  color: theme.colorScheme.onPrimaryContainer
-                                      .withOpacity(0.2),
-                                ),
-                                showCheckmark: false,
-                              ),
-                          ],
                         ),
                       ],
                     ),
@@ -236,6 +193,45 @@ class _NewConversationViewState extends State<NewConversationView> {
                         ),
                       ),
                     ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      for (final filter in quickFilters)
+                        FilterChip(
+                          selected: _activeQuickFilterValue == filter.value,
+                          onSelected: (_) =>
+                              _handleQuickFilterSelected(filter.value),
+                          avatar: Icon(
+                            filter.icon,
+                            size: 18,
+                            color: _activeQuickFilterValue == filter.value
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          label: Text(filter.label),
+                          labelStyle: theme.textTheme.labelMedium?.copyWith(
+                            color: _activeQuickFilterValue == filter.value
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          backgroundColor:
+                              theme.colorScheme.surfaceVariant.withOpacity(0.4),
+                          selectedColor: theme.colorScheme.primary,
+                          showCheckmark: false,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: const BorderSide(color: Colors.transparent),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -342,19 +338,28 @@ class _NewConversationViewState extends State<NewConversationView> {
                                           ),
                                         ),
                                         const SizedBox(height: 6),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 4,
-                                          crossAxisAlignment: WrapCrossAlignment.center,
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Chip(
                                               materialTapTargetSize:
                                                   MaterialTapTargetSize.shrinkWrap,
                                               padding:
-                                                  const EdgeInsets.symmetric(horizontal: 8),
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 4,
+                                              ),
                                               visualDensity: VisualDensity.compact,
                                               backgroundColor:
                                                   accentColor.withOpacity(0.14),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                side: BorderSide(
+                                                  color: Colors.transparent,
+                                                ),
+                                              ),
                                               label: Text(
                                                 _resolveRoleLabel(contact.role),
                                                 style: theme.textTheme.labelMedium?.copyWith(
@@ -364,25 +369,43 @@ class _NewConversationViewState extends State<NewConversationView> {
                                               ),
                                             ),
                                             if (relationship != null &&
-                                                relationship.isNotEmpty)
+                                                relationship.isNotEmpty) ...[
+                                              const SizedBox(height: 6),
                                               Chip(
                                                 materialTapTargetSize:
-                                                    MaterialTapTargetSize.shrinkWrap,
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8,
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 4,
                                                 ),
-                                                visualDensity: VisualDensity.compact,
+                                                visualDensity:
+                                                    VisualDensity.compact,
                                                 backgroundColor: theme
-                                                    .colorScheme.onSurfaceVariant
-                                                    .withOpacity(0.12),
+                                                    .colorScheme
+                                                    .surfaceVariant
+                                                    .withOpacity(0.5),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                    16,
+                                                  ),
+                                                  side: const BorderSide(
+                                                    color: Colors.transparent,
+                                                  ),
+                                                ),
                                                 label: Text(
                                                   relationship,
-                                                  style: theme.textTheme.labelMedium?.copyWith(
-                                                    color: theme
-                                                        .colorScheme.onSurfaceVariant,
+                                                  style: theme
+                                                      .textTheme.labelMedium
+                                                      ?.copyWith(
+                                                    color: theme.colorScheme
+                                                        .onSurfaceVariant,
                                                   ),
                                                 ),
                                               ),
+                                            ],
                                           ],
                                         ),
                                       ],
