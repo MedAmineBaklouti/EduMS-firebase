@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/widgets/dashboard_card.dart';
+import 'safe_asset_image.dart';
 
 class RoleDashboard extends StatelessWidget {
   final List<DashboardCard> cards;
@@ -26,21 +27,25 @@ class RoleDashboard extends StatelessWidget {
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/splash/background.png'),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          SafeAssetImage(
+            assetPath: 'assets/splash/background.png',
             fit: BoxFit.cover,
+            fallback: Container(
+              color: Theme.of(context).colorScheme.surface,
+            ),
           ),
-        ),
-        child: GridView.count(
-          padding: const EdgeInsets.all(16),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.1,
-          children: cards,
-        ),
+          GridView.count(
+            padding: const EdgeInsets.all(16),
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 1.1,
+            children: cards,
+          ),
+        ],
       ),
     );
   }

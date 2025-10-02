@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/widgets/safe_asset_image.dart';
 import '../../../app/routes/app_pages.dart';
 
 class SplashView extends StatefulWidget {
@@ -69,9 +70,12 @@ class _SplashViewState extends State<SplashView> {
         fit: StackFit.expand,
         children: [
           // Background image
-          Image.asset(
-            'assets/splash/background.png',
+          SafeAssetImage(
+            assetPath: 'assets/splash/background.png',
             fit: BoxFit.cover,
+            fallback: Container(
+              color: Theme.of(context).colorScheme.surface,
+            ),
           ),
 
           // Content
@@ -80,10 +84,14 @@ class _SplashViewState extends State<SplashView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Your logo
-                Image.asset(
-                  'assets/EduMS_logo.png',
-                  width: 200,
-                  height: 200,
+                SafeAssetImage(
+                  assetPath: 'assets/EduMS_logo.png',
+                  fit: BoxFit.contain,
+                  fallback: Icon(
+                    Icons.school,
+                    size: 120,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 SizedBox(height: 20),
                 // Loading indicator
@@ -109,9 +117,18 @@ class _SplashViewState extends State<SplashView> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Image.asset(
-                    'assets/Denet_logo.png',
+                  SizedBox(
                     height: 40,
+                    child: SafeAssetImage(
+                      assetPath: 'assets/Denet_logo.png',
+                      fit: BoxFit.contain,
+                      fallback: Text(
+                        'Denet',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
                   ),
                 ],
               ),

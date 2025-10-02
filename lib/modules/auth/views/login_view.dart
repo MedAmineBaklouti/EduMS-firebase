@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/widgets/safe_asset_image.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginView extends StatelessWidget {
@@ -15,91 +16,68 @@ class LoginView extends StatelessWidget {
     return GestureDetector(
       onTap: _authController.unfocusFields,
       child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/splash/background.png'),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            SafeAssetImage(
+              assetPath: 'assets/splash/background.png',
               fit: BoxFit.cover,
+              fallback: Container(
+                color: Theme.of(context).colorScheme.surface,
+              ),
             ),
-          ),
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('assets/EduMS_logo.png', width: 200, height: 200),
-                    const SizedBox(height: 40),
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 200,
+                        height: 200,
+                        child: SafeAssetImage(
+                          assetPath: 'assets/EduMS_logo.png',
+                          fallback: Icon(
+                            Icons.school,
+                            size: 120,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Login',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                            ),
-                            const SizedBox(height: 24),
-                            TextField(
-                              controller: _authController.emailController,
-                              focusNode: _authController.emailFocus,
-                              decoration: InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(
-                                  Icons.email,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                filled: true,
-                                fillColor: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceVariant
-                                    .withOpacity(0.4),
+                      const SizedBox(height: 40),
+                      Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              Text(
+                                'Login',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
                               ),
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                              onSubmitted: (_) =>
-                                  _authController.passwordFocus.requestFocus(),
-                            ),
-                            const SizedBox(height: 16),
-                            Obx(
-                              () => TextField(
-                                controller: _authController.passwordController,
-                                focusNode: _authController.passwordFocus,
-                                obscureText: _obscurePassword.value,
+                              const SizedBox(height: 24),
+                              TextField(
+                                controller: _authController.emailController,
+                                focusNode: _authController.emailFocus,
                                 decoration: InputDecoration(
-                                  labelText: 'Password',
+                                  labelText: 'Email',
                                   prefixIcon: Icon(
-                                    Icons.lock,
+                                    Icons.email,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurfaceVariant,
-                                  ),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword.value
-                                          ? Icons.visibility
-                                          : Icons.visibility_off,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                                    onPressed: () => _obscurePassword.toggle(),
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -110,48 +88,89 @@ class LoginView extends StatelessWidget {
                                       .surfaceVariant
                                       .withOpacity(0.4),
                                 ),
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => _authController.submitForm(),
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                onSubmitted: (_) =>
+                                    _authController.passwordFocus.requestFocus(),
                               ),
-                            ),
-                            const SizedBox(height: 24),
-                            Obx(
-                              () => FilledButton(
-                                style: FilledButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
-                                  foregroundColor:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                  minimumSize: const Size(double.infinity, 50),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                              const SizedBox(height: 16),
+                              Obx(
+                                () => TextField(
+                                  controller: _authController.passwordController,
+                                  focusNode: _authController.passwordFocus,
+                                  obscureText: _obscurePassword.value,
+                                  decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon: Icon(
+                                      Icons.lock,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword.value
+                                            ? Icons.visibility
+                                            : Icons.visibility_off,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                      onPressed: () => _obscurePassword.toggle(),
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    filled: true,
+                                    fillColor: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant
+                                        .withOpacity(0.4),
                                   ),
+                                  textInputAction: TextInputAction.done,
+                                  onSubmitted: (_) =>
+                                      _authController.submitForm(),
                                 ),
-                                onPressed: _authController.isLoading.value
-                                    ? null
-                                    : _authController.submitForm,
-                                child: _authController.isLoading.value
-                                    ? const SizedBox(
-                                        height: 24,
-                                        width: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text('Login',
-                                        style: TextStyle(fontSize: 16)),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 24),
+                              Obx(
+                                () => FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                    foregroundColor:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                    minimumSize: const Size(double.infinity, 50),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: _authController.isLoading.value
+                                      ? null
+                                      : _authController.submitForm,
+                                  child: _authController.isLoading.value
+                                      ? const SizedBox(
+                                          height: 24,
+                                          width: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text('Login',
+                                          style: TextStyle(fontSize: 16)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
