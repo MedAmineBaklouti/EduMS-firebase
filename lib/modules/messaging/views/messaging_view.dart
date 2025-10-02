@@ -126,16 +126,10 @@ class MessagingView extends GetView<MessagingController> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: hasAdministrationParticipant
-                            ? Colors.transparent
-                            : theme.colorScheme.primary.withOpacity(0.12),
+                        backgroundColor:
+                            theme.colorScheme.primary.withOpacity(0.12),
                         foregroundColor: theme.colorScheme.primary,
-                        backgroundImage: hasAdministrationParticipant
-                            ? const AssetImage('assets/icon/icon.png')
-                            : null,
-                        child: hasAdministrationParticipant
-                            ? null
-                            : Text(titleInitial),
+                        child: Text(titleInitial),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
