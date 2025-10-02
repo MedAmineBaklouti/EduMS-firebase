@@ -351,6 +351,22 @@ class MessagingController extends GetxController {
   bool get isTeacher =>
       (_authService.currentRole ?? '').toLowerCase() == 'teacher';
 
+  bool get isParent =>
+      (_authService.currentRole ?? '').toLowerCase() == 'parent';
+
+  bool hasAdministrationParticipant(ConversationModel conversation) {
+    return conversation.participants.any(
+      (participant) => participant.role.toLowerCase() == 'admin',
+    );
+  }
+
+  bool shouldUseAdministrationAvatar(ConversationModel conversation) {
+    if (!isTeacher && !isParent) {
+      return false;
+    }
+    return hasAdministrationParticipant(conversation);
+  }
+
   bool get shouldShowAdministrationAction {
     if (!isTeacher) {
       return false;

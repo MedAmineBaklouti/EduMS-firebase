@@ -100,6 +100,8 @@ class ConversationHistoryView extends StatelessWidget {
                   final titleInitial = displayTitle.isEmpty
                       ? '?'
                       : displayTitle.characters.first.toUpperCase();
+                  final showAdministrationAvatar =
+                      controller.shouldUseAdministrationAvatar(conversation);
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
@@ -123,10 +125,18 @@ class ConversationHistoryView extends StatelessWidget {
                         vertical: 12,
                       ),
                       leading: CircleAvatar(
-                        backgroundColor:
-                            theme.colorScheme.primary.withOpacity(0.12),
-                        foregroundColor: theme.colorScheme.primary,
-                        child: Text(titleInitial),
+                        backgroundColor: showAdministrationAvatar
+                            ? Colors.transparent
+                            : theme.colorScheme.primary.withOpacity(0.12),
+                        foregroundColor: showAdministrationAvatar
+                            ? Colors.transparent
+                            : theme.colorScheme.primary,
+                        backgroundImage: showAdministrationAvatar
+                            ? const AssetImage('assets/icon/icon.png')
+                            : null,
+                        child: showAdministrationAvatar
+                            ? null
+                            : Text(titleInitial),
                       ),
                       title: Text(
                         displayTitle,
