@@ -100,6 +100,9 @@ class ConversationHistoryView extends StatelessWidget {
                   final titleInitial = displayTitle.isEmpty
                       ? '?'
                       : displayTitle.characters.first.toUpperCase();
+                  final hasAdministrationParticipant = conversation.participants
+                      .any((participant) =>
+                          participant.role.toLowerCase() == 'admin');
 
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
@@ -124,10 +127,16 @@ class ConversationHistoryView extends StatelessWidget {
                         vertical: 12,
                       ),
                       leading: CircleAvatar(
-                        backgroundColor:
-                            theme.colorScheme.primary.withOpacity(0.12),
+                        backgroundColor: hasAdministrationParticipant
+                            ? Colors.transparent
+                            : theme.colorScheme.primary.withOpacity(0.12),
                         foregroundColor: theme.colorScheme.primary,
-                        child: Text(titleInitial),
+                        backgroundImage: hasAdministrationParticipant
+                            ? const AssetImage('assets/icon/icon.png')
+                            : null,
+                        child: hasAdministrationParticipant
+                            ? null
+                            : Text(titleInitial),
                       ),
                       title: Text(
                         displayTitle,
