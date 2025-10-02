@@ -356,7 +356,7 @@ class MessagingController extends GetxController {
 
   bool hasAdministrationParticipant(ConversationModel conversation) {
     return conversation.participants.any(
-      (participant) => participant.role.toLowerCase() == 'admin',
+      (participant) => _isAdministrationRole(participant.role),
     );
   }
 
@@ -371,7 +371,9 @@ class MessagingController extends GetxController {
     if (!isTeacher) {
       return false;
     }
-    return contacts.any((contact) => contact.role.toLowerCase() == 'admin');
+    return contacts.any(
+      (contact) => _isAdministrationRole(contact.role),
+    );
   }
 
   void showConversationListView() {
@@ -380,7 +382,7 @@ class MessagingController extends GetxController {
 
   Future<void> startConversationWithAdministration() async {
     final adminContact = contacts.firstWhereOrNull(
-      (contact) => contact.role.toLowerCase() == 'admin',
+      (contact) => _isAdministrationRole(contact.role),
     );
     if (adminContact == null) {
       messageError.value =
@@ -425,6 +427,14 @@ class MessagingController extends GetxController {
     }).toList();
 
     filteredConversations.assignAll(results);
+  }
+
+  bool _isAdministrationRole(String role) {
+    final normalizedRole = role.trim().toLowerCase();
+    if (normalizedRole.isEmpty) {
+      return false;
+    }
+    return normalizedRole.contains('admin');
   }
 
   Future<void> startConversationWithContact(MessagingContact contact) async {
