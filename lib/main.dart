@@ -4,8 +4,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app/bindings/app-binding.dart';
-import 'my_app.dart';
-import 'modules/messaging/services/messaging_push_handler.dart';
+import 'app/app.dart';
+import 'app/modules/messaging/services/messaging_push_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

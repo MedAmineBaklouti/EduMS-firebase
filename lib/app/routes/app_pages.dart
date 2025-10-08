@@ -1,31 +1,31 @@
 // lib/app/routes/app_pages.dart
 import 'package:get/get_navigation/src/routes/get_route.dart';
 
-import '../../modules/admin_dashboard/views/admin_control_view.dart';
-import '../../modules/admin_dashboard/views/admin_dashboard_view.dart';
-import '../../modules/announcement/views/announcement_list_view.dart';
-import '../../modules/attendance/views/admin_attendance_view.dart';
-import '../../modules/attendance/views/admin_teacher_attendance_view.dart';
-import '../../modules/attendance/views/parent_attendance_view.dart';
-import '../../modules/attendance/views/teacher_attendance_view.dart';
-import '../../modules/auth/views/login_view.dart';
-import '../../modules/behavior/views/admin_behavior_list_view.dart';
-import '../../modules/behavior/views/parent_behavior_list_view.dart';
-import '../../modules/behavior/views/teacher_behavior_list_view.dart';
-import '../../modules/courses/views/admin_courses_view.dart';
-import '../../modules/courses/views/parent_courses_view.dart';
-import '../../modules/courses/views/teacher_courses_view.dart';
-import '../../modules/homework/views/admin_homework_list_view.dart';
-import '../../modules/homework/views/parent_homework_list_view.dart';
-import '../../modules/homework/views/teacher_homework_list_view.dart';
-import '../../modules/parents_dashboard/views/parent_dashboard_view.dart';
-import '../../modules/pickup/views/admin_archived_pickup_view.dart';
-import '../../modules/pickup/views/admin_pickup_view.dart';
-import '../../modules/messaging/views/messaging_view.dart';
-import '../../modules/pickup/views/parent_pickup_view.dart';
-import '../../modules/pickup/views/teacher_pickup_view.dart';
-import '../../modules/splash/splash_view.dart';
-import '../../modules/teachers_dashboard/views/teacher_dashboard_view.dart';
+import '../modules/admin_dashboard/views/admin_control_view.dart';
+import '../modules/admin_dashboard/views/admin_dashboard_view.dart';
+import '../modules/announcement/views/announcement_list_view.dart';
+import '../modules/attendance/views/admin_attendance_view.dart';
+import '../modules/attendance/views/admin_teacher_attendance_view.dart';
+import '../modules/attendance/views/parent_attendance_view.dart';
+import '../modules/attendance/views/teacher_attendance_view.dart';
+import '../modules/auth/views/login_view.dart';
+import '../modules/behavior/views/admin_behavior_list_view.dart';
+import '../modules/behavior/views/parent_behavior_list_view.dart';
+import '../modules/behavior/views/teacher_behavior_list_view.dart';
+import '../modules/courses/views/admin_courses_view.dart';
+import '../modules/courses/views/parent_courses_view.dart';
+import '../modules/courses/views/teacher_courses_view.dart';
+import '../modules/homework/views/admin_homework_list_view.dart';
+import '../modules/homework/views/parent_homework_list_view.dart';
+import '../modules/homework/views/teacher_homework_list_view.dart';
+import '../modules/parents_dashboard/views/parent_dashboard_view.dart';
+import '../modules/pickup/views/admin_archived_pickup_view.dart';
+import '../modules/pickup/views/admin_pickup_view.dart';
+import '../modules/messaging/views/messaging_view.dart';
+import '../modules/pickup/views/parent_pickup_view.dart';
+import '../modules/pickup/views/teacher_pickup_view.dart';
+import '../modules/splash/splash_view.dart';
+import '../modules/teachers_dashboard/views/teacher_dashboard_view.dart';
 
 abstract class AppPages {
   static const SPLASH     = '/splash';

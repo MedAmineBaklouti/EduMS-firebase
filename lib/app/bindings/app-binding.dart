@@ -1,31 +1,31 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/services/auth_service.dart';
-import '../../core/services/database_service.dart';
-import '../../core/services/network_service.dart';
-import '../../modules/admin_dashboard/controllers/admin_controller.dart';
-import '../../modules/admin_dashboard/controllers/admin_control_controller.dart';
-import '../../modules/attendance/controllers/admin_attendance_controller.dart';
-import '../../modules/attendance/controllers/admin_teacher_attendance_controller.dart';
-import '../../modules/attendance/controllers/parent_attendance_controller.dart';
-import '../../modules/attendance/controllers/teacher_attendance_controller.dart';
-import '../../modules/auth/controllers/auth_controller.dart';
-import '../../modules/behavior/controllers/admin_behavior_controller.dart';
-import '../../modules/behavior/controllers/parent_behavior_controller.dart';
-import '../../modules/behavior/controllers/teacher_behavior_controller.dart';
-import '../../modules/homework/controllers/admin_homework_controller.dart';
-import '../../modules/homework/controllers/parent_homework_controller.dart';
-import '../../modules/homework/controllers/teacher_homework_controller.dart';
-import '../../modules/pickup/controllers/admin_archived_pickup_controller.dart';
-import '../../modules/pickup/controllers/admin_pickup_controller.dart';
-import '../../modules/messaging/controllers/messaging_controller.dart';
-import '../../modules/messaging/services/messaging_service.dart';
-import '../../modules/pickup/controllers/parent_pickup_controller.dart';
-import '../../modules/pickup/controllers/teacher_pickup_controller.dart';
-import '../../modules/pickup/services/parent_pickup_notification_service.dart';
-import '../../modules/parents_dashboard/controllers/parent_controller.dart';
-import '../../modules/teachers_dashboard/controllers/teacher_controller.dart';
+import '../core/services/auth_service.dart';
+import '../core/services/database_service.dart';
+import '../core/services/network_service.dart';
+import '../modules/admin_dashboard/controllers/admin_controller.dart';
+import '../modules/admin_dashboard/controllers/admin_control_controller.dart';
+import '../modules/attendance/controllers/admin_attendance_controller.dart';
+import '../modules/attendance/controllers/admin_teacher_attendance_controller.dart';
+import '../modules/attendance/controllers/parent_attendance_controller.dart';
+import '../modules/attendance/controllers/teacher_attendance_controller.dart';
+import '../modules/auth/controllers/auth_controller.dart';
+import '../modules/behavior/controllers/admin_behavior_controller.dart';
+import '../modules/behavior/controllers/parent_behavior_controller.dart';
+import '../modules/behavior/controllers/teacher_behavior_controller.dart';
+import '../modules/homework/controllers/admin_homework_controller.dart';
+import '../modules/homework/controllers/parent_homework_controller.dart';
+import '../modules/homework/controllers/teacher_homework_controller.dart';
+import '../modules/pickup/controllers/admin_archived_pickup_controller.dart';
+import '../modules/pickup/controllers/admin_pickup_controller.dart';
+import '../modules/messaging/controllers/messaging_controller.dart';
+import '../modules/messaging/services/messaging_service.dart';
+import '../modules/pickup/controllers/parent_pickup_controller.dart';
+import '../modules/pickup/controllers/teacher_pickup_controller.dart';
+import '../modules/pickup/services/parent_pickup_notification_service.dart';
+import '../modules/parents_dashboard/controllers/parent_controller.dart';
+import '../modules/teachers_dashboard/controllers/teacher_controller.dart';
 
 class AppBindings extends Bindings {
   @override
