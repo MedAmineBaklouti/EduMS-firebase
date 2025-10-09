@@ -16,6 +16,7 @@ class TeacherDashboard extends StatelessWidget {
       onLogout: _controller.logout,
       onMessagesTap: () => Get.toNamed(AppPages.MESSAGING),
       announcementAudience: 'teachers',
+      onShowAllAnnouncements: () => Get.toNamed(AppPages.TEACHER_ANNOUNCEMENTS),
       cards: [
         DashboardCard(
           icon: Icons.message,

@@ -10,6 +10,7 @@ class RoleDashboard extends StatelessWidget {
   final VoidCallback onLogout;
   final VoidCallback? onMessagesTap;
   final String? announcementAudience;
+  final VoidCallback? onShowAllAnnouncements;
 
   const RoleDashboard({
     super.key,
@@ -18,6 +19,7 @@ class RoleDashboard extends StatelessWidget {
     required this.onLogout,
     this.onMessagesTap,
     this.announcementAudience,
+    this.onShowAllAnnouncements,
   });
 
   @override
@@ -28,7 +30,16 @@ class RoleDashboard extends StatelessWidget {
         onLogout: onLogout,
       ),
       appBar: AppBar(
-        title: Text('$roleName Dashboard'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        title: Text(
+          '$roleName Dashboard',
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -43,11 +54,6 @@ class RoleDashboard extends StatelessWidget {
               onPressed: onMessagesTap,
               tooltip: 'Messages',
             ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: onLogout,
-            tooltip: 'Logout',
-          ),
         ],
       ),
       body: Container(
@@ -57,26 +63,91 @@ class RoleDashboard extends StatelessWidget {
             fit: BoxFit.cover,
           ),
         ),
-        child: Column(
-          children: [
-            if (announcementAudience != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: DashboardAnnouncements(
-                  audience: announcementAudience,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 960;
+
+            Widget buildMenuGrid(int crossAxisCount) {
+              return GridView.builder(
+                itemCount: cards.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: isWide ? 1.05 : 1.1,
                 ),
-              ),
-            Expanded(
-              child: GridView.count(
-                padding: const EdgeInsets.all(16),
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 1.1,
-                children: cards,
-              ),
-            ),
-          ],
+                itemBuilder: (context, index) => cards[index],
+              );
+            }
+
+            final announcementsWidget = announcementAudience != null
+                ? DashboardAnnouncements(
+                    audience: announcementAudience,
+                    onShowAll: onShowAllAnnouncements,
+                  )
+                : const SizedBox.shrink();
+
+            if (isWide) {
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Menu',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(child: buildMenuGrid(3)),
+                        ],
+                      ),
+                    ),
+                    if (announcementAudience != null) ...[
+                      const SizedBox(width: 24),
+                      SizedBox(width: 360, child: announcementsWidget),
+                    ],
+                  ],
+                ),
+              );
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (announcementAudience != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: announcementsWidget,
+                  ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Menu',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(child: buildMenuGrid(2)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -94,56 +165,102 @@ class _DashboardDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final onPrimary = theme.colorScheme.onPrimary;
+
     return Drawer(
+      elevation: 8,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
       child: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DrawerHeader(
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
+                gradient: LinearGradient(
+                  colors: [primary, primary.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomRight: Radius.circular(24),
+                  bottomLeft: Radius.circular(24),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  CircleAvatar(
+                    backgroundColor: onPrimary.withOpacity(0.2),
+                    radius: 28,
+                    child: Icon(Icons.dashboard_customize, color: onPrimary),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     '$roleName shortcuts',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Quick access to upcoming features',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: onPrimary.withOpacity(0.8),
+                    ),
                   ),
                 ],
               ),
             ),
-            _DashboardDrawerItem(
-              icon: Icons.settings_outlined,
-              label: 'Settings',
-              onTap: () => _showComingSoon(context, 'Settings'),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _DashboardDrawerItem(
+                    icon: Icons.settings_outlined,
+                    label: 'Settings',
+                    onTap: () => _showComingSoon(context, 'Settings'),
+                  ),
+                  _DashboardDrawerItem(
+                    icon: Icons.person_outline,
+                    label: 'Edit profile',
+                    onTap: () => _showComingSoon(context, 'Edit profile'),
+                  ),
+                  _DashboardDrawerItem(
+                    icon: Icons.help_outline,
+                    label: 'Ask something',
+                    onTap: () => _showComingSoon(context, 'Ask something'),
+                  ),
+                  _DashboardDrawerItem(
+                    icon: Icons.logout,
+                    label: 'Logout',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onLogout();
+                    },
+                    isDestructive: true,
+                  ),
+                ],
+              ),
             ),
-            _DashboardDrawerItem(
-              icon: Icons.person_outline,
-              label: 'Edit profile',
-              onTap: () => _showComingSoon(context, 'Edit profile'),
-            ),
-            _DashboardDrawerItem(
-              icon: Icons.help_outline,
-              label: 'Ask something',
-              onTap: () => _showComingSoon(context, 'Ask something'),
-            ),
-            _DashboardDrawerItem(
-              icon: Icons.logout,
-              label: 'Logout',
-              onTap: () {
-                Navigator.of(context).pop();
-                onLogout();
-              },
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Text(
+                'More tools coming soon',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
             ),
           ],
         ),
@@ -166,18 +283,51 @@ class _DashboardDrawerItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.isDestructive = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool isDestructive;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      onTap: onTap,
+    final theme = Theme.of(context);
+    final color = isDestructive
+        ? theme.colorScheme.error
+        : theme.colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

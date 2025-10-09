@@ -16,6 +16,7 @@ class ParentDashboard extends StatelessWidget {
       onLogout: _controller.logout,
       onMessagesTap: () => Get.toNamed(AppPages.MESSAGING),
       announcementAudience: 'parents',
+      onShowAllAnnouncements: () => Get.toNamed(AppPages.PARENT_ANNOUNCEMENTS),
       cards: [
         DashboardCard(
           icon: Icons.message,
