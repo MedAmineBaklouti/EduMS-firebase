@@ -18,8 +18,11 @@ class ParentAttendanceView extends GetView<ParentAttendanceController> {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMMd();
     final shortDateFormat = DateFormat.yMMMd();
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('Attendance'),
         centerTitle: true,
       ),

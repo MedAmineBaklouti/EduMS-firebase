@@ -22,6 +22,8 @@ class AnnouncementListView extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('Announcements'),
         centerTitle: true,
       ),

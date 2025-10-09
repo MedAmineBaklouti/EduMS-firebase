@@ -14,8 +14,11 @@ class AdminPickupView extends GetView<AdminPickupController> {
   @override
   Widget build(BuildContext context) {
     final timeFormat = DateFormat('MMM d • h:mm a');
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('Pickup Queue'),
         centerTitle: true,
       ),

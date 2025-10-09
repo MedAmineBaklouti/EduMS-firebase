@@ -16,6 +16,8 @@ class AdminCoursesView extends StatelessWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('Courses'),
         centerTitle: true,
       ),

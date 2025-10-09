@@ -18,15 +18,21 @@ class AdminControlView extends StatelessWidget {
       length: 5,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           title: const Text('Admin Control'),
           centerTitle: true,
           elevation: 0,
           bottom: TabBar(
             isScrollable: true,
+            indicatorColor: theme.colorScheme.onPrimary,
             indicatorWeight: 3,
             labelStyle: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
+            labelColor: theme.colorScheme.onPrimary,
+            unselectedLabelColor:
+                theme.colorScheme.onPrimary.withOpacity(0.7),
             tabs: const [
               Tab(text: 'Parents'),
               Tab(text: 'Teachers'),

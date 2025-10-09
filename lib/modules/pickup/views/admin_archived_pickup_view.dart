@@ -19,8 +19,11 @@ class AdminArchivedPickupView extends GetView<AdminArchivedPickupController> {
     final dateFormat = DateFormat.yMMMMd();
     final timeFormat = DateFormat.jm();
     final headerFormat = DateFormat.yMMMMEEEEd();
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('Archived Pickups'),
         centerTitle: true,
       ),

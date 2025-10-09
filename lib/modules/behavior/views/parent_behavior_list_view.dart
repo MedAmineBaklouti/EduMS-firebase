@@ -16,8 +16,11 @@ class ParentBehaviorListView extends GetView<ParentBehaviorController> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMd().add_jm();
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('My Children Behaviors'),
         centerTitle: true,
       ),

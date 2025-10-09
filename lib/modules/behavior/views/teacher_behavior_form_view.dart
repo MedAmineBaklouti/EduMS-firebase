@@ -11,8 +11,11 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(controller.editing == null
             ? 'Add Behavior'
             : 'Edit Behavior'),

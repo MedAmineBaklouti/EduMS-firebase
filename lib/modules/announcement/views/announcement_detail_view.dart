@@ -28,6 +28,8 @@ class AnnouncementDetailView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(
           announcement.title.isNotEmpty
               ? announcement.title
