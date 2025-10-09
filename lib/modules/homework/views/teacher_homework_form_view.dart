@@ -11,8 +11,11 @@ class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMMd();
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(
           controller.editing == null ? 'Add Homework' : 'Edit Homework',
         ),

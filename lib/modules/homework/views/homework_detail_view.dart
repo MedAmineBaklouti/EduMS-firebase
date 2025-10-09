@@ -86,6 +86,8 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(
           _homework.title.isNotEmpty ? _homework.title : 'Homework details',
         ),

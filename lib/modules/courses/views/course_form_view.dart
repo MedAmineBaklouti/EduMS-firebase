@@ -14,6 +14,8 @@ class CourseFormView extends StatelessWidget {
     final subjectName = controller.subject.value?.name ?? 'Subject not set';
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(controller.editing == null ? 'Add Course' : 'Edit Course'),
         centerTitle: true,
       ),

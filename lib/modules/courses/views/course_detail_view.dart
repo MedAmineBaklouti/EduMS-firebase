@@ -22,6 +22,8 @@ class CourseDetailView extends StatelessWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(course.title),
         centerTitle: true,
         actions: [

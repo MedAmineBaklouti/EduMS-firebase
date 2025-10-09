@@ -14,6 +14,8 @@ class AnnouncementFormView extends StatelessWidget {
     final isEditing = controller.editing != null;
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(isEditing ? 'Edit Announcement' : 'Add Announcement'),
         centerTitle: true,
       ),

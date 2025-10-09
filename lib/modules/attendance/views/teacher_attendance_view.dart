@@ -16,6 +16,7 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMMd();
+    final theme = Theme.of(context);
     return WillPopScope(
       onWillPop: () async {
         if (controller.selectedClass.value != null) {
@@ -26,6 +27,8 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
       },
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           title: const Text('Attendance'),
           centerTitle: true,
           leading: Obx(() {

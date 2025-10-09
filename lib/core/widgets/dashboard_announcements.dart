@@ -25,7 +25,9 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   late final PageController _pageController;
   int _currentPage = 0;
   Timer? _autoScrollTimer;
+  Timer? _autoScrollResumeTimer;
   int _autoScrollItemCount = 0;
+  bool _isUserInteracting = false;
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
+    _autoScrollResumeTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -111,20 +114,35 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
               ),
               const SizedBox(height: 8),
               Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: announcements.length,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification is ScrollStartNotification &&
+                        notification.dragDetails != null) {
+                      _isUserInteracting = true;
+                      _pauseAutoScroll();
+                    } else if (notification is ScrollEndNotification) {
+                      if (_isUserInteracting) {
+                        _isUserInteracting = false;
+                        _scheduleAutoScrollResume();
+                      }
+                    }
+                    return false;
                   },
-                  itemBuilder: (context, index) {
-                    final announcement = announcements[index];
-                    return _AnnouncementSlide(
-                      announcement: announcement,
-                    );
-                  },
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: announcements.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final announcement = announcements[index];
+                      return _AnnouncementSlide(
+                        announcement: announcement,
+                      );
+                    },
+                  ),
                 ),
               ),
               if (announcements.length > 1)
@@ -160,15 +178,24 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
     _autoScrollItemCount = itemCount;
 
     if (itemCount <= 1) {
-      _autoScrollTimer?.cancel();
-      _autoScrollTimer = null;
+      _pauseAutoScroll(cancelResume: true);
       return;
     }
 
-    if (_autoScrollTimer != null) {
+    if (_isUserInteracting) {
       return;
     }
 
+    if (_autoScrollTimer?.isActive == true) {
+      return;
+    }
+
+    _startAutoScrollTimer();
+  }
+
+  void _startAutoScrollTimer() {
+    _autoScrollTimer?.cancel();
+    _autoScrollResumeTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
       if (!_pageController.hasClients || _autoScrollItemCount <= 1) {
         return;
@@ -179,6 +206,24 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
+    });
+  }
+
+  void _pauseAutoScroll({bool cancelResume = false}) {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = null;
+    if (cancelResume) {
+      _autoScrollResumeTimer?.cancel();
+      _autoScrollResumeTimer = null;
+    }
+  }
+
+  void _scheduleAutoScrollResume() {
+    _autoScrollResumeTimer?.cancel();
+    _autoScrollResumeTimer = Timer(const Duration(seconds: 8), () {
+      if (_autoScrollItemCount > 1 && !_isUserInteracting) {
+        _startAutoScrollTimer();
+      }
     });
   }
 

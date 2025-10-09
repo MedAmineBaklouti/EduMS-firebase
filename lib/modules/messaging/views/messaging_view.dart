@@ -63,7 +63,8 @@ class MessagingView extends GetView<MessagingController> {
           appBar: AppBar(
             automaticallyImplyLeading: false,
             elevation: 0,
-            backgroundColor: theme.colorScheme.surface,
+            backgroundColor: theme.colorScheme.primary,
+            foregroundColor: theme.colorScheme.onPrimary,
             centerTitle: false,
             leading: () {
               if (viewMode == MessagingViewMode.conversationThread) {
@@ -93,12 +94,15 @@ class MessagingView extends GetView<MessagingController> {
                     children: [
                       Text(
                         'Messaging',
-                        style: theme.textTheme.titleMedium,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         'Stay connected with your school community',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.onPrimary.withOpacity(0.8),
                         ),
                       ),
                     ],

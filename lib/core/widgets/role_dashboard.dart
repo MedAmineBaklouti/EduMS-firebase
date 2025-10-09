@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../services/auth_service.dart';
 import '../../core/widgets/dashboard_card.dart';
 import 'dashboard_announcements.dart';
 
@@ -11,6 +12,7 @@ class RoleDashboard extends StatelessWidget {
   final VoidCallback? onMessagesTap;
   final String? announcementAudience;
   final VoidCallback? onShowAllAnnouncements;
+  final String? userName;
 
   const RoleDashboard({
     super.key,
@@ -20,25 +22,48 @@ class RoleDashboard extends StatelessWidget {
     this.onMessagesTap,
     this.announcementAudience,
     this.onShowAllAnnouncements,
+    this.userName,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final onPrimary = theme.colorScheme.onPrimary;
+
+    final authService = Get.isRegistered<AuthService>()
+        ? Get.find<AuthService>()
+        : null;
+
+    String resolvedUserName = userName?.trim() ?? '';
+    if (resolvedUserName.isEmpty) {
+      final displayName = authService?.currentUser?.displayName?.trim();
+      if (displayName != null && displayName.isNotEmpty) {
+        resolvedUserName = displayName;
+      } else {
+        final email = authService?.currentUser?.email?.trim();
+        if (email != null && email.isNotEmpty) {
+          resolvedUserName = email;
+        } else {
+          resolvedUserName = '$roleName user';
+        }
+      }
+    }
+
     return Scaffold(
       drawer: _DashboardDrawer(
         roleName: roleName,
         onLogout: onLogout,
+        userName: resolvedUserName,
       ),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: primary,
+        foregroundColor: onPrimary,
         title: Text(
           '$roleName Dashboard',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+          style: theme.textTheme.titleLarge
+              ?.copyWith(color: onPrimary, fontWeight: FontWeight.bold),
         ),
         leading: Builder(
           builder: (context) => IconButton(
@@ -158,10 +183,12 @@ class _DashboardDrawer extends StatelessWidget {
   const _DashboardDrawer({
     required this.roleName,
     required this.onLogout,
+    required this.userName,
   });
 
   final String roleName;
   final VoidCallback onLogout;
+  final String userName;
 
   @override
   Widget build(BuildContext context) {
@@ -205,7 +232,7 @@ class _DashboardDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '$roleName shortcuts',
+                    userName,
                     style: theme.textTheme.titleLarge?.copyWith(
                       color: onPrimary,
                       fontWeight: FontWeight.bold,
@@ -237,9 +264,14 @@ class _DashboardDrawer extends StatelessWidget {
                     onTap: () => _showComingSoon(context, 'Edit profile'),
                   ),
                   _DashboardDrawerItem(
-                    icon: Icons.help_outline,
+                    icon: Icons.smart_toy_outlined,
                     label: 'Ask something',
                     onTap: () => _showComingSoon(context, 'Ask something'),
+                  ),
+                  _DashboardDrawerItem(
+                    icon: Icons.contact_support_outlined,
+                    label: 'Contact us',
+                    onTap: () => _showComingSoon(context, 'Contact us'),
                   ),
                   _DashboardDrawerItem(
                     icon: Icons.logout,
