@@ -341,7 +341,7 @@ class _AnnouncementSlide extends StatelessWidget {
                     Icon(Icons.campaign_outlined,
                         color: Theme.of(context).colorScheme.onPrimary),
                     const SizedBox(width: 8),
-                    Expanded(
+                    Flexible(
                       child: Text(
                         displayTitle,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -350,6 +350,35 @@ class _AnnouncementSlide extends StatelessWidget {
                             ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onPrimary
+                            .withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onPrimary
+                              .withOpacity(0.4),
+                        ),
+                      ),
+                      child: Text(
+                        'NEW',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onPrimary,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
                       ),
                     ),
                   ],
