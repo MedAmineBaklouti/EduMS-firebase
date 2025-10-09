@@ -128,45 +128,79 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                     }
                     return false;
                   },
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: announcements.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentPage = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      final announcement = announcements[index];
-                      return _AnnouncementSlide(
-                        announcement: announcement,
-                      );
-                    },
+                  child: Stack(
+                    children: [
+                      PageView.builder(
+                        controller: _pageController,
+                        itemCount: announcements.length,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentPage = index;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          final announcement = announcements[index];
+                          return _AnnouncementSlide(
+                            announcement: announcement,
+                          );
+                        },
+                      ),
+                      if (announcements.length > 1)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 20),
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary
+                                        .withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: List.generate(
+                                          announcements.length, (index) {
+                                        final isActive = index == _currentPage;
+                                        return AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 4),
+                                          width: isActive ? 18 : 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: isActive
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary
+                                                    .withOpacity(0.9)
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary
+                                                    .withOpacity(0.35),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-              if (announcements.length > 1)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(announcements.length, (index) {
-                      final isActive = index == _currentPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: isActive ? 20 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
             ],
           ),
         );
@@ -196,7 +230,7 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   void _startAutoScrollTimer() {
     _autoScrollTimer?.cancel();
     _autoScrollResumeTimer?.cancel();
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!_pageController.hasClients || _autoScrollItemCount <= 1) {
         return;
       }

@@ -43,7 +43,7 @@ class RoleDashboard extends StatelessWidget {
       } else {
         final email = authService?.currentUser?.email?.trim();
         if (email != null && email.isNotEmpty) {
-          resolvedUserName = email;
+          resolvedUserName = _nameFromEmail(email);
         } else {
           resolvedUserName = '$roleName user';
         }
@@ -177,6 +177,33 @@ class RoleDashboard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _nameFromEmail(String email) {
+  final localPart = email.split('@').first;
+  final cleaned = localPart.replaceAll(RegExp(r'[^a-zA-Z0-9]+'), ' ');
+  final segments = cleaned
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((segment) => segment.isNotEmpty)
+      .map(_capitalizeWord)
+      .toList();
+
+  if (segments.isEmpty) {
+    return email;
+  }
+
+  return segments.join(' ');
+}
+
+String _capitalizeWord(String word) {
+  if (word.isEmpty) {
+    return word;
+  }
+  if (word.length == 1) {
+    return word.toUpperCase();
+  }
+  return '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}';
 }
 
 class _DashboardDrawer extends StatelessWidget {
