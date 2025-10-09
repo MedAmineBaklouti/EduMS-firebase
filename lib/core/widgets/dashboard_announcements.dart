@@ -12,10 +12,12 @@ class DashboardAnnouncements extends StatefulWidget {
     super.key,
     this.audience,
     this.onShowAll,
+    this.userName,
   });
 
   final String? audience;
   final VoidCallback? onShowAll;
+  final String? userName;
 
   @override
   State<DashboardAnnouncements> createState() => _DashboardAnnouncementsState();
@@ -32,7 +34,7 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.85);
+    _pageController = PageController();
   }
 
   @override
@@ -140,8 +142,10 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                         },
                         itemBuilder: (context, index) {
                           final announcement = announcements[index];
+                          final displayTitle = _resolveSlideTitle(announcement);
                           return _AnnouncementSlide(
                             announcement: announcement,
+                            displayTitle: displayTitle,
                           );
                         },
                       ),
@@ -275,12 +279,30 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
       return lowered.contains(audience) || lowered.contains('all');
     }).toList();
   }
+
+  String _resolveSlideTitle(AnnouncementModel announcement) {
+    final trimmedName = widget.userName?.trim();
+    if (trimmedName != null && trimmedName.isNotEmpty) {
+      return trimmedName;
+    }
+
+    final title = announcement.title.trim();
+    if (title.isNotEmpty) {
+      return title;
+    }
+
+    return 'Announcement';
+  }
 }
 
 class _AnnouncementSlide extends StatelessWidget {
-  const _AnnouncementSlide({required this.announcement});
+  const _AnnouncementSlide({
+    required this.announcement,
+    required this.displayTitle,
+  });
 
   final AnnouncementModel announcement;
+  final String displayTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -321,7 +343,7 @@ class _AnnouncementSlide extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        announcement.title,
+                        displayTitle,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.bold,
