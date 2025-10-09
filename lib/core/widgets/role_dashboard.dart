@@ -50,6 +50,9 @@ class RoleDashboard extends StatelessWidget {
       }
     }
 
+    final announcementDisplayName =
+        roleName.toLowerCase() == 'admin' ? 'Admin' : resolvedUserName;
+
     return Scaffold(
       drawer: _DashboardDrawer(
         roleName: roleName,
@@ -109,6 +112,7 @@ class RoleDashboard extends StatelessWidget {
                 ? DashboardAnnouncements(
                     audience: announcementAudience,
                     onShowAll: onShowAllAnnouncements,
+                    userName: announcementDisplayName,
                   )
                 : const SizedBox.shrink();
 
