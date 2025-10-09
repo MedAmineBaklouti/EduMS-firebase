@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -9,9 +11,11 @@ class DashboardAnnouncements extends StatefulWidget {
   const DashboardAnnouncements({
     super.key,
     this.audience,
+    this.onShowAll,
   });
 
   final String? audience;
+  final VoidCallback? onShowAll;
 
   @override
   State<DashboardAnnouncements> createState() => _DashboardAnnouncementsState();
@@ -20,15 +24,18 @@ class DashboardAnnouncements extends StatefulWidget {
 class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   late final PageController _pageController;
   int _currentPage = 0;
+  Timer? _autoScrollTimer;
+  int _autoScrollItemCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.9);
+    _pageController = PageController(viewportFraction: 0.85);
   }
 
   @override
   void dispose() {
+    _autoScrollTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -60,42 +67,49 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
         }
 
         final announcements = _filterAnnouncements(snapshot.data ?? []);
+        _configureAutoScroll(announcements.length);
 
         if (announcements.isEmpty) {
           return SizedBox(
-            height: 120,
-            child: Card(
-              elevation: 2,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'No announcements right now. Check back later!',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ),
-            ),
+            height: 180,
+            child: _EmptyAnnouncements(onShowAll: widget.onShowAll),
           );
         }
 
+        if (_currentPage >= announcements.length) {
+          _currentPage = 0;
+          if (_pageController.hasClients) {
+            _pageController.jumpToPage(0);
+          }
+        }
+
         return SizedBox(
-          height: 180,
+          height: 220,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                child: Text(
-                  'Announcements',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Announcements',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    if (widget.onShowAll != null)
+                      TextButton.icon(
+                        onPressed: widget.onShowAll,
+                        icon: const Icon(Icons.open_in_new, size: 18),
+                        label: const Text('Show all'),
+                      ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 8),
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
@@ -115,7 +129,7 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
               ),
               if (announcements.length > 1)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(announcements.length, (index) {
@@ -123,13 +137,13 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: isActive ? 16 : 8,
+                        width: isActive ? 20 : 8,
                         height: 8,
                         decoration: BoxDecoration(
                           color: isActive
                               ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(8),
+                              : Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                       );
                     }),
@@ -140,6 +154,32 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
         );
       },
     );
+  }
+
+  void _configureAutoScroll(int itemCount) {
+    _autoScrollItemCount = itemCount;
+
+    if (itemCount <= 1) {
+      _autoScrollTimer?.cancel();
+      _autoScrollTimer = null;
+      return;
+    }
+
+    if (_autoScrollTimer != null) {
+      return;
+    }
+
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 6), (_) {
+      if (!_pageController.hasClients || _autoScrollItemCount <= 1) {
+        return;
+      }
+      final nextPage = (_currentPage + 1) % _autoScrollItemCount;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   List<AnnouncementModel> _filterAnnouncements(List<AnnouncementModel> items) {
@@ -166,30 +206,47 @@ class _AnnouncementSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: GestureDetector(
         onTap: () {
           Get.to(() => AnnouncementDetailView(announcement: announcement));
         },
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 4,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primaryContainer,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.campaign_outlined),
+                    Icon(Icons.campaign_outlined,
+                        color: Theme.of(context).colorScheme.onPrimary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         announcement.title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -200,20 +257,36 @@ class _AnnouncementSlide extends StatelessWidget {
                 Expanded(
                   child: Text(
                     announcement.description,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onPrimary
+                              .withOpacity(0.9),
+                        ),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: Text(
-                    _formatDate(announcement.createdAt),
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(color: Theme.of(context).hintColor),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color:
+                          Theme.of(context).colorScheme.onPrimary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _formatDate(announcement.createdAt),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimary
+                                .withOpacity(0.85),
+                          ),
+                    ),
                   ),
                 ),
               ],
@@ -226,5 +299,59 @@ class _AnnouncementSlide extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+}
+
+class _EmptyAnnouncements extends StatelessWidget {
+  const _EmptyAnnouncements({this.onShowAll});
+
+  final VoidCallback? onShowAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Announcements',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (onShowAll != null)
+                  TextButton.icon(
+                    onPressed: onShowAll,
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: const Text('Show all'),
+                  ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              'No announcements right now.\nCheck back soon for updates.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const Spacer(),
+          ],
+        ),
+      ),
+    );
   }
 }
