@@ -14,6 +14,8 @@ class TeacherDashboard extends StatelessWidget {
     return RoleDashboard(
       roleName: 'Teacher',
       onLogout: _controller.logout,
+      onMessagesTap: () => Get.toNamed(AppPages.MESSAGING),
+      announcementAudience: 'teachers',
       cards: [
         DashboardCard(
           icon: Icons.message,
