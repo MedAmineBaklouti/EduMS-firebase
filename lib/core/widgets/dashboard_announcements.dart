@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../services/database_service.dart';
+import '../utils/user_display_name.dart';
 import '../../data/models/announcement_model.dart';
 import '../../modules/announcement/views/announcement_detail_view.dart';
 
@@ -283,7 +284,14 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   String _resolveSlideTitle(AnnouncementModel announcement) {
     final trimmedName = widget.userName?.trim();
     if (trimmedName != null && trimmedName.isNotEmpty) {
-      return trimmedName;
+      final formattedName = formatUserDisplayName(
+        explicitName: trimmedName,
+        email: trimmedName,
+        fallback: '',
+      );
+      if (formattedName.isNotEmpty) {
+        return formattedName;
+      }
     }
 
     final title = announcement.title.trim();

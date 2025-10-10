@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../services/auth_service.dart';
+import '../utils/user_display_name.dart';
 import '../../core/widgets/dashboard_card.dart';
 import 'dashboard_announcements.dart';
 
@@ -35,20 +36,16 @@ class RoleDashboard extends StatelessWidget {
         ? Get.find<AuthService>()
         : null;
 
-    String resolvedUserName = userName?.trim() ?? '';
-    if (resolvedUserName.isEmpty) {
-      final displayName = authService?.currentUser?.displayName?.trim();
-      if (displayName != null && displayName.isNotEmpty) {
-        resolvedUserName = displayName;
-      } else {
-        final email = authService?.currentUser?.email?.trim();
-        if (email != null && email.isNotEmpty) {
-          resolvedUserName = email;
-        } else {
-          resolvedUserName = '$roleName user';
-        }
-      }
-    }
+    final fallbackName = roleName.trim().isEmpty
+        ? 'Dashboard user'
+        : '$roleName user';
+
+    final resolvedUserName = formatUserDisplayName(
+      explicitName: userName,
+      displayName: authService?.currentUser?.displayName,
+      email: authService?.currentUser?.email,
+      fallback: fallbackName,
+    );
 
     final announcementDisplayName =
         roleName.toLowerCase() == 'admin' ? 'Admin' : resolvedUserName;
