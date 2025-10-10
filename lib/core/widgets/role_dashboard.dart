@@ -43,7 +43,10 @@ class RoleDashboard extends StatelessWidget {
       } else {
         final email = authService?.currentUser?.email?.trim();
         if (email != null && email.isNotEmpty) {
-          resolvedUserName = email;
+          final formattedFromEmail = _formatNameFromEmail(email);
+          resolvedUserName = formattedFromEmail.isNotEmpty
+              ? formattedFromEmail
+              : '$roleName user';
         } else {
           resolvedUserName = '$roleName user';
         }
@@ -180,6 +183,35 @@ class RoleDashboard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatNameFromEmail(String email) {
+    final localPart = email.split('@').first.trim();
+    if (localPart.isEmpty) {
+      return '';
+    }
+
+    final cleaned = localPart
+        .replaceAll(RegExp(r'[._-]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    if (cleaned.isEmpty) {
+      return '';
+    }
+
+    final words = cleaned.split(' ');
+    final capitalizedWords = words.map((word) {
+      if (word.isEmpty) {
+        return word;
+      }
+      if (word.length == 1) {
+        return word.toUpperCase();
+      }
+      return '${word[0].toUpperCase()}${word.substring(1)}';
+    }).toList();
+
+    return capitalizedWords.join(' ');
   }
 }
 
