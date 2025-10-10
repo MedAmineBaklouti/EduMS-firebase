@@ -19,20 +19,6 @@ class ParentDashboard extends StatelessWidget {
       onShowAllAnnouncements: () => Get.toNamed(AppPages.PARENT_ANNOUNCEMENTS),
       cards: [
         DashboardCard(
-          icon: Icons.message,
-          title: 'Messages',
-          subtitle: 'Reach the school',
-          color: Colors.cyan,
-          onTap: () => Get.toNamed(AppPages.MESSAGING),
-        ),
-        DashboardCard(
-          icon: Icons.announcement,
-          title: 'Announcements',
-          subtitle: 'School notices',
-          color: Colors.purple,
-          onTap: () => Get.toNamed(AppPages.PARENT_ANNOUNCEMENTS),
-        ),
-        DashboardCard(
           icon: Icons.menu_book,
           title: 'Courses',
           subtitle: 'View class materials',

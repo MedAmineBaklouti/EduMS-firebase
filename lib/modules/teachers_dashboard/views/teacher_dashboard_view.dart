@@ -19,13 +19,6 @@ class TeacherDashboard extends StatelessWidget {
       onShowAllAnnouncements: () => Get.toNamed(AppPages.TEACHER_ANNOUNCEMENTS),
       cards: [
         DashboardCard(
-          icon: Icons.message,
-          title: 'Messages',
-          subtitle: 'Chat with families',
-          color: Colors.cyan,
-          onTap: () => Get.toNamed(AppPages.MESSAGING),
-        ),
-        DashboardCard(
           icon: Icons.menu_book,
           title: 'Courses',
           subtitle: 'Create and share lessons',
@@ -38,13 +31,6 @@ class TeacherDashboard extends StatelessWidget {
           subtitle: 'Assign tasks',
           color: Colors.green,
           onTap: () => Get.toNamed(AppPages.TEACHER_HOMEWORK),
-        ),
-        DashboardCard(
-          icon: Icons.calendar_today,
-          title: 'Attendance',
-          subtitle: 'Record presence',
-          color: Colors.orange,
-          onTap: () => Get.toNamed(AppPages.TEACHER_ATTENDANCE),
         ),
         DashboardCard(
           icon: Icons.emoji_people,
