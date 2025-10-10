@@ -117,10 +117,6 @@ class _RoleDashboardState extends State<RoleDashboard> {
           }
         }
 
-        final announcementDisplayName = widget.roleName.toLowerCase() == 'admin'
-            ? 'Admin'
-            : resolvedUserName;
-
         return Scaffold(
           drawer: _DashboardDrawer(
             roleName: widget.roleName,
@@ -180,7 +176,6 @@ class _RoleDashboardState extends State<RoleDashboard> {
                     ? DashboardAnnouncements(
                         audience: widget.announcementAudience,
                         onShowAll: widget.onShowAllAnnouncements,
-                        userName: announcementDisplayName,
                       )
                     : const SizedBox.shrink();
 
