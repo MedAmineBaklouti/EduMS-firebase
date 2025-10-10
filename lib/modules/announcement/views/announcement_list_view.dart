@@ -140,10 +140,10 @@ class AnnouncementListView extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: theme.colorScheme.surface,
+            color: theme.colorScheme.primary,
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.08),
+                color: theme.colorScheme.primary.withOpacity(0.25),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
@@ -160,12 +160,12 @@ class AnnouncementListView extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.12),
+                        color: theme.colorScheme.onPrimary.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.campaign_outlined,
-                        color: theme.colorScheme.primary,
+                        color: theme.colorScheme.onPrimary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -177,6 +177,7 @@ class AnnouncementListView extends StatelessWidget {
                             ann.title,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onPrimary,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -185,14 +186,14 @@ class AnnouncementListView extends StatelessWidget {
                               Icon(
                                 Icons.schedule,
                                 size: 16,
-                                color: theme.colorScheme.primary,
+                                color: theme.colorScheme.onPrimary,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 dateText,
                                 style:
                                     theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
+                                  color: theme.colorScheme.onPrimary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -209,7 +210,7 @@ class AnnouncementListView extends StatelessWidget {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onPrimary.withOpacity(0.9),
                     height: 1.5,
                   ),
                 ),
@@ -321,13 +322,13 @@ class AnnouncementListView extends StatelessWidget {
                 Icon(
                   Icons.hourglass_bottom,
                   size: 18,
-                  color: theme.colorScheme.secondary,
+                  color: theme.colorScheme.onPrimary,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   timeLeftLabel,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -336,7 +337,7 @@ class AnnouncementListView extends StatelessWidget {
             Text(
               expiryLabel,
               style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: theme.colorScheme.onPrimary.withOpacity(0.85),
               ),
             ),
           ],
@@ -347,11 +348,11 @@ class AnnouncementListView extends StatelessWidget {
           child: LinearProgressIndicator(
             minHeight: 6,
             value: progress,
-            backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.6),
+            backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.2),
             valueColor: AlwaysStoppedAnimation(
               highlightForAdmin
                   ? theme.colorScheme.error
-                  : theme.colorScheme.primary,
+                  : theme.colorScheme.onPrimary,
             ),
           ),
         ),
@@ -423,15 +424,16 @@ class AnnouncementListView extends StatelessWidget {
       avatar: Icon(
         icon,
         size: 18,
-        color: theme.colorScheme.primary,
+        color: theme.colorScheme.onPrimary,
       ),
       label: Text(
         label,
         style: theme.textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onPrimary,
         ),
       ),
-      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+      backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.18),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }

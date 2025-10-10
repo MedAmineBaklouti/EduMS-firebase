@@ -2,18 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../services/auth_service.dart';
+import '../services/database_service.dart';
+import '../../data/models/parent_model.dart';
+import '../../data/models/teacher_model.dart';
 import '../../core/widgets/dashboard_card.dart';
 import 'dashboard_announcements.dart';
 
-class RoleDashboard extends StatelessWidget {
-  final List<DashboardCard> cards;
-  final String roleName;
-  final VoidCallback onLogout;
-  final VoidCallback? onMessagesTap;
-  final String? announcementAudience;
-  final VoidCallback? onShowAllAnnouncements;
-  final String? userName;
-
+class RoleDashboard extends StatefulWidget {
   const RoleDashboard({
     super.key,
     required this.cards,
@@ -25,163 +20,235 @@ class RoleDashboard extends StatelessWidget {
     this.userName,
   });
 
+  final List<DashboardCard> cards;
+  final String roleName;
+  final VoidCallback onLogout;
+  final VoidCallback? onMessagesTap;
+  final String? announcementAudience;
+  final VoidCallback? onShowAllAnnouncements;
+  final String? userName;
+
+  @override
+  State<RoleDashboard> createState() => _RoleDashboardState();
+}
+
+class _RoleDashboardState extends State<RoleDashboard> {
+  late final Future<String?> _userModelNameFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _userModelNameFuture = _fetchUserModelName();
+  }
+
+  Future<String?> _fetchUserModelName() async {
+    final authService =
+        Get.isRegistered<AuthService>() ? Get.find<AuthService>() : null;
+    final databaseService =
+        Get.isRegistered<DatabaseService>() ? Get.find<DatabaseService>() : null;
+
+    if (authService == null || databaseService == null) {
+      return null;
+    }
+
+    final user = authService.currentUser;
+    final role = authService.currentRole?.toLowerCase();
+    if (user == null || role == null) {
+      return null;
+    }
+
+    try {
+      switch (role) {
+        case 'teacher':
+          final snapshot =
+              await databaseService.firestore.collection('teachers').doc(user.uid).get();
+          if (!snapshot.exists) {
+            return null;
+          }
+          return TeacherModel.fromDoc(snapshot).name.trim();
+        case 'parent':
+          final snapshot =
+              await databaseService.firestore.collection('parents').doc(user.uid).get();
+          if (!snapshot.exists) {
+            return null;
+          }
+          return ParentModel.fromDoc(snapshot).name.trim();
+        default:
+          return null;
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final onPrimary = theme.colorScheme.onPrimary;
 
-    final authService = Get.isRegistered<AuthService>()
-        ? Get.find<AuthService>()
-        : null;
+    final authService =
+        Get.isRegistered<AuthService>() ? Get.find<AuthService>() : null;
 
-    String resolvedUserName = userName?.trim() ?? '';
-    if (resolvedUserName.isEmpty) {
-      final displayName = authService?.currentUser?.displayName?.trim();
-      if (displayName != null && displayName.isNotEmpty) {
-        resolvedUserName = displayName;
-      } else {
-        final email = authService?.currentUser?.email?.trim();
-        if (email != null && email.isNotEmpty) {
-          final formattedFromEmail = _formatNameFromEmail(email);
-          resolvedUserName = formattedFromEmail.isNotEmpty
-              ? formattedFromEmail
-              : '$roleName user';
-        } else {
-          resolvedUserName = '$roleName user';
+    return FutureBuilder<String?>(
+      future: _userModelNameFuture,
+      builder: (context, snapshot) {
+        final modelName = snapshot.data?.trim();
+
+        String resolvedUserName = widget.userName?.trim() ?? '';
+        if (modelName != null && modelName.isNotEmpty) {
+          resolvedUserName = modelName;
         }
-      }
-    }
 
-    final announcementDisplayName =
-        roleName.toLowerCase() == 'admin' ? 'Admin' : resolvedUserName;
+        if (resolvedUserName.isEmpty) {
+          final displayName = authService?.currentUser?.displayName?.trim();
+          if (displayName != null && displayName.isNotEmpty) {
+            resolvedUserName = displayName;
+          } else {
+            final email = authService?.currentUser?.email?.trim();
+            if (email != null && email.isNotEmpty) {
+              final formattedFromEmail = _formatNameFromEmail(email);
+              resolvedUserName = formattedFromEmail.isNotEmpty
+                  ? formattedFromEmail
+                  : '${widget.roleName} user';
+            } else {
+              resolvedUserName = '${widget.roleName} user';
+            }
+          }
+        }
 
-    return Scaffold(
-      drawer: _DashboardDrawer(
-        roleName: roleName,
-        onLogout: onLogout,
-        userName: resolvedUserName,
-      ),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: primary,
-        foregroundColor: onPrimary,
-        title: Text(
-          '$roleName Dashboard',
-          style: theme.textTheme.titleLarge
-              ?.copyWith(color: onPrimary, fontWeight: FontWeight.bold),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Menu',
+        final announcementDisplayName = widget.roleName.toLowerCase() == 'admin'
+            ? 'Admin'
+            : resolvedUserName;
+
+        return Scaffold(
+          drawer: _DashboardDrawer(
+            roleName: widget.roleName,
+            onLogout: widget.onLogout,
+            userName: resolvedUserName,
           ),
-        ),
-        actions: [
-          if (onMessagesTap != null)
-            IconButton(
-              icon: const Icon(Icons.message_outlined),
-              onPressed: onMessagesTap,
-              tooltip: 'Messages',
+          appBar: AppBar(
+            elevation: 0,
+            backgroundColor: primary,
+            foregroundColor: onPrimary,
+            title: Text(
+              '${widget.roleName} Dashboard',
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(color: onPrimary, fontWeight: FontWeight.bold),
             ),
-        ],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/splash/background.png'),
-            fit: BoxFit.cover,
+            leading: Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'Menu',
+              ),
+            ),
+            actions: [
+              if (widget.onMessagesTap != null)
+                IconButton(
+                  icon: const Icon(Icons.message_outlined),
+                  onPressed: widget.onMessagesTap,
+                  tooltip: 'Messages',
+                ),
+            ],
           ),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth > 960;
+          body: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/splash/background.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 960;
 
-            Widget buildMenuGrid(int crossAxisCount) {
-              return GridView.builder(
-                itemCount: cards.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: isWide ? 1.05 : 1.1,
-                ),
-                itemBuilder: (context, index) => cards[index],
-              );
-            }
-
-            final announcementsWidget = announcementAudience != null
-                ? DashboardAnnouncements(
-                    audience: announcementAudience,
-                    onShowAll: onShowAllAnnouncements,
-                    userName: announcementDisplayName,
-                  )
-                : const SizedBox.shrink();
-
-            if (isWide) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Menu',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 16),
-                          Expanded(child: buildMenuGrid(3)),
-                        ],
-                      ),
+                Widget buildMenuGrid(int crossAxisCount) {
+                  return GridView.builder(
+                    itemCount: widget.cards.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: isWide ? 1.05 : 1.1,
                     ),
-                    if (announcementAudience != null) ...[
-                      const SizedBox(width: 24),
-                      SizedBox(width: 360, child: announcementsWidget),
-                    ],
-                  ],
-                ),
-              );
-            }
+                    itemBuilder: (context, index) => widget.cards[index],
+                  );
+                }
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (announcementAudience != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: announcementsWidget,
-                  ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
+                final announcementsWidget = widget.announcementAudience != null
+                    ? DashboardAnnouncements(
+                        audience: widget.announcementAudience,
+                        onShowAll: widget.onShowAllAnnouncements,
+                        userName: announcementDisplayName,
+                      )
+                    : const SizedBox.shrink();
+
+                if (isWide) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Menu',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Menu',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 16),
+                              Expanded(child: buildMenuGrid(3)),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        Expanded(child: buildMenuGrid(2)),
+                        if (widget.announcementAudience != null) ...[
+                          const SizedBox(width: 24),
+                          SizedBox(width: 360, child: announcementsWidget),
+                        ],
                       ],
                     ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.announcementAudience != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                        child: announcementsWidget,
+                      ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Menu',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 16),
+                            Expanded(child: buildMenuGrid(2)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 

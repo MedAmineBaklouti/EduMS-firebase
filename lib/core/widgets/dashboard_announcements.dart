@@ -90,122 +90,103 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
 
         return SizedBox(
           height: 220,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Announcements',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    if (widget.onShowAll != null)
-                      TextButton.icon(
-                        onPressed: widget.onShowAll,
-                        icon: const Icon(Icons.open_in_new, size: 18),
-                        label: const Text('Show all'),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    if (notification is ScrollStartNotification &&
-                        notification.dragDetails != null) {
-                      _isUserInteracting = true;
-                      _pauseAutoScroll();
-                    } else if (notification is ScrollEndNotification) {
-                      if (_isUserInteracting) {
-                        _isUserInteracting = false;
-                        _scheduleAutoScrollResume();
-                      }
-                    }
-                    return false;
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification is ScrollStartNotification &&
+                  notification.dragDetails != null) {
+                _isUserInteracting = true;
+                _pauseAutoScroll();
+              } else if (notification is ScrollEndNotification) {
+                if (_isUserInteracting) {
+                  _isUserInteracting = false;
+                  _scheduleAutoScrollResume();
+                }
+              }
+              return false;
+            },
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: announcements.length,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
                   },
-                  child: Stack(
-                    children: [
-                      PageView.builder(
-                        controller: _pageController,
-                        itemCount: announcements.length,
-                        onPageChanged: (index) {
-                          setState(() {
-                            _currentPage = index;
-                          });
-                        },
-                        itemBuilder: (context, index) {
-                          final announcement = announcements[index];
-                          final displayTitle = _resolveSlideTitle(announcement);
-                          return _AnnouncementSlide(
-                            announcement: announcement,
-                            displayTitle: displayTitle,
-                          );
-                        },
-                      ),
-                      if (announcements.length > 1)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 20),
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary
-                                        .withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: List.generate(
-                                          announcements.length, (index) {
-                                        final isActive = index == _currentPage;
+                  itemBuilder: (context, index) {
+                    final announcement = announcements[index];
+                    final displayTitle = _resolveSlideTitle(announcement);
+                    return _AnnouncementSlide(
+                      announcement: announcement,
+                      displayTitle: displayTitle,
+                      onShowAll: widget.onShowAll,
+                    );
+                  },
+                ),
+                if (announcements.length > 1)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surface
+                                  .withOpacity(0.65),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              child: AnimatedBuilder(
+                                animation: _pageController,
+                                builder: (context, child) {
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: List.generate(
+                                      announcements.length,
+                                      (dotIndex) {
+                                        final isActive =
+                                            dotIndex == _currentPage;
                                         return AnimatedContainer(
                                           duration:
                                               const Duration(milliseconds: 300),
                                           margin: const EdgeInsets.symmetric(
                                               horizontal: 4),
-                                          width: isActive ? 18 : 8,
-                                          height: 8,
+                                          height: 6,
+                                          width: isActive ? 18 : 6,
                                           decoration: BoxDecoration(
                                             color: isActive
                                                 ? Theme.of(context)
                                                     .colorScheme
-                                                    .onPrimary
-                                                    .withOpacity(0.9)
+                                                    .primary
                                                 : Theme.of(context)
                                                     .colorScheme
-                                                    .onPrimary
-                                                    .withOpacity(0.35),
+                                                    .primary
+                                                    .withOpacity(0.3),
                                             borderRadius:
-                                                BorderRadius.circular(10),
+                                                BorderRadius.circular(3),
                                           ),
                                         );
-                                      }),
+                                      },
                                     ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
                             ),
                           ),
                         ),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -299,10 +280,12 @@ class _AnnouncementSlide extends StatelessWidget {
   const _AnnouncementSlide({
     required this.announcement,
     required this.displayTitle,
+    this.onShowAll,
   });
 
   final AnnouncementModel announcement;
   final String displayTitle;
+  final VoidCallback? onShowAll;
 
   @override
   Widget build(BuildContext context) {
@@ -337,48 +320,87 @@ class _AnnouncementSlide extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(Icons.campaign_outlined,
                         color: Theme.of(context).colorScheme.onPrimary),
                     const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        displayTitle,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  displayTitle,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary
+                                      .withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary
+                                        .withOpacity(0.4),
+                                  ),
+                                ),
+                                child: Text(
+                                  'NEW',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.8,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          if (announcement.title.trim().isNotEmpty)
+                            Text(
+                              announcement.title.trim(),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary
+                                        .withOpacity(0.85),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onPrimary
-                            .withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onPrimary
-                              .withOpacity(0.4),
-                        ),
-                      ),
-                      child: Text(
-                        'NEW',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
-                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -398,29 +420,55 @@ class _AnnouncementSlide extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).colorScheme.onPrimary.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _formatDate(announcement.createdAt),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onPrimary
-                                .withOpacity(0.85),
+                Row(
+                  mainAxisAlignment: onShowAll != null
+                      ? MainAxisAlignment.spaceBetween
+                      : MainAxisAlignment.end,
+                  children: [
+                    if (onShowAll != null)
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
                           ),
+                          minimumSize: const Size(0, 36),
+                        ),
+                        onPressed: onShowAll,
+                        icon: const Icon(Icons.open_in_new, size: 18),
+                        label: const Text('Show all'),
+                      ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onPrimary
+                            .withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _formatDate(announcement.createdAt),
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimary
+                                  .withOpacity(0.85),
+                            ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
+
           ),
         ),
       ),
