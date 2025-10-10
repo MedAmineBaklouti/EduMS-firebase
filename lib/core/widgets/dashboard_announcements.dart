@@ -12,12 +12,10 @@ class DashboardAnnouncements extends StatefulWidget {
     super.key,
     this.audience,
     this.onShowAll,
-    this.userName,
   });
 
   final String? audience;
   final VoidCallback? onShowAll;
-  final String? userName;
 
   @override
   State<DashboardAnnouncements> createState() => _DashboardAnnouncementsState();
@@ -116,10 +114,8 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                   },
                   itemBuilder: (context, index) {
                     final announcement = announcements[index];
-                    final displayTitle = _resolveSlideTitle(announcement);
                     return _AnnouncementSlide(
                       announcement: announcement,
-                      displayTitle: displayTitle,
                       onShowAll: widget.onShowAll,
                     );
                   },
@@ -261,34 +257,24 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
     }).toList();
   }
 
-  String _resolveSlideTitle(AnnouncementModel announcement) {
-    final trimmedName = widget.userName?.trim();
-    if (trimmedName != null && trimmedName.isNotEmpty) {
-      return trimmedName;
-    }
-
-    final title = announcement.title.trim();
-    if (title.isNotEmpty) {
-      return title;
-    }
-
-    return 'Announcement';
-  }
 }
 
 class _AnnouncementSlide extends StatelessWidget {
   const _AnnouncementSlide({
     required this.announcement,
-    required this.displayTitle,
     this.onShowAll,
   });
 
   final AnnouncementModel announcement;
-  final String displayTitle;
   final VoidCallback? onShowAll;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolvedTitle = announcement.title.trim().isEmpty
+        ? 'Announcement'
+        : announcement.title.trim();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: GestureDetector(
@@ -322,87 +308,68 @@ class _AnnouncementSlide extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.campaign_outlined,
-                        color: Theme.of(context).colorScheme.onPrimary),
+                    Icon(
+                      Icons.campaign_outlined,
+                      color: theme.colorScheme.onPrimary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  displayTitle,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                          Expanded(
+                            child: Text(
+                              resolvedTitle,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimary
-                                      .withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary
-                                        .withOpacity(0.4),
-                                  ),
-                                ),
-                                child: Text(
-                                  'NEW',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.8,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          if (announcement.title.trim().isNotEmpty)
-                            Text(
-                              announcement.title.trim(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary
-                                        .withOpacity(0.85),
-                                    fontWeight: FontWeight.w600,
-                                  ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.onPrimary
+                                  .withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: theme.colorScheme.onPrimary
+                                    .withOpacity(0.4),
+                              ),
+                            ),
+                            child: Text(
+                              'NEW',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
+                    if (onShowAll != null) ...[
+                      const SizedBox(width: 12),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          minimumSize: const Size(0, 36),
+                        ),
+                        onPressed: onShowAll,
+                        icon: const Icon(Icons.open_in_new, size: 18),
+                        label: const Text('Show all'),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -421,47 +388,23 @@ class _AnnouncementSlide extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Row(
-                  mainAxisAlignment: onShowAll != null
-                      ? MainAxisAlignment.spaceBetween
-                      : MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (onShowAll != null)
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                          ),
-                          minimumSize: const Size(0, 36),
-                        ),
-                        onPressed: onShowAll,
-                        icon: const Icon(Icons.open_in_new, size: 18),
-                        label: const Text('Show all'),
-                      ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onPrimary
-                            .withOpacity(0.12),
+                        color: theme.colorScheme.onPrimary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         _formatDate(announcement.createdAt),
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelMedium
-                            ?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimary
-                                  .withOpacity(0.85),
-                            ),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onPrimary
+                              .withOpacity(0.85),
+                        ),
                       ),
                     ),
                   ],
