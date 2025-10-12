@@ -111,15 +111,10 @@ class MessagingView extends GetView<MessagingController> {
                   if (activeConversation == null) {
                     return const SizedBox.shrink();
                   }
-                  var titleText =
-                      controller.resolveConversationTitle(activeConversation);
-                  final hasAdministrationParticipant = controller
-                      .hasAdministrationParticipant(activeConversation);
                   final showAdministrationAvatar = controller
                       .shouldUseAdministrationAvatar(activeConversation);
-                  if (hasAdministrationParticipant) {
-                    titleText = 'Administration';
-                  }
+                  final titleText =
+                      controller.resolveConversationTitle(activeConversation);
                   final contextText =
                       controller.resolveConversationContext(activeConversation);
                   final titleInitial = titleText.isEmpty

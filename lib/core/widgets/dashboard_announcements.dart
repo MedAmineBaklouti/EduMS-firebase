@@ -183,8 +183,8 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                                                     .primary
                                                 : Theme.of(context)
                                                     .colorScheme
-                                                    .primary
-                                                    .withOpacity(0.3),
+                                                    .onSurface
+                                                    .withOpacity(0.35),
                                             borderRadius:
                                                 BorderRadius.circular(3),
                                           ),
@@ -403,38 +403,45 @@ class _AnnouncementSlide extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: Text(
-                              resolvedTitle,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.onPrimary
-                                  .withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: theme.colorScheme.onPrimary
-                                    .withOpacity(0.4),
-                              ),
-                            ),
-                            child: Text(
-                              'NEW',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                              ),
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    resolvedTitle,
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: theme.colorScheme.onPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.onPrimary
+                                        .withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: theme.colorScheme.onPrimary
+                                          .withOpacity(0.4),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'NEW',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           if (onShowAll != null) ...[
@@ -448,7 +455,11 @@ class _AnnouncementSlide extends StatelessWidget {
                                 minimumSize: const Size(0, 36),
                               ),
                               onPressed: onShowAll,
-                              icon: const Icon(Icons.open_in_new, size: 18),
+                              icon: Icon(
+                                Icons.open_in_new,
+                                size: 18,
+                                color: theme.colorScheme.onPrimary,
+                              ),
                               label: const Text('Show all'),
                             ),
                           ],
