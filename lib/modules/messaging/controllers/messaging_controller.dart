@@ -355,13 +355,22 @@ class MessagingController extends GetxController {
       (_authService.currentRole ?? '').toLowerCase() == 'parent';
 
   bool hasAdministrationParticipant(ConversationModel conversation) {
-    return conversation.participants.any(
+    final others = _otherParticipants(conversation);
+    if (others.isEmpty) {
+      return false;
+    }
+    return others.any(
       (participant) => _isAdministrationRole(participant.role),
     );
   }
 
   bool shouldUseAdministrationAvatar(ConversationModel conversation) {
-    if (hasAdministrationParticipant(conversation)) {
+    final others = _otherParticipants(conversation);
+    if (others.isEmpty) {
+      return false;
+    }
+
+    if (others.any((participant) => _isAdministrationRole(participant.role))) {
       return true;
     }
 
