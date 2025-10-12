@@ -28,16 +28,7 @@ class AnnouncementListView extends StatelessWidget {
         centerTitle: true,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.06),
-              theme.colorScheme.surface,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: theme.colorScheme.surface,
         child: Obx(() {
           final items = controller.announcements;
           return RefreshIndicator(
@@ -126,6 +117,14 @@ class AnnouncementListView extends StatelessWidget {
     final showExpiryDetails = isAdmin || highlightForAdmin;
     final showAudienceTags = showAudience && audienceLabels.isNotEmpty;
 
+    final cardColor = theme.colorScheme.surface;
+    final primaryColor = theme.colorScheme.primary;
+    final onSurface = theme.colorScheme.onSurface;
+    final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
+    final borderColor = highlightForAdmin
+        ? primaryColor.withOpacity(0.2)
+        : primaryColor.withOpacity(0.08);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -140,10 +139,11 @@ class AnnouncementListView extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            color: theme.colorScheme.primary,
+            color: cardColor,
+            border: Border.all(color: borderColor),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.25),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
@@ -160,12 +160,12 @@ class AnnouncementListView extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.15),
+                        color: primaryColor.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.campaign_outlined,
-                        color: theme.colorScheme.onPrimary,
+                        color: primaryColor,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -177,7 +177,7 @@ class AnnouncementListView extends StatelessWidget {
                             ann.title,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.onPrimary,
+                              color: onSurface,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -186,14 +186,13 @@ class AnnouncementListView extends StatelessWidget {
                               Icon(
                                 Icons.schedule,
                                 size: 16,
-                                color: theme.colorScheme.onPrimary,
+                                color: onSurfaceVariant,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 dateText,
-                                style:
-                                    theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -210,7 +209,7 @@ class AnnouncementListView extends StatelessWidget {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onPrimary.withOpacity(0.9),
+                    color: onSurfaceVariant,
                     height: 1.5,
                   ),
                 ),
@@ -322,13 +321,13 @@ class AnnouncementListView extends StatelessWidget {
                 Icon(
                   Icons.hourglass_bottom,
                   size: 18,
-                  color: theme.colorScheme.onPrimary,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   timeLeftLabel,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimary,
+                    color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -337,7 +336,7 @@ class AnnouncementListView extends StatelessWidget {
             Text(
               expiryLabel,
               style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -348,11 +347,11 @@ class AnnouncementListView extends StatelessWidget {
           child: LinearProgressIndicator(
             minHeight: 6,
             value: progress,
-            backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.2),
+            backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
             valueColor: AlwaysStoppedAnimation(
               highlightForAdmin
                   ? theme.colorScheme.error
-                  : theme.colorScheme.onPrimary,
+                  : theme.colorScheme.primary,
             ),
           ),
         ),
@@ -424,16 +423,16 @@ class AnnouncementListView extends StatelessWidget {
       avatar: Icon(
         icon,
         size: 18,
-        color: theme.colorScheme.onPrimary,
+        color: theme.colorScheme.primary,
       ),
       label: Text(
         label,
         style: theme.textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onPrimary,
+          color: theme.colorScheme.primary,
         ),
       ),
-      backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.18),
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }

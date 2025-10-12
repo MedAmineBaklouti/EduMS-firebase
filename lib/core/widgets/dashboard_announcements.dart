@@ -28,6 +28,7 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   Timer? _autoScrollResumeTimer;
   int _autoScrollItemCount = 0;
   bool _isUserInteracting = false;
+  String? _currentAnnouncementId;
 
   @override
   void initState() {
@@ -70,6 +71,7 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
         }
 
         final announcements = _filterAnnouncements(snapshot.data ?? []);
+        _syncCurrentPage(announcements);
         _configureAutoScroll(announcements.length);
 
         if (announcements.isEmpty) {
@@ -79,21 +81,32 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
           );
         }
 
-        if (_currentPage >= announcements.length) {
-          _currentPage = 0;
-          if (_pageController.hasClients) {
-            _pageController.jumpToPage(0);
-          }
-        }
-
         return SizedBox(
           height: 220,
           child: NotificationListener<ScrollNotification>(
             onNotification: (notification) {
-              if (notification is ScrollStartNotification &&
+              if (notification.metrics.axis != Axis.horizontal) {
+                return false;
+              }
+
+              if (notification is UserScrollNotification) {
+                if (notification.direction == ScrollDirection.idle) {
+                  if (_isUserInteracting) {
+                    _isUserInteracting = false;
+                    _scheduleAutoScrollResume();
+                  }
+                } else {
+                  if (!_isUserInteracting) {
+                    _isUserInteracting = true;
+                    _pauseAutoScroll();
+                  }
+                }
+              } else if (notification is ScrollStartNotification &&
                   notification.dragDetails != null) {
-                _isUserInteracting = true;
-                _pauseAutoScroll();
+                if (!_isUserInteracting) {
+                  _isUserInteracting = true;
+                  _pauseAutoScroll();
+                }
               } else if (notification is ScrollEndNotification) {
                 if (_isUserInteracting) {
                   _isUserInteracting = false;
@@ -110,6 +123,11 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                   onPageChanged: (index) {
                     setState(() {
                       _currentPage = index;
+                      if (index >= 0 && index < announcements.length) {
+                        _currentAnnouncementId = announcements[index].id;
+                      } else {
+                        _currentAnnouncementId = null;
+                      }
                     });
                   },
                   itemBuilder: (context, index) {
@@ -215,6 +233,14 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
       if (!_pageController.hasClients || _autoScrollItemCount <= 1) {
         return;
       }
+      if (_isUserInteracting) {
+        return;
+      }
+
+      final position = _pageController.position;
+      if (position.hasPixels && position.isScrollingNotifier.value) {
+        return;
+      }
       final nextPage = (_currentPage + 1) % _autoScrollItemCount;
       _pageController.animateToPage(
         nextPage,
@@ -240,6 +266,65 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
         _startAutoScrollTimer();
       }
     });
+  }
+
+  void _syncCurrentPage(List<AnnouncementModel> announcements) {
+    if (!mounted) return;
+
+    if (announcements.isEmpty) {
+      if (_currentPage != 0 || _currentAnnouncementId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            _currentPage = 0;
+            _currentAnnouncementId = null;
+          });
+        });
+      }
+      return;
+    }
+
+    final targetIndex = _resolveCurrentPageIndex(announcements);
+    final targetId = announcements[targetIndex].id;
+
+    if (targetIndex == _currentPage &&
+        targetId == _currentAnnouncementId &&
+        _pageController.hasClients) {
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_pageController.hasClients) {
+        try {
+          _pageController.jumpToPage(targetIndex);
+        } catch (_) {
+          // Ignore jump errors if the controller is not attached yet.
+        }
+      }
+      setState(() {
+        _currentPage = targetIndex;
+        _currentAnnouncementId = targetId;
+      });
+    });
+  }
+
+  int _resolveCurrentPageIndex(List<AnnouncementModel> announcements) {
+    if (_currentAnnouncementId != null) {
+      final existingIndex = announcements
+          .indexWhere((announcement) => announcement.id == _currentAnnouncementId);
+      if (existingIndex != -1) {
+        return existingIndex;
+      }
+    }
+
+    if (_currentPage >= announcements.length) {
+      return announcements.length - 1;
+    }
+    if (_currentPage < 0) {
+      return 0;
+    }
+    return _currentPage;
   }
 
   List<AnnouncementModel> _filterAnnouncements(List<AnnouncementModel> items) {
