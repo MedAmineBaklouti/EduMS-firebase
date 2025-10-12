@@ -401,13 +401,13 @@ class _AnnouncementSlide extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
+                          Expanded(
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Flexible(
+                                Expanded(
                                   child: Text(
                                     resolvedTitle,
                                     style: theme.textTheme.titleMedium?.copyWith(
@@ -418,6 +418,7 @@ class _AnnouncementSlide extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
