@@ -392,7 +392,7 @@ class _AnnouncementSlide extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.campaign_outlined,
@@ -401,7 +401,7 @@ class _AnnouncementSlide extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: Row(
@@ -418,7 +418,7 @@ class _AnnouncementSlide extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 3),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -453,7 +453,9 @@ class _AnnouncementSlide extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                 ),
-                                minimumSize: const Size(0, 36),
+                                minimumSize: const Size(0, 32),
+                                visualDensity: VisualDensity.compact,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
                               onPressed: onShowAll,
                               icon: Icon(
