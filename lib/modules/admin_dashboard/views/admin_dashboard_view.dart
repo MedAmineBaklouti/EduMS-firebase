@@ -17,18 +17,18 @@ class AdminDashboard extends StatelessWidget {
       onMessagesTap: () => Get.toNamed(AppPages.MESSAGING),
       cards: [
         DashboardCard(
-          icon: Icons.message,
-          title: 'Messages',
-          subtitle: 'Stay connected',
-          color: Colors.cyan,
-          onTap: () => Get.toNamed(AppPages.MESSAGING),
-        ),
-        DashboardCard(
           icon: Icons.announcement,
           title: 'Announcements',
           subtitle: 'School notices',
           color: Colors.purple,
           onTap: () => Get.toNamed(AppPages.ADMIN_ANNOUNCEMENTS),
+        ),
+        DashboardCard(
+          icon: Icons.settings,
+          title: 'Control',
+          subtitle: 'Manage data',
+          color: Colors.grey,
+          onTap: () => Get.toNamed(AppPages.ADMIN_CONTROL),
         ),
         DashboardCard(
           icon: Icons.school,
@@ -78,13 +78,6 @@ class AdminDashboard extends StatelessWidget {
           subtitle: 'Review completed releases',
           color: Colors.teal,
           onTap: () => Get.toNamed(AppPages.ADMIN_PICKUP_ARCHIVE),
-        ),
-        DashboardCard(
-          icon: Icons.settings,
-          title: 'Control',
-          subtitle: 'Manage data',
-          color: Colors.grey,
-          onTap: () => Get.toNamed(AppPages.ADMIN_CONTROL),
         ),
       ],
     );

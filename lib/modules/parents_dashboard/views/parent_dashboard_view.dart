@@ -26,6 +26,13 @@ class ParentDashboard extends StatelessWidget {
           onTap: () => Get.toNamed(AppPages.PARENT_COURSES),
         ),
         DashboardCard(
+          icon: Icons.assignment,
+          title: 'Homework',
+          subtitle: 'View assignments',
+          color: Colors.green,
+          onTap: () => Get.toNamed(AppPages.PARENT_HOMEWORK),
+        ),
+        DashboardCard(
           icon: Icons.calendar_today,
           title: 'Attendance',
           subtitle: 'View records',
@@ -45,13 +52,6 @@ class ParentDashboard extends StatelessWidget {
           subtitle: 'Transportation updates',
           color: Colors.indigo,
           onTap: () => Get.toNamed(AppPages.PARENT_PICKUP),
-        ),
-        DashboardCard(
-          icon: Icons.assignment,
-          title: 'Homework',
-          subtitle: 'View assignments',
-          color: Colors.green,
-          onTap: () => Get.toNamed(AppPages.PARENT_HOMEWORK),
         ),
       ],
     );

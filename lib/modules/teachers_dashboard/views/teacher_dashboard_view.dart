@@ -33,18 +33,18 @@ class TeacherDashboard extends StatelessWidget {
           onTap: () => Get.toNamed(AppPages.TEACHER_HOMEWORK),
         ),
         DashboardCard(
+          icon: Icons.calendar_today,
+          title: 'Attendance',
+          subtitle: 'Record presence',
+          color: Colors.orange,
+          onTap: () => Get.toNamed(AppPages.TEACHER_ATTENDANCE),
+        ),
+        DashboardCard(
           icon: Icons.emoji_people,
           title: 'Behavior',
           subtitle: 'Student reports',
           color: Colors.red,
           onTap: () => Get.toNamed(AppPages.TEACHER_BEHAVIOR),
-        ),
-        DashboardCard(
-          icon: Icons.announcement,
-          title: 'Announcements',
-          subtitle: 'Class notices',
-          color: Colors.purple,
-          onTap: () => Get.toNamed(AppPages.TEACHER_ANNOUNCEMENTS),
         ),
         DashboardCard(
           icon: Icons.directions_bus,
