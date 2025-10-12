@@ -23,17 +23,19 @@ class DashboardAnnouncements extends StatefulWidget {
 
 class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
   late final PageController _pageController;
-  int _currentPage = 0;
   Timer? _autoScrollTimer;
   Timer? _autoScrollResumeTimer;
   int _autoScrollItemCount = 0;
   bool _isUserInteracting = false;
-  String? _currentAnnouncementId;
+  late final ValueNotifier<int> _currentPageNotifier;
+  late final ValueNotifier<String?> _currentAnnouncementIdNotifier;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _currentPageNotifier = ValueNotifier<int>(0);
+    _currentAnnouncementIdNotifier = ValueNotifier<String?>(null);
   }
 
   @override
@@ -41,6 +43,8 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
     _autoScrollTimer?.cancel();
     _autoScrollResumeTimer?.cancel();
     _pageController.dispose();
+    _currentPageNotifier.dispose();
+    _currentAnnouncementIdNotifier.dispose();
     super.dispose();
   }
 
@@ -121,14 +125,11 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                   controller: _pageController,
                   itemCount: announcements.length,
                   onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                      if (index >= 0 && index < announcements.length) {
-                        _currentAnnouncementId = announcements[index].id;
-                      } else {
-                        _currentAnnouncementId = null;
-                      }
-                    });
+                    final nextId =
+                        index >= 0 && index < announcements.length
+                            ? announcements[index].id
+                            : null;
+                    _updateCurrentSelection(index: index, id: nextId);
                   },
                   itemBuilder: (context, index) {
                     final announcement = announcements[index];
@@ -158,16 +159,16 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
                                 horizontal: 12,
                                 vertical: 6,
                               ),
-                              child: AnimatedBuilder(
-                                animation: _pageController,
-                                builder: (context, child) {
+                              child: ValueListenableBuilder<int>(
+                                valueListenable: _currentPageNotifier,
+                                builder: (context, currentPage, _) {
                                   return Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: List.generate(
                                       announcements.length,
                                       (dotIndex) {
                                         final isActive =
-                                            dotIndex == _currentPage;
+                                            dotIndex == currentPage;
                                         return AnimatedContainer(
                                           duration:
                                               const Duration(milliseconds: 300),
@@ -241,7 +242,8 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
       if (position.hasPixels && position.isScrollingNotifier.value) {
         return;
       }
-      final nextPage = (_currentPage + 1) % _autoScrollItemCount;
+      final nextPage =
+          (_currentPageNotifier.value + 1) % _autoScrollItemCount;
       _pageController.animateToPage(
         nextPage,
         duration: const Duration(milliseconds: 500),
@@ -272,13 +274,11 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
     if (!mounted) return;
 
     if (announcements.isEmpty) {
-      if (_currentPage != 0 || _currentAnnouncementId != null) {
+      if (_currentPageNotifier.value != 0 ||
+          _currentAnnouncementIdNotifier.value != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          setState(() {
-            _currentPage = 0;
-            _currentAnnouncementId = null;
-          });
+          _updateCurrentSelection(index: 0, id: null);
         });
       }
       return;
@@ -287,8 +287,8 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
     final targetIndex = _resolveCurrentPageIndex(announcements);
     final targetId = announcements[targetIndex].id;
 
-    if (targetIndex == _currentPage &&
-        targetId == _currentAnnouncementId &&
+    if (targetIndex == _currentPageNotifier.value &&
+        targetId == _currentAnnouncementIdNotifier.value &&
         _pageController.hasClients) {
       return;
     }
@@ -302,29 +302,28 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
           // Ignore jump errors if the controller is not attached yet.
         }
       }
-      setState(() {
-        _currentPage = targetIndex;
-        _currentAnnouncementId = targetId;
-      });
+      _updateCurrentSelection(index: targetIndex, id: targetId);
     });
   }
 
   int _resolveCurrentPageIndex(List<AnnouncementModel> announcements) {
-    if (_currentAnnouncementId != null) {
+    final currentId = _currentAnnouncementIdNotifier.value;
+    if (currentId != null) {
       final existingIndex = announcements
-          .indexWhere((announcement) => announcement.id == _currentAnnouncementId);
+          .indexWhere((announcement) => announcement.id == currentId);
       if (existingIndex != -1) {
         return existingIndex;
       }
     }
 
-    if (_currentPage >= announcements.length) {
+    final currentPage = _currentPageNotifier.value;
+    if (currentPage >= announcements.length) {
       return announcements.length - 1;
     }
-    if (_currentPage < 0) {
+    if (currentPage < 0) {
       return 0;
     }
-    return _currentPage;
+    return currentPage;
   }
 
   List<AnnouncementModel> _filterAnnouncements(List<AnnouncementModel> items) {
@@ -340,6 +339,15 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
       final lowered = announcement.audience.map((item) => item.toLowerCase()).toList();
       return lowered.contains(audience) || lowered.contains('all');
     }).toList();
+  }
+
+  void _updateCurrentSelection({required int index, String? id}) {
+    if (_currentPageNotifier.value != index) {
+      _currentPageNotifier.value = index;
+    }
+    if (_currentAnnouncementIdNotifier.value != id) {
+      _currentAnnouncementIdNotifier.value = id;
+    }
   }
 
 }

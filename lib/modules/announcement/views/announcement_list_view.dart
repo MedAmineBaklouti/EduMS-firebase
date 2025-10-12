@@ -13,6 +13,9 @@ class AnnouncementListView extends StatelessWidget {
   AnnouncementListView({super.key, this.isAdmin = false, this.audience});
 
   static final DateFormat _dateFormat = DateFormat('MMM d, yyyy • h:mm a');
+  static final DateFormat _weekdaySectionFormat = DateFormat('EEEE, MMM d');
+  static final DateFormat _monthDaySectionFormat = DateFormat('MMMM d');
+  static final DateFormat _fullDateSectionFormat = DateFormat('MMM d, yyyy');
 
   @override
   Widget build(BuildContext context) {
@@ -35,19 +38,49 @@ class AnnouncementListView extends StatelessWidget {
             onRefresh: controller.refreshAnnouncements,
             child: items.isEmpty
                 ? _buildEmptyState(context)
-                : ListView.separated(
+                : ListView.builder(
                     padding:
                         EdgeInsets.fromLTRB(16, 24, 16, isAdmin ? 120 : 32),
                     physics: const BouncingScrollPhysics(
                       parent: AlwaysScrollableScrollPhysics(),
                     ),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 18),
                     itemBuilder: (context, index) {
                       final ann = items[index];
-                      return isAdmin
+                      final showHeader = index == 0 ||
+                          !_isSameDay(items[index - 1].createdAt, ann.createdAt);
+                      final headerLabel =
+                          showHeader ? _sectionLabelForDate(ann.createdAt) : null;
+                      final card = isAdmin
                           ? _buildAdminItem(context, controller, ann)
                           : _buildAnnouncementCard(context, ann);
+
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (headerLabel != null)
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                4,
+                                index == 0 ? 0 : 24,
+                                4,
+                                12,
+                              ),
+                              child: Text(
+                                headerLabel,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                          card,
+                          if (index != items.length - 1)
+                            const SizedBox(height: 18),
+                        ],
+                      );
                     },
                   ),
           );
@@ -241,6 +274,32 @@ class AnnouncementListView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _sectionLabelForDate(DateTime timestamp) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final lastWeek = today.subtract(const Duration(days: 7));
+    final target = DateTime(timestamp.year, timestamp.month, timestamp.day);
+
+    if (_isSameDay(target, today)) {
+      return 'Today';
+    }
+    if (_isSameDay(target, yesterday)) {
+      return 'Yesterday';
+    }
+    if (target.isAfter(lastWeek)) {
+      return _weekdaySectionFormat.format(timestamp);
+    }
+    if (target.year == today.year) {
+      return _monthDaySectionFormat.format(timestamp);
+    }
+    return _fullDateSectionFormat.format(timestamp);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   Widget _buildAdminItem(BuildContext context,
