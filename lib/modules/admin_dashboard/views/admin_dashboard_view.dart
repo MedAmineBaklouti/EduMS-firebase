@@ -14,6 +14,7 @@ class AdminDashboard extends StatelessWidget {
     return RoleDashboard(
       roleName: 'Admin',
       onLogout: _controller.logout,
+      onMessagesTap: () => Get.toNamed(AppPages.MESSAGING),
       cards: [
         DashboardCard(
           icon: Icons.message,

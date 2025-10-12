@@ -377,14 +377,7 @@ class _AnnouncementSlide extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primaryContainer,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Theme.of(context).colorScheme.primary,
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).colorScheme.primary.withOpacity(0.25),
@@ -421,7 +414,6 @@ class _AnnouncementSlide extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -445,24 +437,24 @@ class _AnnouncementSlide extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (onShowAll != null) ...[
+                            const SizedBox(width: 12),
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                minimumSize: const Size(0, 36),
+                              ),
+                              onPressed: onShowAll,
+                              icon: const Icon(Icons.open_in_new, size: 18),
+                              label: const Text('Show all'),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    if (onShowAll != null) ...[
-                      const SizedBox(width: 12),
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                          ),
-                          minimumSize: const Size(0, 36),
-                        ),
-                        onPressed: onShowAll,
-                        icon: const Icon(Icons.open_in_new, size: 18),
-                        label: const Text('Show all'),
-                      ),
-                    ],
                   ],
                 ),
                 const SizedBox(height: 12),
