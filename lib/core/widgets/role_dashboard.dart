@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../../data/models/conversation_model.dart';
 import '../../data/models/parent_model.dart';
 import '../../data/models/teacher_model.dart';
+import '../../modules/messaging/services/messaging_service.dart';
 import '../../core/widgets/dashboard_card.dart';
 import 'dashboard_announcements.dart';
 
@@ -141,11 +143,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
             ),
             actions: [
               if (widget.onMessagesTap != null)
-                IconButton(
-                  icon: const Icon(Icons.message_outlined),
-                  onPressed: widget.onMessagesTap,
-                  tooltip: 'Messages',
-                ),
+                _buildMessagesAction(context),
             ],
           ),
           body: Container(
@@ -274,6 +272,101 @@ class _RoleDashboardState extends State<RoleDashboard> {
     }).toList();
 
     return capitalizedWords.join(' ');
+  }
+
+  Widget _buildMessagesAction(BuildContext context) {
+    final messagingService = Get.isRegistered<MessagingService>()
+        ? Get.find<MessagingService>()
+        : null;
+
+    IconButton buildBaseButton() {
+      return IconButton(
+        icon: const Icon(Icons.message_outlined),
+        onPressed: widget.onMessagesTap,
+        tooltip: 'Messages',
+      );
+    }
+
+    if (messagingService == null) {
+      return buildBaseButton();
+    }
+
+    return StreamBuilder<List<ConversationModel>>(
+      stream: messagingService.watchConversations(),
+      builder: (context, snapshot) {
+        final conversations = snapshot.data ?? <ConversationModel>[];
+        final unreadTotal = conversations.fold<int>(
+          0,
+          (total, conversation) => total + conversation.unreadCount,
+        );
+
+        if (unreadTotal <= 0) {
+          return buildBaseButton();
+        }
+
+        final theme = Theme.of(context);
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            buildBaseButton(),
+            Positioned(
+              right: 8,
+              top: 10,
+              child: _UnreadBadge(
+                count: unreadTotal,
+                backgroundColor: theme.colorScheme.error,
+                textColor: theme.colorScheme.onError,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _UnreadBadge extends StatelessWidget {
+  const _UnreadBadge({
+    required this.count,
+    required this.backgroundColor,
+    required this.textColor,
+  });
+
+  final int count;
+  final Color backgroundColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayText = count > 99 ? '99+' : count.toString();
+    final textStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.bold,
+        );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: backgroundColor.withOpacity(0.45),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      constraints: const BoxConstraints(minWidth: 22),
+      child: Text(
+        displayText,
+        textAlign: TextAlign.center,
+        style: textStyle,
+      ),
+    );
   }
 }
 

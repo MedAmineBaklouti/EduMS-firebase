@@ -31,7 +31,16 @@ class AnnouncementListView extends StatelessWidget {
         centerTitle: true,
       ),
       body: Container(
-        color: theme.colorScheme.surface,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary.withOpacity(0.05),
+              theme.colorScheme.surface,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: Obx(() {
           final items = controller.announcements;
           return RefreshIndicator(
@@ -154,8 +163,8 @@ class AnnouncementListView extends StatelessWidget {
     final primaryColor = theme.colorScheme.primary;
     final onSurface = theme.colorScheme.onSurface;
     final onSurfaceVariant = theme.colorScheme.onSurfaceVariant;
-    final borderColor = highlightForAdmin
-        ? primaryColor.withOpacity(0.2)
+    final shadowColor = highlightForAdmin
+        ? primaryColor.withOpacity(0.16)
         : primaryColor.withOpacity(0.08);
 
     return Material(
@@ -173,10 +182,12 @@ class AnnouncementListView extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: cardColor,
-            border: Border.all(color: borderColor),
+            border: highlightForAdmin
+                ? Border.all(color: primaryColor.withOpacity(0.25), width: 1.4)
+                : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: shadowColor,
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
