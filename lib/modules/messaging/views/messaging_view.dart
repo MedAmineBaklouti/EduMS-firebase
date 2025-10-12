@@ -145,14 +145,18 @@ class MessagingView extends GetView<MessagingController> {
                           children: [
                             Text(
                               titleText,
-                              style: theme.textTheme.titleMedium,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                             if (contextText != null && contextText.isNotEmpty)
                               Text(
                                 contextText,
                                 style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  color:
+                                      theme.colorScheme.onPrimary.withOpacity(0.85),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
