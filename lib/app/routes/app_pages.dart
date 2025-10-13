@@ -1,6 +1,8 @@
 // lib/app/routes/app_pages.dart
-import 'package:get/get_navigation/src/routes/get_route.dart';
+import 'package:get/get.dart';
 
+import '../../modules/ai_chat/controllers/ai_chat_controller.dart';
+import '../../modules/ai_chat/views/ai_chat_view.dart';
 import '../../modules/admin_dashboard/views/admin_control_view.dart';
 import '../../modules/admin_dashboard/views/admin_dashboard_view.dart';
 import '../../modules/announcement/views/announcement_list_view.dart';
@@ -61,6 +63,7 @@ abstract class AppPages {
   static const MESSAGING = '/messaging';
   static const EDIT_PROFILE = '/profile/edit';
   static const CONTACT_US = '/support/contact';
+  static const AI_CHAT = '/ai/chat';
   static const SETTINGS = '/settings';
 
   static final routes = [
@@ -112,6 +115,13 @@ abstract class AppPages {
     GetPage(name: MESSAGING, page: () => const MessagingView()),
     GetPage(name: EDIT_PROFILE, page: () => const EditProfileView()),
     GetPage(name: CONTACT_US, page: () => const ContactUsView()),
+    GetPage(
+      name: AI_CHAT,
+      page: () => const AiChatView(),
+      binding: BindingsBuilder(
+        () => Get.lazyPut(() => AiChatController()),
+      ),
+    ),
     GetPage(
       name: SETTINGS,
       page: () => const SettingsView(),
