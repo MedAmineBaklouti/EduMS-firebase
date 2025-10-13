@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/behavior_model.dart';
@@ -23,12 +24,12 @@ class BehaviorDetailView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Behavior details'),
+        title: Text('behavior_detail_title'.tr),
         centerTitle: true,
         actions: [
           if (onEdit != null)
             IconButton(
-              tooltip: 'Edit behavior',
+              tooltip: 'behavior_detail_edit_tooltip'.tr,
               onPressed: () async {
                 await onEdit?.call();
               },
@@ -47,10 +48,10 @@ class BehaviorDetailView extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSectionCard(
               context,
-              title: 'Description',
+              title: 'behavior_detail_section_description'.tr,
               child: Text(
                 behavior.description.trim().isEmpty
-                    ? 'No description was provided for this behavior update.'
+                    ? 'behavior_detail_no_description'.tr
                     : behavior.description.trim(),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.6,
@@ -156,13 +157,15 @@ class BehaviorDetailView extends StatelessWidget {
               _buildHeroChip(
                 context,
                 icon: Icons.schedule,
-                label: 'Recorded $recordedLabel',
+                label: 'behavior_detail_chip_recorded'
+                    .trParams({'date': recordedLabel}),
               ),
               if (teacherLabel != null)
                 _buildHeroChip(
                   context,
                   icon: Icons.person_outline,
-                  label: 'Teacher: $teacherLabel',
+                  label: 'behavior_detail_chip_teacher'
+                      .trParams({'teacher': teacherLabel}),
                 ),
             ],
           ),
@@ -211,7 +214,7 @@ class BehaviorDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Behavior overview',
+              'behavior_detail_overview_title'.tr,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -363,18 +366,18 @@ class BehaviorDetailView extends StatelessWidget {
   String _behaviorTypeHeadline(BehaviorType type) {
     switch (type) {
       case BehaviorType.positive:
-        return 'Positive behavior';
+        return 'behavior_detail_summary_positive_title'.tr;
       case BehaviorType.negative:
-        return 'Needs attention';
+        return 'behavior_detail_summary_negative_title'.tr;
     }
   }
 
   String _behaviorTypeSummary() {
     switch (behavior.type) {
       case BehaviorType.positive:
-        return 'This positive note highlights progress, achievements, or conduct worth celebrating.';
+        return 'behavior_detail_summary_positive'.tr;
       case BehaviorType.negative:
-        return 'This entry flags a concern that may require follow-up, guidance, or additional support.';
+        return 'behavior_detail_summary_negative'.tr;
     }
   }
 

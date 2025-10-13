@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
 
 enum BehaviorType { positive, negative }
 
@@ -13,9 +14,9 @@ extension BehaviorTypeParser on BehaviorType {
   String get label {
     switch (this) {
       case BehaviorType.positive:
-        return 'Positive';
+        return 'behavior_type_positive'.tr;
       case BehaviorType.negative:
-        return 'Negative';
+        return 'behavior_type_negative'.tr;
     }
   }
 }

@@ -17,8 +17,8 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         title: Text(controller.editing == null
-            ? 'Add Behavior'
-            : 'Edit Behavior'),
+            ? 'behavior_form_title_add'.tr
+            : 'behavior_form_title_edit'.tr),
       ),
       body: Obx(() {
         final classes = controller.classes;
@@ -34,17 +34,16 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (classes.isEmpty)
-                const _InfoBanner(
+                _InfoBanner(
                   icon: Icons.info_outline,
-                  message:
-                      'No classes have been assigned to you yet. Please contact the administrator to link your profile to a class before recording behaviors.',
+                  message: 'behavior_form_info_no_classes'.tr,
                 ),
               if (classes.isNotEmpty) const SizedBox(height: 8),
               DropdownButtonFormField<SchoolClassModel?>(
                 value: selectedClass,
-                decoration: const InputDecoration(
-                  labelText: 'Class',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'behavior_form_field_class'.tr,
+                  border: const OutlineInputBorder(),
                 ),
                 items: classes
                     .map(
@@ -62,18 +61,17 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
               ),
               const SizedBox(height: 16),
               if (selectedClass != null && availableChildren.isEmpty)
-                const _InfoBanner(
+                _InfoBanner(
                   icon: Icons.groups_2_outlined,
-                  message:
-                      'There are no students registered for the selected class yet. Once students are added to this class you will be able to record their behaviors.',
+                  message: 'behavior_form_info_no_students'.tr,
                 ),
               if (selectedClass != null && availableChildren.isEmpty)
                 const SizedBox(height: 16),
               DropdownButtonFormField<ChildModel?>(
                 value: selectedChild,
-                decoration: const InputDecoration(
-                  labelText: 'Child',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'behavior_form_field_child'.tr,
+                  border: const OutlineInputBorder(),
                 ),
                 items: availableChildren
                     .map(
@@ -94,9 +92,9 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
               const SizedBox(height: 16),
               DropdownButtonFormField<BehaviorType>(
                 value: behaviorType,
-                decoration: const InputDecoration(
-                  labelText: 'Behavior type',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'behavior_form_field_type'.tr,
+                  border: const OutlineInputBorder(),
                 ),
                 items: BehaviorType.values
                     .map(
@@ -116,9 +114,9 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
               TextFormField(
                 controller: controller.descriptionController,
                 maxLines: 5,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'behavior_form_field_description'.tr,
+                  border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
               ),
@@ -146,7 +144,9 @@ class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {
                           isEditing ? Icons.save_outlined : Icons.send_rounded,
                           color: Colors.white,
                         ),
-                  label: Text(isSaving ? 'Saving...' : 'Save'),
+                  label: Text(
+                    isSaving ? 'common_saving'.tr : 'common_save'.tr,
+                  ),
                 ),
               ),
             ],
