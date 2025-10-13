@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../common/widgets/module_page_container.dart';
+import 'package:edums/core/widgets/module_page_container.dart';
 import '../controllers/admin_attendance_controller.dart';
 import '../models/child_attendance_summary.dart';
 import 'widgets/child_attendance_detail_content.dart';

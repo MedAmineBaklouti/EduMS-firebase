@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import 'package:edums/core/widgets/module_card.dart';
 import '../../../core/services/database_service.dart';
 import '../../../data/models/admin_model.dart';
 import '../../../data/models/pickup_model.dart';
 import '../../../data/models/subject_model.dart';
 import '../../../data/models/teacher_model.dart';
-import '../../common/widgets/module_card.dart';
 
 class PickupTicketDetailView extends StatelessWidget {
   PickupTicketDetailView({
