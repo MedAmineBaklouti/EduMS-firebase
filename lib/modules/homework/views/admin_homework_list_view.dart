@@ -20,7 +20,7 @@ class AdminHomeworkListView extends GetView<AdminHomeworkController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('All Homeworks'),
+        title: Text('homework_admin_list_title'.tr),
         centerTitle: true,
       ),
       body: ModulePageContainer(
@@ -39,12 +39,11 @@ class AdminHomeworkListView extends GetView<AdminHomeworkController> {
                       ? ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
+                          children: [
                             ModuleEmptyState(
                               icon: Icons.library_books_outlined,
-                              title: 'No homeworks match the filters',
-                              message:
-                                  'Adjust the filters above to explore assignments shared across classes.',
+                              title: 'homework_admin_empty_title'.tr,
+                              message: 'homework_admin_empty_message'.tr,
                             ),
                           ],
                         )
@@ -107,7 +106,7 @@ class _AdminHomeworkFilters extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Filter homeworks',
+                      'homework_filters_title'.tr,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -116,7 +115,7 @@ class _AdminHomeworkFilters extends StatelessWidget {
                       onPressed: hasFilters ? controller.clearFilters : null,
                       icon:
                           const Icon(Icons.filter_alt_off_outlined, size: 18),
-                      label: const Text('Clear'),
+                      label: Text('common_clear'.tr),
                     ),
                   ],
                 ),
@@ -128,14 +127,18 @@ class _AdminHomeworkFilters extends StatelessWidget {
                     children: [
                       if (hasClassFilter)
                         _ActiveFilterChip(
-                          label:
-                              'Class: ${controller.className(controller.classFilter.value!)}',
+                          label: 'homework_filter_chip_class'.trParams({
+                            'class': controller
+                                .className(controller.classFilter.value!),
+                          }),
                           onRemoved: () => controller.setClassFilter(null),
                         ),
                       if (hasTeacherFilter)
                         _ActiveFilterChip(
-                          label:
-                              'Teacher: ${controller.teacherName(controller.teacherFilter.value!)}',
+                          label: 'homework_filter_chip_teacher'.trParams({
+                            'teacher': controller
+                                .teacherName(controller.teacherFilter.value!),
+                          }),
                           onRemoved: () => controller.setTeacherFilter(null),
                         ),
                     ],
@@ -155,15 +158,15 @@ class _AdminHomeworkFilters extends StatelessWidget {
                           width: fieldWidth,
                           child: DropdownButtonFormField<String?>(
                             value: controller.classFilter.value,
-                            decoration: const InputDecoration(
-                              labelText: 'Class',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: 'homework_filter_label_class'.tr,
+                              border: const OutlineInputBorder(),
                             ),
-                            hint: const Text('All classes'),
+                            hint: Text('homework_filter_all_classes'.tr),
                             items: [
-                              const DropdownMenuItem<String?>(
+                              DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text('All classes'),
+                                child: Text('homework_filter_all_classes'.tr),
                               ),
                               ...controller.classes.map(
                                 (item) => DropdownMenuItem<String?>(
@@ -179,15 +182,15 @@ class _AdminHomeworkFilters extends StatelessWidget {
                           width: fieldWidth,
                           child: DropdownButtonFormField<String?>(
                             value: controller.teacherFilter.value,
-                            decoration: const InputDecoration(
-                              labelText: 'Teacher',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: 'homework_filter_label_teacher'.tr,
+                              border: const OutlineInputBorder(),
                             ),
-                            hint: const Text('All teachers'),
+                            hint: Text('homework_filter_all_teachers'.tr),
                             items: [
-                              const DropdownMenuItem<String?>(
+                              DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text('All teachers'),
+                                child: Text('homework_filter_all_teachers'.tr),
                               ),
                               ...controller.teachers.map(
                                 (item) => DropdownMenuItem<String?>(
@@ -261,8 +264,12 @@ class _AdminHomeworkCard extends StatelessWidget {
         homework.completionByChildId.values.where((v) => v).length;
     final totalCount = totalChildren ?? homework.completionByChildId.length;
     final completionLabel = totalCount > 0
-        ? '$completedCount/$totalCount completed'
-        : '$completedCount completed';
+        ? 'homework_completion_summary_full'.trParams({
+            'completed': '$completedCount',
+            'total': '$totalCount',
+          })
+        : 'homework_completion_summary_partial'
+            .trParams({'completed': '$completedCount'});
     return ModuleCard(
       onTap: onTap,
       child: Column(
@@ -290,7 +297,8 @@ class _AdminHomeworkCard extends StatelessWidget {
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    'Due ${dateFormat.format(homework.dueDate)}',
+                    'homework_due_date'
+                        .trParams({'date': dateFormat.format(homework.dueDate)}),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,

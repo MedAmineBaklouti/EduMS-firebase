@@ -17,7 +17,9 @@ class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         title: Text(
-          controller.editing == null ? 'Add Homework' : 'Edit Homework',
+          controller.editing == null
+              ? 'homework_form_title_add'.tr
+              : 'homework_form_title_edit'.tr,
         ),
       ),
       body: Obx(() {
@@ -33,27 +35,27 @@ class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {
             children: [
               TextFormField(
                 controller: controller.titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'homework_form_field_title'.tr,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: controller.descriptionController,
                 maxLines: 6,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'homework_form_field_description'.tr,
+                  border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<SchoolClassModel?>(
                 value: selectedClass,
-                decoration: const InputDecoration(
-                  labelText: 'Class',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'homework_form_field_class'.tr,
+                  border: const OutlineInputBorder(),
                 ),
                 items: classes
                     .map(
@@ -88,8 +90,9 @@ class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {
                 icon: const Icon(Icons.calendar_today),
                 label: Text(
                   dueDate == null
-                      ? 'Select due date'
-                      : 'Due ${dateFormat.format(dueDate)}',
+                      ? 'homework_form_select_due_date'.tr
+                      : 'homework_form_due_date'
+                          .trParams({'date': dateFormat.format(dueDate)}),
                 ),
               ),
               const SizedBox(height: 24),
@@ -116,7 +119,11 @@ class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {
                           isEditing ? Icons.save_outlined : Icons.send_rounded,
                           color: Colors.white,
                         ),
-                  label: Text(isSaving ? 'Saving...' : 'Save'),
+                  label: Text(
+                    isSaving
+                        ? 'homework_form_action_saving'.tr
+                        : 'homework_form_action_save'.tr,
+                  ),
                 ),
               ),
             ],
