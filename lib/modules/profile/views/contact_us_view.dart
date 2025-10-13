@@ -46,27 +46,22 @@ class _ContactUsViewState extends State<ContactUsView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
-    final primaryContainer = theme.colorScheme.primaryContainer;
-    final onPrimaryContainer = theme.colorScheme.onPrimaryContainer;
+    final scheme = theme.colorScheme;
+    final primary = scheme.primary;
+    final onPrimary = scheme.onPrimary;
+    final neutralCardColor = scheme.surfaceVariant.withOpacity(
+      theme.brightness == Brightness.dark ? 0.45 : 0.6,
+    );
+    final onNeutralCard = scheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Contact us'),
         backgroundColor: primary,
-        foregroundColor: theme.colorScheme.onPrimary,
+        foregroundColor: onPrimary,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              primary.withOpacity(0.05),
-              primary.withOpacity(0.02),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: scheme.surface,
         width: double.infinity,
         child: Center(
           child: SingleChildScrollView(
@@ -94,12 +89,12 @@ class _ContactUsViewState extends State<ContactUsView> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.onPrimary.withOpacity(0.12),
+                              color: onPrimary.withOpacity(0.12),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.support_agent_outlined,
-                              color: theme.colorScheme.onPrimary,
+                              color: onPrimary,
                               size: 32,
                             ),
                           ),
@@ -108,7 +103,7 @@ class _ContactUsViewState extends State<ContactUsView> {
                             'Get in touch with EduMS',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.headlineSmall?.copyWith(
-                              color: theme.colorScheme.onPrimary,
+                              color: onPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -117,7 +112,7 @@ class _ContactUsViewState extends State<ContactUsView> {
                             'We are here to help! Reach out to our team using your preferred method below.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                              color: onPrimary.withOpacity(0.85),
                             ),
                           ),
                         ],
@@ -126,53 +121,40 @@ class _ContactUsViewState extends State<ContactUsView> {
                   ),
                   const SizedBox(height: 24),
                   Card(
-                    elevation: 10,
-                    shadowColor: primary.withOpacity(0.18),
+                    elevation: 8,
+                    shadowColor: scheme.shadow.withOpacity(0.08),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    color: primaryContainer,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        gradient: LinearGradient(
-                          colors: [
-                            primaryContainer,
-                            primaryContainer.withOpacity(0.92),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                    color: neutralCardColor,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 32,
+                        horizontal: 24,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 32,
-                          horizontal: 24,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Contact information',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: onPrimaryContainer,
-                                fontWeight: FontWeight.w700,
-                              ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Contact information',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: onNeutralCard,
+                              fontWeight: FontWeight.w700,
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Choose one of the contact options below to reach our team directly.',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: onPrimaryContainer.withOpacity(0.85),
-                              ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Choose one of the contact options below to reach our team directly.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: onNeutralCard.withOpacity(0.8),
                             ),
-                            const SizedBox(height: 28),
-                            ..._buildContactActions(theme),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 28),
+                          ..._buildContactActions(theme, onNeutralCard),
+                        ],
                       ),
                     ),
                   ),
@@ -185,16 +167,16 @@ class _ContactUsViewState extends State<ContactUsView> {
     );
   }
 
-  List<Widget> _buildContactActions(ThemeData theme) {
+  List<Widget> _buildContactActions(ThemeData theme, Color onCardColor) {
     final primary = theme.colorScheme.primary;
 
     final widgets = <Widget>[];
     for (var i = 0; i < _actions.length; i++) {
-      widgets.add(_buildContactAction(theme, _actions[i], primary));
+      widgets.add(_buildContactAction(theme, _actions[i], primary, onCardColor));
       if (i != _actions.length - 1) {
         widgets.add(
           Divider(
-            color: theme.colorScheme.onPrimaryContainer.withOpacity(0.16),
+            color: theme.colorScheme.outlineVariant.withOpacity(0.35),
           ),
         );
       }
@@ -206,15 +188,14 @@ class _ContactUsViewState extends State<ContactUsView> {
     ThemeData theme,
     _ContactActionData action,
     Color primary,
+    Color onCardColor,
   ) {
-    final onPrimaryContainer = theme.colorScheme.onPrimaryContainer;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _launchUri(action.uri),
         borderRadius: BorderRadius.circular(18),
-        splashColor: onPrimaryContainer.withOpacity(0.12),
+        splashColor: onCardColor.withOpacity(0.08),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
@@ -224,18 +205,11 @@ class _ContactUsViewState extends State<ContactUsView> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      onPrimaryContainer.withOpacity(0.12),
-                      onPrimaryContainer.withOpacity(0.06),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: primary.withOpacity(0.12),
                 ),
                 child: Icon(
                   action.icon,
-                  color: onPrimaryContainer,
+                  color: primary,
                   size: 24,
                 ),
               ),
@@ -248,7 +222,7 @@ class _ContactUsViewState extends State<ContactUsView> {
                       action.label,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: onPrimaryContainer,
+                        color: onCardColor,
                       ),
                     ),
                     if (action.description != null) ...[
@@ -256,7 +230,7 @@ class _ContactUsViewState extends State<ContactUsView> {
                       Text(
                         action.description!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: onPrimaryContainer.withOpacity(0.75),
+                          color: onCardColor.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -266,13 +240,13 @@ class _ContactUsViewState extends State<ContactUsView> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: onPrimaryContainer.withOpacity(0.08),
+                  color: onCardColor.withOpacity(0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: onPrimaryContainer,
+                  color: onCardColor,
                 ),
               ),
             ],

@@ -18,11 +18,17 @@ class DashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+      color: isDarkMode
+          ? theme.colorScheme.surfaceVariant.withOpacity(0.4)
+          : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/auth_service.dart';
-import '../../common/widgets/module_page_container.dart';
 
 class EditProfileView extends StatefulWidget {
   const EditProfileView({super.key});
@@ -57,7 +56,8 @@ class _EditProfileViewState extends State<EditProfileView> {
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: onPrimary,
       ),
-      body: ModulePageContainer(
+      body: Container(
+        color: theme.colorScheme.surface,
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           child: Form(
@@ -81,10 +81,10 @@ class _EditProfileViewState extends State<EditProfileView> {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: onPrimary,
+                              color: Colors.white,
                             ),
                           )
-                        : Icon(Icons.save_outlined, color: onPrimary),
+                        : const Icon(Icons.save_outlined, color: Colors.white),
                     label: Text(_isSubmitting ? 'Saving...' : 'Save changes'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -163,6 +163,46 @@ class _EditProfileViewState extends State<EditProfileView> {
     );
   }
 
+  InputDecoration _buildInputDecoration(
+    ThemeData theme, {
+    required String label,
+    IconData? prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    final scheme = theme.colorScheme;
+    final baseBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(
+        color: scheme.outlineVariant.withOpacity(0.4),
+      ),
+    );
+
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: prefixIcon != null
+          ? Icon(
+              prefixIcon,
+              color: scheme.onSurfaceVariant,
+            )
+          : null,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: scheme.surfaceVariant.withOpacity(
+        theme.brightness == Brightness.dark ? 0.35 : 0.6,
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      border: baseBorder,
+      enabledBorder: baseBorder,
+      focusedBorder: baseBorder.copyWith(
+        borderSide: BorderSide(
+          color: scheme.primary,
+          width: 2,
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmailField(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,10 +216,10 @@ class _EditProfileViewState extends State<EditProfileView> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _emailController,
-          decoration: const InputDecoration(
-            labelText: 'Email address',
-            prefixIcon: Icon(Icons.email_outlined),
-            border: OutlineInputBorder(),
+          decoration: _buildInputDecoration(
+            theme,
+            label: 'Email address',
+            prefixIcon: Icons.email_outlined,
           ),
           keyboardType: TextInputType.emailAddress,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -222,15 +262,16 @@ class _EditProfileViewState extends State<EditProfileView> {
         TextFormField(
           controller: _currentPasswordController,
           obscureText: !_showCurrentPassword,
-          decoration: InputDecoration(
-            labelText: 'Current password',
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.lock_outline),
+          decoration: _buildInputDecoration(
+            theme,
+            label: 'Current password',
+            prefixIcon: Icons.lock_outline,
             suffixIcon: IconButton(
               icon: Icon(
                 _showCurrentPassword
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               onPressed: () {
                 setState(() {
@@ -246,15 +287,16 @@ class _EditProfileViewState extends State<EditProfileView> {
         TextFormField(
           controller: _newPasswordController,
           obscureText: !_showNewPassword,
-          decoration: InputDecoration(
-            labelText: 'New password',
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.lock_reset_outlined),
+          decoration: _buildInputDecoration(
+            theme,
+            label: 'New password',
+            prefixIcon: Icons.lock_reset_outlined,
             suffixIcon: IconButton(
               icon: Icon(
                 _showNewPassword
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               onPressed: () {
                 setState(() {
@@ -280,15 +322,16 @@ class _EditProfileViewState extends State<EditProfileView> {
         TextFormField(
           controller: _confirmPasswordController,
           obscureText: !_showConfirmPassword,
-          decoration: InputDecoration(
-            labelText: 'Confirm new password',
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.check_circle_outline),
+          decoration: _buildInputDecoration(
+            theme,
+            label: 'Confirm new password',
+            prefixIcon: Icons.check_circle_outline,
             suffixIcon: IconButton(
               icon: Icon(
                 _showConfirmPassword
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
               onPressed: () {
                 setState(() {
