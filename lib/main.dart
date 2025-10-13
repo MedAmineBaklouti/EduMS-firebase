@@ -14,9 +14,16 @@ Future<void> main() async {
   // Firebase services. Calling initializeApp early ensures the plugin channel
   // is ready when the background isolate starts.
   try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    print('Firebase init failed: $e');
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (e, stackTrace) {
+    // Surface the initialization failure instead of silently continuing. Most
+    // services depend on Firebase being ready, so rethrowing gives clearer
+    // feedback during startup failures.
+    debugPrint('Firebase init failed: $e');
+    debugPrintStack(stackTrace: stackTrace);
+    rethrow;
   }
 
   // Ensure background push notifications are handled when the app is
