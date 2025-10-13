@@ -23,7 +23,7 @@ class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Student Behaviors'),
+        title: Text('behavior_teacher_title'.tr),
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -32,7 +32,7 @@ class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
           Get.to(() => const TeacherBehaviorFormView());
         },
         icon: const Icon(Icons.add),
-        label: const Text('New record'),
+        label: Text('behavior_teacher_new_record'.tr),
       ),
       body: ModulePageContainer(
         child: Column(
@@ -50,12 +50,13 @@ class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
                       ? ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
+                          children: [
                             ModuleEmptyState(
                               icon: Icons.emoji_people_outlined,
-                              title: 'No behaviors recorded yet',
-                              message:
-                                  'Tap the “New record” button to capture your first classroom observation.',
+                              title: 'behavior_teacher_empty_title'.tr,
+                              message: 'behavior_teacher_empty_message'.trParams({
+                                'action': 'behavior_teacher_new_record'.tr,
+                              }),
                             ),
                           ],
                         )
@@ -74,13 +75,13 @@ class TeacherBehaviorListView extends GetView<TeacherBehaviorController> {
                                 alignment: Alignment.centerLeft,
                                 color: Theme.of(context).colorScheme.primary,
                                 icon: Icons.edit_outlined,
-                                label: 'Edit',
+                                label: 'common_edit'.tr,
                               ),
                               secondaryBackground: SwipeActionBackground(
                                 alignment: Alignment.centerRight,
                                 color: Theme.of(context).colorScheme.error,
                                 icon: Icons.delete_outline,
-                                label: 'Delete',
+                                label: 'common_delete'.tr,
                               ),
                               confirmDismiss: (direction) async {
                                 if (direction == DismissDirection.startToEnd) {
@@ -145,7 +146,7 @@ class _TeacherBehaviorFilters extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Filter behaviors',
+                    'behavior_filters_title'.tr,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -157,7 +158,7 @@ class _TeacherBehaviorFilters extends StatelessWidget {
                     return TextButton.icon(
                       onPressed: hasFilters ? controller.clearFilters : null,
                       icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                      label: const Text('Clear'),
+                      label: Text('common_clear'.tr),
                     );
                   }),
                 ],
@@ -170,7 +171,10 @@ class _TeacherBehaviorFilters extends StatelessWidget {
                   chips.add(
                     _buildActiveFilterChip(
                       context,
-                      label: 'Class: ${controller.classNameFor(classFilter)}',
+                      label: 'behavior_filter_chip_class'.trParams({
+                        'class': controller.classNameFor(classFilter) ??
+                            'behavior_filter_label_class'.tr,
+                      }),
                       onRemoved: () => controller.setClassFilter(null),
                     ),
                   );
@@ -180,7 +184,8 @@ class _TeacherBehaviorFilters extends StatelessWidget {
                   chips.add(
                     _buildActiveFilterChip(
                       context,
-                      label: 'Type: ${_behaviorTypeLabel(typeFilter)}',
+                      label: 'behavior_filter_chip_type'
+                          .trParams({'type': _behaviorTypeLabel(typeFilter)}),
                       onRemoved: () => controller.setTypeFilter(null),
                     ),
                   );
@@ -208,14 +213,15 @@ class _TeacherBehaviorFilters extends StatelessWidget {
                       final classFilter = controller.classFilter.value;
                       return DropdownButtonFormField<String?>(
                         value: classFilter,
-                        decoration: const InputDecoration(
-                          labelText: 'Filter by class',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: 'behavior_teacher_filter_label_class'.tr,
+                          border: const OutlineInputBorder(),
                         ),
                         items: [
-                          const DropdownMenuItem<String?>(
+                          DropdownMenuItem<String?>(
                             value: null,
-                            child: Text('All classes'),
+                            child:
+                                Text('behavior_filter_all_classes'.tr),
                           ),
                           ...classes.map(
                             (item) => DropdownMenuItem<String?>(
@@ -234,22 +240,23 @@ class _TeacherBehaviorFilters extends StatelessWidget {
                       final typeFilter = controller.typeFilter.value;
                       return DropdownButtonFormField<BehaviorType?>(
                         value: typeFilter,
-                        decoration: const InputDecoration(
-                          labelText: 'Filter by type',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: 'behavior_teacher_filter_label_type'.tr,
+                          border: const OutlineInputBorder(),
                         ),
-                        items: const [
+                        items: [
                           DropdownMenuItem<BehaviorType?>(
                             value: null,
-                            child: Text('All types'),
+                            child:
+                                Text('behavior_filter_all_types'.tr),
                           ),
                           DropdownMenuItem<BehaviorType?>(
                             value: BehaviorType.positive,
-                            child: Text('Positive'),
+                            child: Text('behavior_type_positive'.tr),
                           ),
                           DropdownMenuItem<BehaviorType?>(
                             value: BehaviorType.negative,
-                            child: Text('Negative'),
+                            child: Text('behavior_type_negative'.tr),
                           ),
                         ],
                         onChanged: controller.setTypeFilter,
@@ -290,12 +297,7 @@ class _TeacherBehaviorFilters extends StatelessWidget {
   }
 
   String _behaviorTypeLabel(BehaviorType type) {
-    switch (type) {
-      case BehaviorType.positive:
-        return 'Positive';
-      case BehaviorType.negative:
-        return 'Negative';
-    }
+    return type.label;
   }
 }
 
@@ -305,15 +307,15 @@ Future<bool> _confirmDelete(BuildContext context) async {
     builder: (dialogContext) {
       final dialogTheme = Theme.of(dialogContext);
       return AlertDialog(
-        title: const Text('Delete behavior'),
-        content: const Text(
-          'Are you sure you want to delete this behavior record?',
+        title: Text('behavior_teacher_confirm_delete_title'.tr),
+        content: Text(
+          'behavior_teacher_confirm_delete_message'.tr,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
-              'Cancel',
+              'common_cancel'.tr,
               style:
                   TextStyle(color: dialogTheme.colorScheme.onSurfaceVariant),
             ),
@@ -321,7 +323,7 @@ Future<bool> _confirmDelete(BuildContext context) async {
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
-              'Delete',
+              'common_delete'.tr,
               style: TextStyle(color: dialogTheme.colorScheme.error),
             ),
           ),
@@ -395,7 +397,7 @@ class _BehaviorCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             behavior.description.isEmpty
-                ? 'No description provided.'
+                ? 'behavior_card_no_description'.tr
                 : behavior.description,
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
           ),
@@ -406,7 +408,8 @@ class _BehaviorCard extends StatelessWidget {
               const Icon(Icons.schedule, size: 16),
               const SizedBox(width: 4),
               Text(
-                'Recorded ${dateFormat.format(behavior.createdAt)}',
+                'behavior_card_recorded'.trParams(
+                    {'date': dateFormat.format(behavior.createdAt)}),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,

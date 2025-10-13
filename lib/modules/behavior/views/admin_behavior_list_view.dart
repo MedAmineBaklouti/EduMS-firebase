@@ -21,7 +21,7 @@ class AdminBehaviorListView extends GetView<AdminBehaviorController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Behavior Oversight'),
+        title: Text('behavior_admin_title'.tr),
         centerTitle: true,
       ),
       body: ModulePageContainer(
@@ -40,12 +40,11 @@ class AdminBehaviorListView extends GetView<AdminBehaviorController> {
                       ? ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
+                          children: [
                             ModuleEmptyState(
                               icon: Icons.fact_check_outlined,
-                              title: 'No behaviors match the filters',
-                              message:
-                                  'Adjust the filters above to explore behavior records shared by teachers across the school.',
+                              title: 'behavior_admin_empty_title'.tr,
+                              message: 'behavior_admin_empty_message'.tr,
                             ),
                           ],
                         )
@@ -97,7 +96,7 @@ class _AdminBehaviorFilters extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Filter behaviors',
+                'behavior_filters_title'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -110,7 +109,7 @@ class _AdminBehaviorFilters extends StatelessWidget {
                 return TextButton.icon(
                   onPressed: hasFilters ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 );
               }),
             ],
@@ -120,22 +119,26 @@ class _AdminBehaviorFilters extends StatelessWidget {
             final chips = <Widget>[];
             final classId = controller.classFilter.value;
             if (classId != null && classId.isNotEmpty) {
-              final className = controller.className(classId) ?? 'Class';
+              final className = controller.className(classId) ??
+                  'behavior_filter_label_class'.tr;
               chips.add(
                 _buildActiveFilterChip(
                   context,
-                  label: 'Class: $className',
+                  label: 'behavior_filter_chip_class'
+                      .trParams({'class': className}),
                   onRemoved: () => controller.setClassFilter(null),
                 ),
               );
             }
             final teacherId = controller.teacherFilter.value;
             if (teacherId != null && teacherId.isNotEmpty) {
-              final teacherName = controller.teacherName(teacherId) ?? 'Teacher';
+              final teacherName = controller.teacherName(teacherId) ??
+                  'behavior_filter_label_teacher'.tr;
               chips.add(
                 _buildActiveFilterChip(
                   context,
-                  label: 'Teacher: $teacherName',
+                  label: 'behavior_filter_chip_teacher'
+                      .trParams({'teacher': teacherName}),
                   onRemoved: () => controller.setTeacherFilter(null),
                 ),
               );
@@ -145,7 +148,8 @@ class _AdminBehaviorFilters extends StatelessWidget {
               chips.add(
                 _buildActiveFilterChip(
                   context,
-                  label: 'Type: ${_behaviorTypeLabel(type)}',
+                  label: 'behavior_filter_chip_type'
+                      .trParams({'type': _behaviorTypeLabel(type)}),
                   onRemoved: () => controller.setTypeFilter(null),
                 ),
               );
@@ -187,14 +191,15 @@ class _AdminBehaviorFilters extends StatelessWidget {
                           selected == null || selected.isEmpty ? null : selected;
                       return DropdownButtonFormField<String?>(
                         value: value,
-                        decoration: const InputDecoration(
-                          labelText: 'Class',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: 'behavior_filter_label_class'.tr,
+                          border: const OutlineInputBorder(),
                         ),
                         items: [
-                          const DropdownMenuItem<String?>(
+                          DropdownMenuItem<String?>(
                             value: null,
-                            child: Text('All classes'),
+                            child:
+                                Text('behavior_filter_all_classes'.tr),
                           ),
                           ...classes.map(
                             (item) => DropdownMenuItem<String?>(
@@ -216,14 +221,15 @@ class _AdminBehaviorFilters extends StatelessWidget {
                           selected == null || selected.isEmpty ? null : selected;
                       return DropdownButtonFormField<String?>(
                         value: value,
-                        decoration: const InputDecoration(
-                          labelText: 'Teacher',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: 'behavior_filter_label_teacher'.tr,
+                          border: const OutlineInputBorder(),
                         ),
                         items: [
-                          const DropdownMenuItem<String?>(
+                          DropdownMenuItem<String?>(
                             value: null,
-                            child: Text('All teachers'),
+                            child:
+                                Text('behavior_filter_all_teachers'.tr),
                           ),
                           ...teachers.map(
                             (item) => DropdownMenuItem<String?>(
@@ -242,22 +248,23 @@ class _AdminBehaviorFilters extends StatelessWidget {
                       final type = controller.typeFilter.value;
                       return DropdownButtonFormField<BehaviorType?>(
                         value: type,
-                        decoration: const InputDecoration(
-                          labelText: 'Type',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          labelText: 'behavior_filter_label_type'.tr,
+                          border: const OutlineInputBorder(),
                         ),
-                        items: const [
+                        items: [
                           DropdownMenuItem<BehaviorType?>(
                             value: null,
-                            child: Text('All types'),
+                            child:
+                                Text('behavior_filter_all_types'.tr),
                           ),
                           DropdownMenuItem<BehaviorType?>(
                             value: BehaviorType.positive,
-                            child: Text('Positive'),
+                            child: Text('behavior_type_positive'.tr),
                           ),
                           DropdownMenuItem<BehaviorType?>(
                             value: BehaviorType.negative,
-                            child: Text('Negative'),
+                            child: Text('behavior_type_negative'.tr),
                           ),
                         ],
                         onChanged: controller.setTypeFilter,
@@ -298,12 +305,7 @@ class _AdminBehaviorFilters extends StatelessWidget {
   }
 
   String _behaviorTypeLabel(BehaviorType type) {
-    switch (type) {
-      case BehaviorType.positive:
-        return 'Positive';
-      case BehaviorType.negative:
-        return 'Negative';
-    }
+    return type.label;
   }
 }
 
@@ -383,7 +385,7 @@ class _AdminBehaviorCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             behavior.description.isEmpty
-                ? 'No description provided.'
+                ? 'behavior_card_no_description'.tr
                 : behavior.description,
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
           ),
