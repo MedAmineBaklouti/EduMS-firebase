@@ -68,7 +68,7 @@ class _DashboardAnnouncementsState extends State<DashboardAnnouncements> {
             height: 180,
             child: Center(
               child: Text(
-                'Unable to load announcements',
+                'dashboard_announcements_error'.tr,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -366,7 +366,7 @@ class _AnnouncementSlide extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final resolvedTitle = announcement.title.trim().isEmpty
-        ? 'Announcement'
+        ? 'dashboard_announcements_default_title'.tr
         : announcement.title.trim();
 
     return Padding(
@@ -435,7 +435,7 @@ class _AnnouncementSlide extends StatelessWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    'NEW',
+                                    'dashboard_announcements_badge_new'.tr,
                                     style: theme.textTheme.labelSmall?.copyWith(
                                       color: theme.colorScheme.onPrimary,
                                       fontWeight: FontWeight.w700,
@@ -464,7 +464,7 @@ class _AnnouncementSlide extends StatelessWidget {
                                 size: 18,
                                 color: theme.colorScheme.onPrimary,
                               ),
-                              label: const Text('Show all'),
+                              label: Text('dashboard_announcements_show_all'.tr),
                             ),
                           ],
                         ],
@@ -549,7 +549,7 @@ class _EmptyAnnouncements extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Announcements',
+                  'dashboard_announcements_title'.tr,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -558,13 +558,13 @@ class _EmptyAnnouncements extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onShowAll,
                     icon: const Icon(Icons.open_in_new, size: 18),
-                    label: const Text('Show all'),
+                    label: Text('dashboard_announcements_show_all'.tr),
                   ),
               ],
             ),
             const Spacer(),
             Text(
-              'No announcements right now.\nCheck back soon for updates.',
+              'dashboard_announcements_empty'.tr,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),

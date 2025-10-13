@@ -15,7 +15,7 @@ class RoleDashboard extends StatefulWidget {
   const RoleDashboard({
     super.key,
     required this.cards,
-    required this.roleName,
+    required this.roleNameKey,
     required this.onLogout,
     this.onMessagesTap,
     this.announcementAudience,
@@ -24,7 +24,7 @@ class RoleDashboard extends StatefulWidget {
   });
 
   final List<DashboardCard> cards;
-  final String roleName;
+  final String roleNameKey;
   final VoidCallback onLogout;
   final VoidCallback? onMessagesTap;
   final String? announcementAudience;
@@ -87,6 +87,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final roleName = widget.roleNameKey.tr;
     final primary = theme.colorScheme.primary;
     final onPrimary = theme.colorScheme.onPrimary;
     final dashboardBackgroundAsset = theme.brightness == Brightness.dark
@@ -116,16 +117,17 @@ class _RoleDashboardState extends State<RoleDashboard> {
               final formattedFromEmail = _formatNameFromEmail(email);
               resolvedUserName = formattedFromEmail.isNotEmpty
                   ? formattedFromEmail
-                  : '${widget.roleName} user';
+                  : 'role_dashboard_user_placeholder'.trParams({'role': roleName});
             } else {
-              resolvedUserName = '${widget.roleName} user';
+              resolvedUserName =
+                  'role_dashboard_user_placeholder'.trParams({'role': roleName});
             }
           }
         }
 
         return Scaffold(
           drawer: _DashboardDrawer(
-            roleName: widget.roleName,
+            roleName: roleName,
             onLogout: widget.onLogout,
             userName: resolvedUserName,
           ),
@@ -134,7 +136,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
             backgroundColor: primary,
             foregroundColor: onPrimary,
             title: Text(
-              '${widget.roleName} Dashboard',
+              'role_dashboard_title'.trParams({'role': roleName}),
               style: theme.textTheme.titleLarge
                   ?.copyWith(color: onPrimary, fontWeight: FontWeight.bold),
             ),
@@ -142,7 +144,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
               builder: (context) => IconButton(
                 icon: const Icon(Icons.menu),
                 onPressed: () => Scaffold.of(context).openDrawer(),
-                tooltip: 'Menu',
+                tooltip: 'common_menu'.tr,
               ),
             ),
             actions: [
@@ -192,7 +194,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Menu',
+                                'role_dashboard_menu'.tr,
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleLarge
@@ -227,7 +229,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Menu',
+                              'role_dashboard_menu'.tr,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleLarge
@@ -287,7 +289,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
       return IconButton(
         icon: const Icon(Icons.message_outlined),
         onPressed: widget.onMessagesTap,
-        tooltip: 'Messages',
+        tooltip: 'common_messages'.tr,
       );
     }
 
@@ -436,7 +438,7 @@ class _DashboardDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Quick access to upcoming features',
+                    'drawer_quick_access'.tr,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: onPrimary.withOpacity(0.8),
                     ),
@@ -459,27 +461,28 @@ class _DashboardDrawer extends StatelessWidget {
                   children: [
                     _DashboardDrawerItem(
                       icon: Icons.settings_outlined,
-                      label: 'Settings',
+                      labelKey: 'drawer_settings',
                       onTap: () => _openSettings(context),
                     ),
                     _DashboardDrawerItem(
                       icon: Icons.person_outline,
-                      label: 'Edit profile',
+                      labelKey: 'drawer_edit_profile',
                       onTap: () => _openEditProfile(context),
                     ),
                     _DashboardDrawerItem(
                       icon: Icons.smart_toy_outlined,
-                      label: 'Ask something',
-                      onTap: () => _showComingSoon(context, 'Ask something'),
+                      labelKey: 'drawer_ask_something',
+                      onTap: () =>
+                          _showComingSoon(context, 'drawer_ask_something'),
                     ),
                     _DashboardDrawerItem(
                       icon: Icons.contact_support_outlined,
-                      label: 'Contact us',
+                      labelKey: 'drawer_contact_us',
                       onTap: () => _openContactUs(context),
                     ),
                     _DashboardDrawerItem(
                       icon: Icons.logout,
-                      label: 'Logout',
+                      labelKey: 'drawer_logout',
                       onTap: () {
                         Navigator.of(context).pop();
                         onLogout();
@@ -488,7 +491,7 @@ class _DashboardDrawer extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'More tools coming soon',
+                      'drawer_more_tools'.tr,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
@@ -503,10 +506,11 @@ class _DashboardDrawer extends StatelessWidget {
     );
   }
 
-  void _showComingSoon(BuildContext context, String featureName) {
+  void _showComingSoon(BuildContext context, String featureKey) {
+    final featureName = featureKey.tr;
     Get.snackbar(
-      'Coming soon',
-      '$featureName will be available soon!',
+      'drawer_coming_soon_title'.tr,
+      'drawer_coming_soon_message'.trParams({'feature': featureName}),
       snackPosition: SnackPosition.BOTTOM,
       margin: const EdgeInsets.all(16),
     );
@@ -531,13 +535,13 @@ class _DashboardDrawer extends StatelessWidget {
 class _DashboardDrawerItem extends StatelessWidget {
   const _DashboardDrawerItem({
     required this.icon,
-    required this.label,
+    required this.labelKey,
     required this.onTap,
     this.isDestructive = false,
   });
 
   final IconData icon;
-  final String label;
+  final String labelKey;
   final VoidCallback onTap;
   final bool isDestructive;
 
@@ -564,7 +568,7 @@ class _DashboardDrawerItem extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    label,
+                    labelKey.tr,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w600,

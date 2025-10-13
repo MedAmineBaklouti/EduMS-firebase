@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
 
     return Obx(
       () => GetMaterialApp(
-        title: 'School Management',
+        title: 'app_title'.tr,
         debugShowCheckedModeBanner: false,
 
         // Routing

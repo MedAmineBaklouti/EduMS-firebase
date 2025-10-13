@@ -12,7 +12,7 @@ class ParentDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RoleDashboard(
-      roleName: 'Parent',
+      roleNameKey: 'role_parent',
       onLogout: _controller.logout,
       onMessagesTap: () => Get.toNamed(AppPages.MESSAGING),
       announcementAudience: 'parents',
@@ -20,36 +20,36 @@ class ParentDashboard extends StatelessWidget {
       cards: [
         DashboardCard(
           icon: Icons.menu_book,
-          title: 'Courses',
-          subtitle: 'View class materials',
+          title: 'dashboard_card_courses_title'.tr,
+          subtitle: 'dashboard_card_courses_parent_subtitle'.tr,
           color: Colors.teal,
           onTap: () => Get.toNamed(AppPages.PARENT_COURSES),
         ),
         DashboardCard(
           icon: Icons.assignment,
-          title: 'Homework',
-          subtitle: 'View assignments',
+          title: 'dashboard_card_homework_title'.tr,
+          subtitle: 'dashboard_card_homework_parent_subtitle'.tr,
           color: Colors.green,
           onTap: () => Get.toNamed(AppPages.PARENT_HOMEWORK),
         ),
         DashboardCard(
           icon: Icons.calendar_today,
-          title: 'Attendance',
-          subtitle: 'View records',
+          title: 'dashboard_card_attendance_title'.tr,
+          subtitle: 'dashboard_card_attendance_parent_subtitle'.tr,
           color: Colors.orange,
           onTap: () => Get.toNamed(AppPages.PARENT_ATTENDANCE),
         ),
         DashboardCard(
           icon: Icons.emoji_people,
-          title: 'Behavior',
-          subtitle: 'View reports',
+          title: 'dashboard_card_behavior_title'.tr,
+          subtitle: 'dashboard_card_behavior_parent_subtitle'.tr,
           color: Colors.red,
           onTap: () => Get.toNamed(AppPages.PARENT_BEHAVIOR),
         ),
         DashboardCard(
           icon: Icons.directions_bus,
-          title: 'Pickup',
-          subtitle: 'Transportation updates',
+          title: 'dashboard_card_pickup_title'.tr,
+          subtitle: 'dashboard_card_pickup_parent_subtitle'.tr,
           color: Colors.indigo,
           onTap: () => Get.toNamed(AppPages.PARENT_PICKUP),
         ),
