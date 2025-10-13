@@ -341,6 +341,115 @@ class AppTranslations extends Translations {
           'announcement_pdf_download_failed': 'Download failed',
           'announcement_pdf_download_error':
               'Unable to generate the PDF. @error',
+          'courses_title': 'Courses',
+          'courses_my_title': 'My Courses',
+          'courses_filter_title': 'Filter courses',
+          'courses_filter_chip_subject': 'Subject: @subject',
+          'courses_filter_chip_teacher': 'Teacher: @teacher',
+          'courses_filter_chip_class': 'Class: @class',
+          'courses_filter_chip_child': 'Child: @child',
+          'courses_filter_label_subject': 'Subject',
+          'courses_filter_label_teacher': 'Teacher',
+          'courses_filter_label_class': 'Class',
+          'courses_filter_label_child': 'Child',
+          'courses_filter_option_all_subjects': 'All subjects',
+          'courses_filter_option_all_teachers': 'All teachers',
+          'courses_filter_option_all_classes': 'All classes',
+          'courses_filter_option_all_children': 'All children',
+          'courses_empty_title': 'No courses found',
+          'courses_empty_message_admin':
+              'Adjust the filters or check back later for new courses.',
+          'courses_empty_message_parent':
+              'There are no courses for the selected filters yet.',
+          'courses_empty_message_teacher':
+              'Tap the button below to publish your first course.',
+          'courses_no_children_title': 'No children linked',
+          'courses_no_children_message':
+              'Please contact the school administration to link your children.',
+          'courses_subject_not_specified': 'Subject not specified',
+          'courses_teacher_unknown': 'Teacher unknown',
+          'courses_description_missing':
+              'No description provided for this course.',
+          'courses_classes_none': 'No classes linked yet',
+          'courses_classes_single': '1 class linked',
+          'courses_classes_plural': '@count classes linked',
+          'courses_class_not_linked': 'No class linked',
+          'courses_class_not_assigned': 'No classes assigned',
+          'courses_created_on': 'Created @date',
+          'courses_action_edit': 'Edit course',
+          'courses_section_description': 'Description',
+          'courses_section_learning_content': 'Learning content',
+          'courses_download_pdf': 'Download as PDF',
+          'courses_overview_title': 'Course overview',
+          'courses_overview_word_count_single': '1 word of content',
+          'courses_overview_word_count_plural': '@count words of content',
+          'courses_overview_assigned_classes': 'Assigned classes',
+          'courses_content_missing':
+              'This course does not include additional content yet.',
+          'courses_pdf_subject': 'Subject: @subject',
+          'courses_pdf_teacher': 'Teacher: @teacher',
+          'courses_pdf_classes': 'Classes: @classes',
+          'courses_pdf_created': 'Created: @date',
+          'courses_pdf_description': 'Description',
+          'courses_pdf_content': 'Content',
+          'courses_pdf_default_filename': 'Course.pdf',
+          'courses_download_saved_to': 'Saved to @path',
+          'courses_download_not_saved':
+              'The PDF was not saved. Please check storage permissions or try again.',
+          'courses_download_error':
+              'Failed to generate the PDF. @error',
+          'courses_form_subject_unassigned': 'Subject not set',
+          'courses_form_title_add': 'Add Course',
+          'courses_form_title_edit': 'Edit Course',
+          'courses_form_title_label': 'Course title',
+          'courses_form_title_error': 'Please enter a title',
+          'courses_form_description_label': 'Description',
+          'courses_form_description_error':
+              'Please enter a brief description',
+          'courses_form_content_label': 'Content',
+          'courses_form_content_hint':
+              'Add the detailed course content here... This will be available in the PDF download.',
+          'courses_form_content_error': 'Course content is required',
+          'courses_form_assign_classes': 'Assign to classes',
+          'courses_form_no_classes':
+              'No classes are linked to your subject yet. Contact the administrator.',
+          'courses_form_save': 'Save Course',
+          'courses_refresh_failed': 'Refresh failed',
+          'courses_refresh_failed_message':
+              'Unable to refresh courses: @error',
+          'courses_load_failed_message':
+              'Failed to load courses. @error',
+          'courses_auth_required_title': 'Authentication required',
+          'courses_teacher_auth_error':
+              'Unable to determine the authenticated teacher.',
+          'courses_profile_missing_title': 'Profile missing',
+          'courses_profile_missing_message':
+              'Please contact the administrator to complete your profile.',
+          'courses_missing_information_title': 'Missing information',
+          'courses_select_class_message': 'Please select at least one class.',
+          'courses_teacher_profile_missing_message':
+              'Teacher profile missing. Please contact the administrator.',
+          'courses_course_added_title': 'Course added',
+          'courses_course_added_message':
+              'Your course has been published successfully.',
+          'courses_course_updated_title': 'Course updated',
+          'courses_course_updated_message': 'Your changes have been saved.',
+          'courses_course_removed_title': 'Course removed',
+          'courses_course_removed_message': 'The course has been deleted.',
+          'courses_save_failed_message':
+              'Failed to save the course. @error',
+          'courses_delete_failed_message':
+              'Failed to delete the course. @error',
+          'courses_parent_auth_error':
+              'Unable to determine the authenticated parent.',
+          'courses_confirm_delete_title': 'Delete course',
+          'courses_confirm_delete_message':
+              'Are you sure you want to delete this course?',
+          'courses_teacher_empty_title': 'No courses yet',
+          'courses_teacher_empty_message':
+              'Tap the button below to publish your first course.',
+          'courses_no_classes_available': 'No classes available',
+          'courses_new_course': 'New Course',
         },
         'fr': {
           'settings_title': 'Paramètres',
@@ -707,6 +816,116 @@ class AppTranslations extends Translations {
               'Échec du téléchargement',
           'announcement_pdf_download_error':
               'Impossible de générer le PDF. @error',
+          'courses_title': 'Cours',
+          'courses_my_title': 'Mes cours',
+          'courses_filter_title': 'Filtrer les cours',
+          'courses_filter_chip_subject': 'Matière : @subject',
+          'courses_filter_chip_teacher': 'Enseignant : @teacher',
+          'courses_filter_chip_class': 'Classe : @class',
+          'courses_filter_chip_child': 'Enfant : @child',
+          'courses_filter_label_subject': 'Matière',
+          'courses_filter_label_teacher': 'Enseignant',
+          'courses_filter_label_class': 'Classe',
+          'courses_filter_label_child': 'Enfant',
+          'courses_filter_option_all_subjects': 'Toutes les matières',
+          'courses_filter_option_all_teachers': 'Tous les enseignants',
+          'courses_filter_option_all_classes': 'Toutes les classes',
+          'courses_filter_option_all_children': 'Tous les enfants',
+          'courses_empty_title': 'Aucun cours',
+          'courses_empty_message_admin':
+              'Ajustez les filtres ou revenez plus tard pour découvrir de nouveaux cours.',
+          'courses_empty_message_parent':
+              'Aucun cours ne correspond encore aux filtres sélectionnés.',
+          'courses_empty_message_teacher':
+              'Appuyez sur le bouton ci-dessous pour publier votre premier cours.',
+          'courses_no_children_title': 'Aucun enfant lié',
+          'courses_no_children_message':
+              'Veuillez contacter l’administration pour lier vos enfants.',
+          'courses_subject_not_specified': 'Matière non spécifiée',
+          'courses_teacher_unknown': 'Enseignant inconnu',
+          'courses_description_missing':
+              'Aucune description n’a été fournie pour ce cours.',
+          'courses_classes_none': 'Aucune classe liée pour le moment',
+          'courses_classes_single': '1 classe liée',
+          'courses_classes_plural': '@count classes liées',
+          'courses_class_not_linked': 'Aucune classe liée',
+          'courses_class_not_assigned': 'Aucune classe attribuée',
+          'courses_created_on': 'Créé le @date',
+          'courses_action_edit': 'Modifier le cours',
+          'courses_section_description': 'Description',
+          'courses_section_learning_content': 'Contenu pédagogique',
+          'courses_download_pdf': 'Télécharger en PDF',
+          'courses_overview_title': 'Aperçu du cours',
+          'courses_overview_word_count_single': '1 mot de contenu',
+          'courses_overview_word_count_plural': '@count mots de contenu',
+          'courses_overview_assigned_classes': 'Classes assignées',
+          'courses_content_missing':
+              'Ce cours ne contient pas encore de contenu supplémentaire.',
+          'courses_pdf_subject': 'Matière : @subject',
+          'courses_pdf_teacher': 'Enseignant : @teacher',
+          'courses_pdf_classes': 'Classes : @classes',
+          'courses_pdf_created': 'Créé : @date',
+          'courses_pdf_description': 'Description',
+          'courses_pdf_content': 'Contenu',
+          'courses_pdf_default_filename': 'Cours.pdf',
+          'courses_download_saved_to': 'Enregistré dans @path',
+          'courses_download_not_saved':
+              'Le PDF n’a pas été enregistré. Vérifiez les autorisations de stockage ou réessayez.',
+          'courses_download_error':
+              'Impossible de générer le PDF. @error',
+          'courses_form_subject_unassigned': 'Matière non définie',
+          'courses_form_title_add': 'Ajouter un cours',
+          'courses_form_title_edit': 'Modifier le cours',
+          'courses_form_title_label': 'Titre du cours',
+          'courses_form_title_error': 'Veuillez saisir un titre',
+          'courses_form_description_label': 'Description',
+          'courses_form_description_error':
+              'Veuillez saisir une brève description',
+          'courses_form_content_label': 'Contenu',
+          'courses_form_content_hint':
+              'Ajoutez ici le contenu détaillé du cours… Il sera disponible dans le PDF téléchargé.',
+          'courses_form_content_error': 'Le contenu du cours est requis',
+          'courses_form_assign_classes': 'Affecter aux classes',
+          'courses_form_no_classes':
+              'Aucune classe n’est encore liée à votre matière. Contactez l’administrateur.',
+          'courses_form_save': 'Enregistrer le cours',
+          'courses_refresh_failed': 'Échec de l’actualisation',
+          'courses_refresh_failed_message':
+              'Impossible d’actualiser les cours : @error',
+          'courses_load_failed_message':
+              'Échec du chargement des cours. @error',
+          'courses_auth_required_title': 'Authentification requise',
+          'courses_teacher_auth_error':
+              'Impossible d’identifier l’enseignant authentifié.',
+          'courses_profile_missing_title': 'Profil manquant',
+          'courses_profile_missing_message':
+              'Veuillez contacter l’administrateur pour compléter votre profil.',
+          'courses_missing_information_title': 'Informations manquantes',
+          'courses_select_class_message':
+              'Veuillez sélectionner au moins une classe.',
+          'courses_teacher_profile_missing_message':
+              'Profil enseignant manquant. Veuillez contacter l’administrateur.',
+          'courses_course_added_title': 'Cours ajouté',
+          'courses_course_added_message':
+              'Votre cours a été publié avec succès.',
+          'courses_course_updated_title': 'Cours mis à jour',
+          'courses_course_updated_message': 'Vos modifications ont été enregistrées.',
+          'courses_course_removed_title': 'Cours supprimé',
+          'courses_course_removed_message': 'Le cours a été supprimé.',
+          'courses_save_failed_message':
+              'Échec de l’enregistrement du cours. @error',
+          'courses_delete_failed_message':
+              'Échec de la suppression du cours. @error',
+          'courses_parent_auth_error':
+              'Impossible d’identifier le parent authentifié.',
+          'courses_confirm_delete_title': 'Supprimer le cours',
+          'courses_confirm_delete_message':
+              'Êtes-vous sûr de vouloir supprimer ce cours ?',
+          'courses_teacher_empty_title': 'Aucun cours',
+          'courses_teacher_empty_message':
+              'Appuyez sur le bouton ci-dessous pour publier votre premier cours.',
+          'courses_no_classes_available': 'Aucune classe disponible',
+          'courses_new_course': 'Nouveau cours',
         },
         'ar': {
           'settings_title': 'الإعدادات',
@@ -1048,6 +1267,107 @@ class AppTranslations extends Translations {
           'announcement_pdf_download_failed': 'فشل التنزيل',
           'announcement_pdf_download_error':
               'تعذر إنشاء ملف PDF. @error',
+          'courses_title': 'الدورات',
+          'courses_my_title': 'دوراتي',
+          'courses_filter_title': 'تصفية الدورات',
+          'courses_filter_chip_subject': 'المادة: @subject',
+          'courses_filter_chip_teacher': 'المعلم: @teacher',
+          'courses_filter_chip_class': 'الصف: @class',
+          'courses_filter_chip_child': 'الطفل: @child',
+          'courses_filter_label_subject': 'المادة',
+          'courses_filter_label_teacher': 'المعلم',
+          'courses_filter_label_class': 'الصف',
+          'courses_filter_label_child': 'الطفل',
+          'courses_filter_option_all_subjects': 'جميع المواد',
+          'courses_filter_option_all_teachers': 'جميع المعلمين',
+          'courses_filter_option_all_classes': 'جميع الصفوف',
+          'courses_filter_option_all_children': 'جميع الأطفال',
+          'courses_empty_title': 'لا توجد دورات',
+          'courses_empty_message_admin':
+              'عدّل عوامل التصفية أو عد لاحقًا للاطلاع على دورات جديدة.',
+          'courses_empty_message_parent':
+              'لا توجد دورات مطابقة لعوامل التصفية المحددة بعد.',
+          'courses_empty_message_teacher':
+              'اضغط على الزر أدناه لنشر دورتك الأولى.',
+          'courses_no_children_title': 'لا يوجد أطفال مرتبطون',
+          'courses_no_children_message':
+              'يرجى التواصل مع إدارة المدرسة لربط أطفالك.',
+          'courses_subject_not_specified': 'المادة غير محددة',
+          'courses_teacher_unknown': 'معلم غير معروف',
+          'courses_description_missing': 'لم يتم تقديم وصف لهذه الدورة.',
+          'courses_classes_none': 'لم يتم ربط أي صفوف بعد',
+          'courses_classes_single': 'صف واحد مرتبط',
+          'courses_classes_plural': '@count صفوف مرتبطة',
+          'courses_class_not_linked': 'لا يوجد صف مرتبط',
+          'courses_class_not_assigned': 'لا توجد صفوف معيّنة',
+          'courses_created_on': 'أُنشئت في @date',
+          'courses_action_edit': 'تعديل الدورة',
+          'courses_section_description': 'الوصف',
+          'courses_section_learning_content': 'المحتوى التعليمي',
+          'courses_download_pdf': 'تنزيل بصيغة PDF',
+          'courses_overview_title': 'نظرة عامة على الدورة',
+          'courses_overview_word_count_single': 'كلمة واحدة من المحتوى',
+          'courses_overview_word_count_plural': '@count كلمة من المحتوى',
+          'courses_overview_assigned_classes': 'الصفوف المعيّنة',
+          'courses_content_missing':
+              'لا يحتوي هذا المقرر على محتوى إضافي بعد.',
+          'courses_pdf_subject': 'المادة: @subject',
+          'courses_pdf_teacher': 'المعلم: @teacher',
+          'courses_pdf_classes': 'الصفوف: @classes',
+          'courses_pdf_created': 'تاريخ الإنشاء: @date',
+          'courses_pdf_description': 'الوصف',
+          'courses_pdf_content': 'المحتوى',
+          'courses_pdf_default_filename': 'دورة.pdf',
+          'courses_download_saved_to': 'تم الحفظ في @path',
+          'courses_download_not_saved':
+              'لم يتم حفظ ملف PDF. يرجى التحقق من أذونات التخزين أو المحاولة مرة أخرى.',
+          'courses_download_error': 'فشل إنشاء ملف PDF. @error',
+          'courses_form_subject_unassigned': 'المادة غير محددة',
+          'courses_form_title_add': 'إضافة دورة',
+          'courses_form_title_edit': 'تعديل دورة',
+          'courses_form_title_label': 'عنوان الدورة',
+          'courses_form_title_error': 'يرجى إدخال عنوان',
+          'courses_form_description_label': 'الوصف',
+          'courses_form_description_error': 'يرجى إدخال وصف مختصر',
+          'courses_form_content_label': 'المحتوى',
+          'courses_form_content_hint':
+              'أضف هنا المحتوى التفصيلي للدورة… سيكون متاحًا في ملف PDF للتنزيل.',
+          'courses_form_content_error': 'محتوى الدورة مطلوب',
+          'courses_form_assign_classes': 'إسناد إلى الصفوف',
+          'courses_form_no_classes':
+              'لا توجد صفوف مرتبطة بمادتك بعد. يرجى التواصل مع المسؤول.',
+          'courses_form_save': 'حفظ الدورة',
+          'courses_refresh_failed': 'فشل التحديث',
+          'courses_refresh_failed_message':
+              'تعذر تحديث الدورات: @error',
+          'courses_load_failed_message':
+              'فشل تحميل الدورات. @error',
+          'courses_auth_required_title': 'المصادقة مطلوبة',
+          'courses_teacher_auth_error': 'تعذر تحديد المعلم المصادق.',
+          'courses_profile_missing_title': 'الملف الشخصي غير مكتمل',
+          'courses_profile_missing_message':
+              'يرجى التواصل مع المسؤول لاستكمال ملفك الشخصي.',
+          'courses_missing_information_title': 'معلومات ناقصة',
+          'courses_select_class_message': 'يرجى اختيار صف واحد على الأقل.',
+          'courses_teacher_profile_missing_message':
+              'ملف المعلم غير موجود. يرجى التواصل مع المسؤول.',
+          'courses_course_added_title': 'تمت إضافة الدورة',
+          'courses_course_added_message': 'تم نشر دورتك بنجاح.',
+          'courses_course_updated_title': 'تم تحديث الدورة',
+          'courses_course_updated_message': 'تم حفظ التغييرات.',
+          'courses_course_removed_title': 'تم حذف الدورة',
+          'courses_course_removed_message': 'تم حذف الدورة.',
+          'courses_save_failed_message': 'فشل حفظ الدورة. @error',
+          'courses_delete_failed_message': 'فشل حذف الدورة. @error',
+          'courses_parent_auth_error': 'تعذر تحديد ولي الأمر المصادق.',
+          'courses_confirm_delete_title': 'حذف الدورة',
+          'courses_confirm_delete_message':
+              'هل أنت متأكد أنك تريد حذف هذه الدورة؟',
+          'courses_teacher_empty_title': 'لا توجد دورات بعد',
+          'courses_teacher_empty_message':
+              'اضغط على الزر أدناه لنشر دورتك الأولى.',
+          'courses_no_classes_available': 'لا توجد صفوف متاحة',
+          'courses_new_course': 'دورة جديدة',
         },
       };
 }

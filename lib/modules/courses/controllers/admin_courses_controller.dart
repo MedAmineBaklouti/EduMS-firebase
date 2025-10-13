@@ -73,8 +73,9 @@ class AdminCoursesController extends GetxController {
       _applyFilters();
     } catch (error) {
       Get.snackbar(
-        'Refresh failed',
-        'Unable to refresh courses: $error',
+        'courses_refresh_failed'.tr,
+        'courses_refresh_failed_message'
+            .trParams({'error': error.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -95,8 +96,8 @@ class AdminCoursesController extends GetxController {
       });
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to load courses. ${e.toString()}',
+        'common_error'.tr,
+        'courses_load_failed_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -192,18 +193,18 @@ class AdminCoursesController extends GetxController {
 
   String subjectName(String id) {
     return subjects.firstWhereOrNull((subject) => subject.id == id)?.name ??
-        'Unknown Subject';
+        'courses_subject_not_specified'.tr;
   }
 
   String teacherName(String id) {
     return teachers.firstWhereOrNull((teacher) => teacher.id == id)?.name ??
-        'Unknown Teacher';
+        'courses_teacher_unknown'.tr;
   }
 
   String className(String id) {
     return classes.firstWhereOrNull((schoolClass) => schoolClass.id == id)
             ?.name ??
-        'Class';
+        'courses_filter_label_class'.tr;
   }
 
   int get totalCourseCount => _allCourses.length;

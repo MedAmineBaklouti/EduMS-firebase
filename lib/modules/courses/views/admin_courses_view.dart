@@ -18,7 +18,7 @@ class AdminCoursesView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Courses'),
+        title: Text('courses_title'.tr),
         centerTitle: true,
       ),
       body: Obx(() {
@@ -76,7 +76,7 @@ class AdminCoursesView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Filter courses',
+                'courses_filter_title'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -88,7 +88,7 @@ class AdminCoursesView extends StatelessWidget {
                 return TextButton.icon(
                   onPressed: hasFilters ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 );
               }),
             ],
@@ -99,8 +99,10 @@ class AdminCoursesView extends StatelessWidget {
             if (controller.selectedSubjectId.value.isNotEmpty) {
               chips.add(_buildActiveFilterChip(
                 context,
-                label:
-                    'Subject: ${controller.subjectName(controller.selectedSubjectId.value)}',
+                label: 'courses_filter_chip_subject'.trParams({
+                  'subject': controller
+                      .subjectName(controller.selectedSubjectId.value),
+                }),
                 onRemoved: () => controller.updateSubjectFilter(''),
               ));
             }
@@ -109,15 +111,19 @@ class AdminCoursesView extends StatelessWidget {
                   controller.selectedTeacherId.value);
               chips.add(_buildActiveFilterChip(
                 context,
-                label: 'Teacher: $teacher',
+                label: 'courses_filter_chip_teacher'
+                    .trParams({'teacher': teacher}),
                 onRemoved: () => controller.updateTeacherFilter(''),
               ));
             }
             if (controller.selectedClassId.value.isNotEmpty) {
               chips.add(_buildActiveFilterChip(
                 context,
-                label:
-                    'Class: ${controller.className(controller.selectedClassId.value)}',
+                label: 'courses_filter_chip_class'.trParams({
+                  'class': controller.className(
+                    controller.selectedClassId.value,
+                  ),
+                }),
                 onRemoved: () => controller.updateClassFilter(''),
               ));
             }
@@ -142,15 +148,16 @@ class AdminCoursesView extends StatelessWidget {
                     value: controller.selectedSubjectId.value.isEmpty
                         ? null
                         : controller.selectedSubjectId.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Subject',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: 'courses_filter_label_subject'.tr,
+                      border: const OutlineInputBorder(),
                     ),
-                    hint: const Text('All subjects'),
+                    hint: Text('courses_filter_option_all_subjects'.tr),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: '',
-                        child: Text('All subjects'),
+                        child: Text(
+                            'courses_filter_option_all_subjects'.tr),
                       ),
                       ...controller.subjects
                           .map(
@@ -173,15 +180,16 @@ class AdminCoursesView extends StatelessWidget {
                     value: controller.selectedTeacherId.value.isEmpty
                         ? null
                         : controller.selectedTeacherId.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Teacher',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: 'courses_filter_label_teacher'.tr,
+                      border: const OutlineInputBorder(),
                     ),
-                    hint: const Text('All teachers'),
+                    hint: Text('courses_filter_option_all_teachers'.tr),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: '',
-                        child: Text('All teachers'),
+                        child: Text(
+                            'courses_filter_option_all_teachers'.tr),
                       ),
                       ...controller.teachers
                           .map(
@@ -208,15 +216,16 @@ class AdminCoursesView extends StatelessWidget {
                     value: controller.selectedClassId.value.isEmpty
                         ? null
                         : controller.selectedClassId.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Class',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: 'courses_filter_label_class'.tr,
+                      border: const OutlineInputBorder(),
                     ),
-                    hint: const Text('All classes'),
+                    hint: Text('courses_filter_option_all_classes'.tr),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: '',
-                        child: Text('All classes'),
+                        child: Text(
+                            'courses_filter_option_all_classes'.tr),
                       ),
                       ...controller.classes
                           .map(
@@ -284,7 +293,7 @@ class AdminCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'No courses found',
+          'courses_empty_title'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
@@ -292,7 +301,7 @@ class AdminCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Adjust the filters or check back later for new courses.',
+          'courses_empty_message_admin'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -314,10 +323,10 @@ class _AdminCourseTile extends StatelessWidget {
     final theme = Theme.of(context);
     final subject = course.subjectName.isNotEmpty
         ? course.subjectName
-        : 'Subject not specified';
+        : 'courses_subject_not_specified'.tr;
     final teacher = course.teacherName.isNotEmpty
         ? course.teacherName
-        : 'Teacher unknown';
+        : 'courses_teacher_unknown'.tr;
     final createdLabel = _dateFormat.format(course.createdAt);
     final uniqueClasses = course.classNames.toSet().toList();
     return Material(
@@ -372,7 +381,7 @@ class _AdminCourseTile extends StatelessWidget {
                 Text(
                   course.description.isNotEmpty
                       ? course.description
-                      : 'No description provided for this course.',
+                      : 'courses_description_missing'.tr,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -391,8 +400,12 @@ class _AdminCourseTile extends StatelessWidget {
                   context,
                   icon: Icons.class_outlined,
                   value: uniqueClasses.isEmpty
-                      ? 'No classes linked yet'
-                      : '${uniqueClasses.length} class${uniqueClasses.length == 1 ? '' : 'es'} linked',
+                      ? 'courses_classes_none'.tr
+                      : uniqueClasses.length == 1
+                          ? 'courses_classes_single'.tr
+                          : 'courses_classes_plural'.trParams({
+                              'count': uniqueClasses.length.toString(),
+                            }),
                 ),
                 if (uniqueClasses.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -410,7 +423,8 @@ class _AdminCourseTile extends StatelessWidget {
                     _buildMetaBadge(
                       context,
                       icon: Icons.calendar_today_outlined,
-                      label: 'Created $createdLabel',
+                      label: 'courses_created_on'
+                          .trParams({'date': createdLabel}),
                     ),
                     const Spacer(),
                     Icon(

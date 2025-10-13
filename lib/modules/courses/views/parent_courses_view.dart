@@ -18,7 +18,7 @@ class ParentCoursesView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Courses'),
+        title: Text('courses_title'.tr),
         centerTitle: true,
       ),
       body: Obx(() {
@@ -88,7 +88,7 @@ class ParentCoursesView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Filter courses',
+                'courses_filter_title'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -100,7 +100,7 @@ class ParentCoursesView extends StatelessWidget {
                 return TextButton.icon(
                   onPressed: hasFilters ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 );
               }),
             ],
@@ -111,16 +111,20 @@ class ParentCoursesView extends StatelessWidget {
             if (controller.selectedChildId.value.isNotEmpty) {
               chips.add(_buildActiveFilterChip(
                 context,
-                label:
-                    'Child: ${controller.childName(controller.selectedChildId.value)}',
+                label: 'courses_filter_chip_child'.trParams({
+                  'child': controller
+                      .childName(controller.selectedChildId.value),
+                }),
                 onRemoved: () => controller.updateChildFilter(''),
               ));
             }
             if (controller.selectedSubjectId.value.isNotEmpty) {
               chips.add(_buildActiveFilterChip(
                 context,
-                label:
-                    'Subject: ${controller.subjectName(controller.selectedSubjectId.value)}',
+                label: 'courses_filter_chip_subject'.trParams({
+                  'subject': controller
+                      .subjectName(controller.selectedSubjectId.value),
+                }),
                 onRemoved: () => controller.updateSubjectFilter(''),
               ));
             }
@@ -144,15 +148,16 @@ class ParentCoursesView extends StatelessWidget {
                     value: controller.selectedChildId.value.isEmpty
                         ? null
                         : controller.selectedChildId.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Child',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: 'courses_filter_label_child'.tr,
+                      border: const OutlineInputBorder(),
                     ),
-                    hint: const Text('All children'),
+                    hint: Text('courses_filter_option_all_children'.tr),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: '',
-                        child: Text('All children'),
+                        child: Text(
+                            'courses_filter_option_all_children'.tr),
                       ),
                       ...controller.children
                           .map(
@@ -176,15 +181,16 @@ class ParentCoursesView extends StatelessWidget {
                     value: controller.selectedSubjectId.value.isEmpty
                         ? null
                         : controller.selectedSubjectId.value,
-                    decoration: const InputDecoration(
-                      labelText: 'Subject',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: 'courses_filter_label_subject'.tr,
+                      border: const OutlineInputBorder(),
                     ),
-                    hint: const Text('All subjects'),
+                    hint: Text('courses_filter_option_all_subjects'.tr),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: '',
-                        child: Text('All subjects'),
+                        child: Text(
+                            'courses_filter_option_all_subjects'.tr),
                       ),
                       ...options
                           .map(
@@ -252,7 +258,7 @@ class ParentCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'No courses found',
+          'courses_empty_title'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
@@ -260,7 +266,7 @@ class ParentCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'There are no courses for the selected filters yet.',
+          'courses_empty_message_parent'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -283,7 +289,7 @@ class ParentCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'No children linked',
+          'courses_no_children_title'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
@@ -291,7 +297,7 @@ class ParentCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Please contact the school administration to link your children.',
+          'courses_no_children_message'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -312,9 +318,9 @@ class _ParentCourseTile extends StatelessWidget {
     final theme = Theme.of(context);
     final subject = course.subjectName.isNotEmpty
         ? course.subjectName
-        : 'Subject not specified';
+        : 'courses_subject_not_specified'.tr;
     final classes = course.classNames.isEmpty
-        ? 'No class linked'
+        ? 'courses_class_not_linked'.tr
         : course.classNames.join(', ');
     return Material(
       color: Colors.transparent,

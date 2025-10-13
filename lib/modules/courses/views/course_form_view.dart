@@ -11,12 +11,15 @@ class CourseFormView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final subjectName = controller.subject.value?.name ?? 'Subject not set';
+    final subjectName = controller.subject.value?.name ??
+        'courses_form_subject_unassigned'.tr;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: Text(controller.editing == null ? 'Add Course' : 'Edit Course'),
+        title: Text(controller.editing == null
+            ? 'courses_form_title_add'.tr
+            : 'courses_form_title_edit'.tr),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -46,7 +49,7 @@ class CourseFormView extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Subject',
+                              'courses_filter_label_subject'.tr,
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -69,13 +72,13 @@ class CourseFormView extends StatelessWidget {
               TextFormField(
                 controller: controller.titleController,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Course title',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'courses_form_title_label'.tr,
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a title';
+                    return 'courses_form_title_error'.tr;
                   }
                   return null;
                 },
@@ -85,14 +88,14 @@ class CourseFormView extends StatelessWidget {
                 controller: controller.descriptionController,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'courses_form_description_label'.tr,
+                  border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a brief description';
+                    return 'courses_form_description_error'.tr;
                   }
                   return null;
                 },
@@ -102,23 +105,22 @@ class CourseFormView extends StatelessWidget {
                 controller: controller.contentController,
                 minLines: 5,
                 maxLines: 10,
-                decoration: const InputDecoration(
-                  labelText: 'Content',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'courses_form_content_label'.tr,
+                  border: const OutlineInputBorder(),
                   alignLabelWithHint: true,
-                  hintText: 'Add the detailed course content here...'
-                      ' This will be available in the PDF download.',
+                  hintText: 'courses_form_content_hint'.tr,
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Course content is required';
+                    return 'courses_form_content_error'.tr;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
               Text(
-                'Assign to classes',
+                'courses_form_assign_classes'.tr,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -134,7 +136,7 @@ class CourseFormView extends StatelessWidget {
                       color: theme.colorScheme.error.withOpacity(0.08),
                     ),
                     child: Text(
-                      'No classes are linked to your subject yet. Contact the administrator.',
+                      'courses_form_no_classes'.tr,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.error,
                       ),
@@ -147,7 +149,7 @@ class CourseFormView extends StatelessWidget {
                   children: controller.availableClasses
                       .map(
                         (schoolClass) => FilterChip(
-                          label: Text(schoolClass.name),
+                    label: Text(schoolClass.name),
                           selected: controller.selectedClassIds
                               .contains(schoolClass.id),
                           onSelected: (_) =>
@@ -173,7 +175,11 @@ class CourseFormView extends StatelessWidget {
                         Icons.save_outlined,
                         color: Colors.white,
                     ),
-                    label: Text(saving ? 'Saving...' : 'Save Course'),
+                    label: Text(
+                      saving
+                          ? 'common_saving'.tr
+                          : 'courses_form_save'.tr,
+                    ),
                     onPressed: saving ? null : controller.saveCourse,
                   ),
                 );

@@ -47,8 +47,8 @@ class TeacherCoursesController extends GetxController {
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
       Get.snackbar(
-        'Authentication required',
-        'Unable to determine the authenticated teacher.',
+        'courses_auth_required_title'.tr,
+        'courses_teacher_auth_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -59,8 +59,8 @@ class TeacherCoursesController extends GetxController {
           await _db.firestore.collection('teachers').doc(uid).get();
       if (!teacherDoc.exists) {
         Get.snackbar(
-          'Profile missing',
-          'Please contact the administrator to complete your profile.',
+          'courses_profile_missing_title'.tr,
+          'courses_profile_missing_message'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -100,8 +100,9 @@ class TeacherCoursesController extends GetxController {
       _applyFilters();
     } catch (error) {
       Get.snackbar(
-        'Refresh failed',
-        'Unable to refresh your courses: $error',
+        'courses_refresh_failed'.tr,
+        'courses_refresh_failed_message'
+            .trParams({'error': error.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -113,8 +114,8 @@ class TeacherCoursesController extends GetxController {
       final uid = _auth.currentUser?.uid;
       if (uid == null) {
         Get.snackbar(
-          'Error',
-          'Unable to determine the authenticated teacher.',
+          'common_error'.tr,
+          'courses_teacher_auth_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -124,8 +125,8 @@ class TeacherCoursesController extends GetxController {
           await _db.firestore.collection('teachers').doc(uid).get();
       if (!teacherDoc.exists) {
         Get.snackbar(
-          'Profile missing',
-          'Please contact the administrator to complete your profile.',
+          'courses_profile_missing_title'.tr,
+          'courses_profile_missing_message'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -163,8 +164,8 @@ class TeacherCoursesController extends GetxController {
       });
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to load your courses. ${e.toString()}',
+        'common_error'.tr,
+        'courses_load_failed_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -194,8 +195,8 @@ class TeacherCoursesController extends GetxController {
     }
     if (selectedClassIds.isEmpty) {
       Get.snackbar(
-        'Missing information',
-        'Please select at least one class.',
+        'courses_missing_information_title'.tr,
+        'courses_select_class_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -203,8 +204,8 @@ class TeacherCoursesController extends GetxController {
     final teacherModel = teacher.value;
     if (teacherModel == null) {
       Get.snackbar(
-        'Error',
-        'Teacher profile missing. Please contact the administrator.',
+        'common_error'.tr,
+        'courses_teacher_profile_missing_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -215,7 +216,7 @@ class TeacherCoursesController extends GetxController {
         .toList();
     final subjectName = subject.value?.name.trim().isNotEmpty == true
         ? subject.value!.name
-        : 'Unknown Subject';
+        : 'courses_subject_not_specified'.tr;
 
     final course = CourseModel(
       id: editing?.id ?? '',
@@ -236,15 +237,15 @@ class TeacherCoursesController extends GetxController {
       if (editing == null) {
         await _db.addCourse(course);
         Get.snackbar(
-          'Course added',
-          'Your course has been published successfully.',
+          'courses_course_added_title'.tr,
+          'courses_course_added_message'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       } else {
         await _db.updateCourse(course);
         Get.snackbar(
-          'Course updated',
-          'Your changes have been saved.',
+          'courses_course_updated_title'.tr,
+          'courses_course_updated_message'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -253,8 +254,8 @@ class TeacherCoursesController extends GetxController {
       editing = null;
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to save the course. ${e.toString()}',
+        'common_error'.tr,
+        'courses_save_failed_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -266,14 +267,14 @@ class TeacherCoursesController extends GetxController {
     try {
       await _db.deleteCourse(id);
       Get.snackbar(
-        'Course removed',
-        'The course has been deleted.',
+        'courses_course_removed_title'.tr,
+        'courses_course_removed_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to delete the course. ${e.toString()}',
+        'common_error'.tr,
+        'courses_delete_failed_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -300,7 +301,7 @@ class TeacherCoursesController extends GetxController {
 
   String className(String id) {
     return availableClasses.firstWhereOrNull((element) => element.id == id)?.name ??
-        'Class';
+        'courses_filter_label_class'.tr;
   }
 
   void _applyFilters() {
