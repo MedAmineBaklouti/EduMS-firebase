@@ -20,21 +20,25 @@ class _ContactUsViewState extends State<ContactUsView> {
         icon: Icons.language_outlined,
         label: 'www.edums.tn',
         uri: Uri.parse('https://www.edums.tn'),
+        description: 'Visit our official website for more information.',
       ),
       _ContactActionData(
         icon: Icons.mail_outline,
         label: 'suggestion@edums.tn',
         uri: Uri(scheme: 'mailto', path: 'suggestion@edums.tn'),
+        description: 'Share your ideas and help us improve EduMS.',
       ),
       _ContactActionData(
         icon: Icons.headset_mic_outlined,
         label: 'support@edums.tn',
         uri: Uri(scheme: 'mailto', path: 'support@edums.tn'),
+        description: 'Contact our support team for assistance.',
       ),
       _ContactActionData(
         icon: Icons.phone_in_talk_outlined,
         label: '+216 54 422 699',
         uri: Uri(scheme: 'tel', path: '+21654422699'),
+        description: 'Give us a call during business hours.',
       ),
     ];
   }
@@ -43,6 +47,8 @@ class _ContactUsViewState extends State<ContactUsView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
+    final primaryContainer = theme.colorScheme.primaryContainer;
+    final onPrimaryContainer = theme.colorScheme.onPrimaryContainer;
 
     return Scaffold(
       appBar: AppBar(
@@ -51,7 +57,16 @@ class _ContactUsViewState extends State<ContactUsView> {
         foregroundColor: theme.colorScheme.onPrimary,
       ),
       body: Container(
-        color: Colors.white,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              primary.withOpacity(0.05),
+              primary.withOpacity(0.02),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         width: double.infinity,
         child: Center(
           child: SingleChildScrollView(
@@ -68,36 +83,65 @@ class _ContactUsViewState extends State<ContactUsView> {
                   ),
                   const SizedBox(height: 32),
                   Card(
-                    elevation: 6,
+                    elevation: 10,
+                    shadowColor: primary.withOpacity(0.18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    color: theme.cardColor,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 32,
-                        horizontal: 24,
+                    color: primaryContainer,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        gradient: LinearGradient(
+                          colors: [
+                            primaryContainer,
+                            primaryContainer.withOpacity(0.92),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Get in touch with EduMS',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: primary,
-                              fontWeight: FontWeight.w700,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 32,
+                          horizontal: 24,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: onPrimaryContainer.withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.support_agent_outlined,
+                                color: onPrimaryContainer,
+                                size: 32,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Choose one of the contact options below to reach our team directly.',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyLarge,
-                          ),
-                          const SizedBox(height: 28),
-                          ..._buildContactActions(theme),
-                        ],
+                            const SizedBox(height: 16),
+                            Text(
+                              'Get in touch with EduMS',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: onPrimaryContainer,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Choose one of the contact options below to reach our team directly.',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: onPrimaryContainer.withOpacity(0.85),
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            ..._buildContactActions(theme),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -117,7 +161,11 @@ class _ContactUsViewState extends State<ContactUsView> {
     for (var i = 0; i < _actions.length; i++) {
       widgets.add(_buildContactAction(theme, _actions[i], primary));
       if (i != _actions.length - 1) {
-        widgets.add(const Divider());
+        widgets.add(
+          Divider(
+            color: theme.colorScheme.onPrimaryContainer.withOpacity(0.16),
+          ),
+        );
       }
     }
     return widgets;
@@ -128,40 +176,73 @@ class _ContactUsViewState extends State<ContactUsView> {
     _ContactActionData action,
     Color primary,
   ) {
+    final onPrimaryContainer = theme.colorScheme.onPrimaryContainer;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _launchUri(action.uri),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        splashColor: onPrimaryContainer.withOpacity(0.12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: primary.withOpacity(0.12),
                   shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      onPrimaryContainer.withOpacity(0.12),
+                      onPrimaryContainer.withOpacity(0.06),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
                 child: Icon(
                   action.icon,
-                  color: primary,
+                  color: onPrimaryContainer,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  action.label,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.label,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: onPrimaryContainer,
+                      ),
+                    ),
+                    if (action.description != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        action.description!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: onPrimaryContainer.withOpacity(0.75),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: primary,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: onPrimaryContainer.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: onPrimaryContainer,
+                ),
               ),
             ],
           ),
@@ -196,9 +277,11 @@ class _ContactActionData {
     required this.icon,
     required this.label,
     required this.uri,
+    this.description,
   });
 
   final IconData icon;
   final String label;
   final Uri uri;
+  final String? description;
 }
