@@ -26,6 +26,8 @@ import '../../modules/pickup/views/parent_pickup_view.dart';
 import '../../modules/pickup/views/teacher_pickup_view.dart';
 import '../../modules/profile/views/contact_us_view.dart';
 import '../../modules/profile/views/edit_profile_view.dart';
+import '../../modules/settings/bindings/settings_binding.dart';
+import '../../modules/settings/views/settings_view.dart';
 import '../../modules/splash/splash_view.dart';
 import '../../modules/teachers_dashboard/views/teacher_dashboard_view.dart';
 
@@ -59,6 +61,7 @@ abstract class AppPages {
   static const MESSAGING = '/messaging';
   static const EDIT_PROFILE = '/profile/edit';
   static const CONTACT_US = '/support/contact';
+  static const SETTINGS = '/settings';
 
   static final routes = [
     GetPage(name: SPLASH, page: () => SplashView()),
@@ -109,5 +112,10 @@ abstract class AppPages {
     GetPage(name: MESSAGING, page: () => const MessagingView()),
     GetPage(name: EDIT_PROFILE, page: () => const EditProfileView()),
     GetPage(name: CONTACT_US, page: () => const ContactUsView()),
+    GetPage(
+      name: SETTINGS,
+      page: () => const SettingsView(),
+      binding: SettingsBinding(),
+    ),
   ];
 }

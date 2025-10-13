@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/network_service.dart';
+import '../../core/services/settings_service.dart';
 import '../../modules/admin_dashboard/controllers/admin_controller.dart';
 import '../../modules/admin_dashboard/controllers/admin_control_controller.dart';
 import '../../modules/attendance/controllers/admin_attendance_controller.dart';
@@ -38,6 +39,11 @@ class AppBindings extends Bindings {
     // Initialize SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     Get.put(prefs, permanent: true);
+
+    // Initialize user preferences and settings
+    final settingsService =
+        await SettingsService(preferences: prefs).init();
+    Get.put(settingsService, permanent: true);
 
     // Monitor connectivity for Firestore before other services use it
     final networkService = NetworkService();
