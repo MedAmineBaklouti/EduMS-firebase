@@ -98,6 +98,7 @@ class _ParentChildSummaryCard extends StatelessWidget {
     final presentCount = summary.presentCount;
     final absentCount = summary.absentCount;
     final pendingCount = summary.pendingCount;
+    final latestDate = latestDateLabel;
     return ModuleCard(
       onTap: () => Get.to(
         () => ParentChildAttendanceDetailView(summary: summary),
@@ -168,14 +169,14 @@ class _ParentChildSummaryCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (latestDateLabel != null)
+              if (latestDate != null)
                 _AttendanceSummaryPill(
                   backgroundColor:
                       theme.colorScheme.secondary.withOpacity(0.12),
                   iconColor: theme.colorScheme.secondary,
                   icon: Icons.event,
                   label: 'attendance_summary_latest'
-                      .trParams({'date': latestDateLabel}),
+                      .trParams({'date': latestDate}),
                 ),
               if (presentCount > 0)
                 _AttendanceSummaryPill(
