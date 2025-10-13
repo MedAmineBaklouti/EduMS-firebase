@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../common/widgets/module_page_container.dart';
-
 class ContactUsView extends StatefulWidget {
   const ContactUsView({super.key});
 
@@ -12,79 +10,31 @@ class ContactUsView extends StatefulWidget {
 }
 
 class _ContactUsViewState extends State<ContactUsView> {
-  late final List<_ContactSectionData> _sections;
+  late final List<_ContactActionData> _actions;
 
   @override
   void initState() {
     super.initState();
-    _sections = [
-      _ContactSectionData(
-        title: 'Service commercial',
-        icon: Icons.handshake_outlined,
-        items: [
-          _ContactItemData(
-            icon: Icons.email_outlined,
-            entries: [
-              _ContactLinkData(
-                text: 'commercial@devnet.tn',
-                uri: Uri(scheme: 'mailto', path: 'commercial@devnet.tn'),
-              ),
-            ],
-          ),
-          _ContactItemData(
-            icon: Icons.phone_outlined,
-            entries: [
-              _ContactLinkData(
-                text: '36 393 040',
-                uri: Uri(scheme: 'tel', path: '36393040'),
-              ),
-              _ContactLinkData(
-                text: '54 422 699',
-                uri: Uri(scheme: 'tel', path: '54422699'),
-              ),
-              _ContactLinkData(
-                text: '54 422 690',
-                uri: Uri(scheme: 'tel', path: '54422690'),
-              ),
-              _ContactLinkData(
-                text: '54 422 691',
-                uri: Uri(scheme: 'tel', path: '54422691'),
-              ),
-            ],
-          ),
-        ],
+    _actions = [
+      _ContactActionData(
+        icon: Icons.language_outlined,
+        label: 'www.edums.tn',
+        uri: Uri.parse('https://www.edums.tn'),
       ),
-      _ContactSectionData(
-        title: 'Service Technique',
-        icon: Icons.support_agent_outlined,
-        items: [
-          _ContactItemData(
-            icon: Icons.email_outlined,
-            entries: [
-              _ContactLinkData(
-                text: 'support@devnet.tn',
-                uri: Uri(scheme: 'mailto', path: 'support@devnet.tn'),
-              ),
-            ],
-          ),
-          _ContactItemData(
-            icon: Icons.phone_outlined,
-            entries: [
-              _ContactLinkData(
-                text: '54 422 692',
-                uri: Uri(scheme: 'tel', path: '54422692'),
-              ),
-              _ContactLinkData(
-                text: '54 422 693',
-                uri: Uri(scheme: 'tel', path: '54422693'),
-              ),
-              _ContactLinkData(
-                text: '54 422 694',
-                uri: Uri(scheme: 'tel', path: '54422694'),
-              ),
-            ],
-          ),
-        ],
+      _ContactActionData(
+        icon: Icons.mail_outline,
+        label: 'suggestion@edums.tn',
+        uri: Uri(scheme: 'mailto', path: 'suggestion@edums.tn'),
+      ),
+      _ContactActionData(
+        icon: Icons.headset_mic_outlined,
+        label: 'support@edums.tn',
+        uri: Uri(scheme: 'mailto', path: 'support@edums.tn'),
+      ),
+      _ContactActionData(
+        icon: Icons.phone_in_talk_outlined,
+        label: '+216 54 422 699',
+        uri: Uri(scheme: 'tel', path: '+21654422699'),
       ),
     ];
   }
@@ -100,150 +50,97 @@ class _ContactUsViewState extends State<ContactUsView> {
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: onPrimary,
       ),
-      body: ModulePageContainer(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Image.asset(
-                    'assets/CU.png',
-                    fit: BoxFit.contain,
+      body: Container(
+        color: theme.colorScheme.primary,
+        width: double.infinity,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Get in touch with EduMS',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Choose one of the contact options below to reach our team directly.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: onPrimary.withOpacity(0.85),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Wrap(
+                    spacing: 32,
+                    runSpacing: 32,
+                    alignment: WrapAlignment.center,
+                    children: _actions
+                        .map((action) => _buildContactAction(theme, action, onPrimary))
+                        .toList(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 28),
-              ..._sections
-                  .map((section) => Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: _buildContactSection(theme, section),
-                      ))
-                  .toList(),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildContactSection(
+  Widget _buildContactAction(
     ThemeData theme,
-    _ContactSectionData section,
+    _ContactActionData action,
+    Color onPrimary,
   ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _launchUri(action.uri),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+        child: Container(
+          width: 200,
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.24),
+            ),
           ),
-        ],
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.12),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
+                  color: onPrimary,
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  section.icon,
+                  action.icon,
                   color: theme.colorScheme.primary,
-                  size: 30,
+                  size: 28,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  section.title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              const SizedBox(height: 18),
+              Text(
+                action.label,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: onPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          ...List.generate(section.items.length, (index) {
-            final item = section.items[index];
-            return Padding(
-              padding: EdgeInsets.only(bottom: index == section.items.length - 1 ? 0 : 20),
-              child: _buildContactItem(theme, item),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContactItem(ThemeData theme, _ContactItemData item) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          alignment: Alignment.topCenter,
-          child: Icon(
-            item.icon,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...List.generate(item.entries.length, (index) {
-                final entry = item.entries[index];
-                return Padding(
-                  padding: EdgeInsets.only(bottom: index == item.entries.length - 1 ? 0 : 8),
-                  child: _buildContactEntry(theme, entry),
-                );
-              }),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildContactEntry(ThemeData theme, _ContactLinkData entry) {
-    final baseStyle = theme.textTheme.bodyLarge?.copyWith(
-      fontWeight: FontWeight.w600,
-      color: theme.colorScheme.primary,
-    );
-
-    if (entry.uri == null) {
-      return Text(
-        entry.text,
-        style: theme.textTheme.bodyLarge,
-      );
-    }
-
-    return InkWell(
-      onTap: () => _launchUri(entry.uri!),
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Text(
-          entry.text,
-          style: baseStyle,
         ),
       ),
     );
@@ -270,34 +167,14 @@ class _ContactUsViewState extends State<ContactUsView> {
   }
 }
 
-class _ContactSectionData {
-  const _ContactSectionData({
-    required this.title,
+class _ContactActionData {
+  const _ContactActionData({
     required this.icon,
-    required this.items,
-  });
-
-  final String title;
-  final IconData icon;
-  final List<_ContactItemData> items;
-}
-
-class _ContactItemData {
-  const _ContactItemData({
-    required this.icon,
-    required this.entries,
+    required this.label,
+    required this.uri,
   });
 
   final IconData icon;
-  final List<_ContactLinkData> entries;
-}
-
-class _ContactLinkData {
-  const _ContactLinkData({
-    required this.text,
-    this.uri,
-  });
-
-  final String text;
-  final Uri? uri;
+  final String label;
+  final Uri uri;
 }
