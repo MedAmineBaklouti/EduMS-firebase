@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import 'package:edums/core/widgets/module_empty_state.dart';
+import 'package:edums/core/widgets/module_page_container.dart';
 import '../../../data/models/pickup_model.dart';
-import '../../common/widgets/module_empty_state.dart';
-import '../../common/widgets/module_page_container.dart';
 import '../../attendance/views/widgets/attendance_date_card.dart';
 import '../controllers/admin_archived_pickup_controller.dart';
 import 'pickup_ticket_detail_view.dart';

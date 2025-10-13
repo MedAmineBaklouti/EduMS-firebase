@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import 'package:edums/core/widgets/module_empty_state.dart';
 import '../../../data/models/conversation_model.dart';
 import '../../../data/models/message_model.dart';
-import '../../common/widgets/module_empty_state.dart';
 import '../controllers/messaging_controller.dart';
 import 'widgets/scrollable_placeholder.dart';
 

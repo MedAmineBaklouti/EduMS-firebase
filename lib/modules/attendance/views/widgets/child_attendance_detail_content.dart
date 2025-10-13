@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/models/attendance_record_model.dart';
-import '../../../common/widgets/module_card.dart';
+import 'package:edums/core/widgets/module_card.dart';
 import '../../models/child_attendance_summary.dart';
 
 class ChildAttendanceDetailContent extends StatelessWidget {

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import 'package:edums/core/widgets/module_card.dart';
+import 'package:edums/core/widgets/module_empty_state.dart';
+import 'package:edums/core/widgets/module_page_container.dart';
 import '../../../data/models/behavior_model.dart';
-import '../../common/widgets/module_card.dart';
-import '../../common/widgets/module_empty_state.dart';
-import '../../common/widgets/module_page_container.dart';
 import '../controllers/parent_behavior_controller.dart';
 import '../widgets/behavior_type_chip.dart';
 import 'behavior_detail_view.dart';
