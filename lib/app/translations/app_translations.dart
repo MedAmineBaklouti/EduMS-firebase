@@ -129,6 +129,101 @@ class AppTranslations extends Translations {
           'messaging_contacts_no_results_message':
               'Try searching with a different name or role.',
           'messaging_contact_placeholder': 'Contact',
+          'announcement_form_appbar_edit': 'Edit Announcement',
+          'announcement_form_appbar_add': 'Add Announcement',
+          'announcement_form_card_title_edit':
+              'Update the announcement details',
+          'announcement_form_card_title_add': 'Share a new announcement',
+          'announcement_form_card_message':
+              'Announcements automatically expire after seven days. Make sure to provide a clear title and concise information.',
+          'announcement_form_title_label': 'Announcement title',
+          'announcement_form_title_hint': 'e.g. Midterm exams schedule',
+          'announcement_form_title_error_empty': 'Please enter a title.',
+          'announcement_form_title_error_short':
+              'The title should be at least 4 characters long.',
+          'announcement_form_message_label': 'Message',
+          'announcement_form_message_hint':
+              'Share the announcement details, dates and any important instructions.',
+          'announcement_form_message_error_empty':
+              'Please describe the announcement.',
+          'announcement_form_message_error_short':
+              'Add a bit more context so everyone understands.',
+          'announcement_form_audience_label': 'Audience',
+          'announcement_audience_teachers': 'Teachers',
+          'announcement_audience_parents': 'Parents',
+          'announcement_form_summary_selected': 'Will notify: @audiences',
+          'announcement_form_summary_empty':
+              'Select at least one audience to notify.',
+          'announcement_form_characters_left': '@count characters left',
+          'announcement_form_characters_over_limit':
+              'Limit exceeded by @count characters',
+          'announcement_form_saving': 'Saving...',
+          'announcement_form_submit_update': 'Update announcement',
+          'announcement_form_submit_publish': 'Publish announcement',
+          'announcement_snackbar_select_title': 'Select audience',
+          'announcement_snackbar_select_message':
+              'Choose at least one audience for this announcement.',
+          'announcement_snackbar_update_title': 'Announcement updated',
+          'announcement_snackbar_publish_title': 'Announcement published',
+          'announcement_snackbar_update_message':
+              'Changes have been saved successfully.',
+          'announcement_snackbar_publish_message':
+              'Your announcement is now visible to the selected audience.',
+          'announcement_snackbar_error_title': 'Error',
+          'announcement_snackbar_save_error':
+              'Failed to save the announcement. @error',
+          'announcement_list_title': 'Announcements',
+          'announcement_list_new': 'New Announcement',
+          'announcement_list_empty_title': 'No announcements yet',
+          'announcement_list_empty_message':
+              'Stay tuned! New announcements will appear here.',
+          'announcement_section_today': 'Today',
+          'announcement_section_yesterday': 'Yesterday',
+          'announcement_action_edit': 'Edit',
+          'announcement_action_delete': 'Delete',
+          'announcement_action_cancel': 'Cancel',
+          'announcement_confirm_delete_title': 'Delete announcement',
+          'announcement_confirm_delete_message':
+              'Are you sure you want to delete this announcement?',
+          'announcement_audience_all': 'All audiences',
+          'announcement_expiry_expired': 'Expired',
+          'announcement_expiry_days_only': '@daysd left',
+          'announcement_expiry_days_hours': '@daysd @hoursh left',
+          'announcement_expiry_hours_only': '@hours h left',
+          'announcement_expiry_hours_minutes': '@hours h @minutes m left',
+          'announcement_expiry_minutes': '@minutes min left',
+          'announcement_detail_fallback_title': 'Announcement',
+          'announcement_detail_no_description':
+              'No additional details were provided for this announcement.',
+          'announcement_detail_chip_published': 'Published @date',
+          'announcement_detail_chip_audience': 'Audience: @audience',
+          'announcement_detail_edit_tooltip': 'Edit announcement',
+          'announcement_detail_audience_summary_multiple': '@count audiences',
+          'announcement_detail_overview_title': 'Announcement overview',
+          'announcement_detail_target_audiences': 'Target audiences',
+          'announcement_detail_section_announcement': 'Announcement',
+          'announcement_detail_admin_tools_title': 'Admin tools',
+          'announcement_detail_admin_tools_message':
+              'Download a formatted PDF copy for records or offline sharing. Announcements remain visible for seven days by default.',
+          'announcement_detail_admin_tools_download':
+              'Download announcement PDF',
+          'announcement_detail_badge_published': 'Published @date',
+          'announcement_detail_badge_expires_on': 'Expires @date',
+          'announcement_detail_expired_on': 'Expired on @date',
+          'announcement_detail_expires_in_days': 'Expires in @count days',
+          'announcement_detail_expires_in_hours': 'Expires in @count hours',
+          'announcement_detail_expires_soon': 'Expires soon',
+          'announcement_pdf_published': 'Published: @date',
+          'announcement_pdf_audience_label': 'Audience',
+          'announcement_pdf_announcement_label': 'Announcement',
+          'announcement_pdf_expires_on': 'Expires on @date',
+          'announcement_pdf_download_ready': 'Download ready',
+          'announcement_pdf_saved_to': 'Saved to @path',
+          'announcement_pdf_not_saved':
+              'The PDF was not saved. Please check storage permissions or try again.',
+          'announcement_pdf_download_failed': 'Download failed',
+          'announcement_pdf_download_error':
+              'Unable to generate the PDF. @error',
         },
         'fr': {
           'settings_title': 'Paramètres',
@@ -273,6 +368,105 @@ class AppTranslations extends Translations {
           'messaging_contacts_no_results_message':
               'Essayez une autre recherche par nom ou rôle.',
           'messaging_contact_placeholder': 'Contact',
+          'announcement_form_appbar_edit': 'Modifier l’annonce',
+          'announcement_form_appbar_add': 'Ajouter une annonce',
+          'announcement_form_card_title_edit':
+              'Mettez à jour les détails de l’annonce',
+          'announcement_form_card_title_add': 'Publiez une nouvelle annonce',
+          'announcement_form_card_message':
+              'Les annonces expirent automatiquement après sept jours. Fournissez un titre clair et des informations concises.',
+          'announcement_form_title_label': 'Titre de l’annonce',
+          'announcement_form_title_hint':
+              'ex. calendrier des examens de mi-semestre',
+          'announcement_form_title_error_empty': 'Veuillez saisir un titre.',
+          'announcement_form_title_error_short':
+              'Le titre doit contenir au moins 4 caractères.',
+          'announcement_form_message_label': 'Message',
+          'announcement_form_message_hint':
+              'Partagez les détails, les dates et les instructions importantes de l’annonce.',
+          'announcement_form_message_error_empty':
+              'Veuillez décrire l’annonce.',
+          'announcement_form_message_error_short':
+              'Ajoutez un peu plus de contexte pour que tout le monde comprenne.',
+          'announcement_form_audience_label': 'Destinataires',
+          'announcement_audience_teachers': 'Enseignants',
+          'announcement_audience_parents': 'Parents',
+          'announcement_form_summary_selected':
+              'Notification envoyée : @audiences',
+          'announcement_form_summary_empty':
+              'Sélectionnez au moins un destinataire à notifier.',
+          'announcement_form_characters_left': '@count caractères restants',
+          'announcement_form_characters_over_limit':
+              'Limite dépassée de @count caractères',
+          'announcement_form_saving': 'Enregistrement…',
+          'announcement_form_submit_update': 'Mettre à jour l’annonce',
+          'announcement_form_submit_publish': 'Publier l’annonce',
+          'announcement_snackbar_select_title': 'Sélectionnez des destinataires',
+          'announcement_snackbar_select_message':
+              'Choisissez au moins un destinataire pour cette annonce.',
+          'announcement_snackbar_update_title': 'Annonce mise à jour',
+          'announcement_snackbar_publish_title': 'Annonce publiée',
+          'announcement_snackbar_update_message':
+              'Les modifications ont été enregistrées avec succès.',
+          'announcement_snackbar_publish_message':
+              'Votre annonce est maintenant visible pour les destinataires sélectionnés.',
+          'announcement_snackbar_error_title': 'Erreur',
+          'announcement_snackbar_save_error':
+              'Impossible d’enregistrer l’annonce. @error',
+          'announcement_list_title': 'Annonces',
+          'announcement_list_new': 'Nouvelle annonce',
+          'announcement_list_empty_title': 'Aucune annonce pour le moment',
+          'announcement_list_empty_message':
+              'Restez à l’écoute ! Les nouvelles annonces apparaîtront ici.',
+          'announcement_section_today': 'Aujourd’hui',
+          'announcement_section_yesterday': 'Hier',
+          'announcement_action_edit': 'Modifier',
+          'announcement_action_delete': 'Supprimer',
+          'announcement_action_cancel': 'Annuler',
+          'announcement_confirm_delete_title': 'Supprimer l’annonce',
+          'announcement_confirm_delete_message':
+              'Êtes-vous sûr de vouloir supprimer cette annonce ?',
+          'announcement_audience_all': 'Tous les destinataires',
+          'announcement_expiry_expired': 'Expirée',
+          'announcement_expiry_days_only': '@days j restants',
+          'announcement_expiry_days_hours': '@days j @hours h restants',
+          'announcement_expiry_hours_only': '@hours h restantes',
+          'announcement_expiry_hours_minutes':
+              '@hours h @minutes min restantes',
+          'announcement_expiry_minutes': '@minutes min restantes',
+          'announcement_detail_fallback_title': 'Annonce',
+          'announcement_detail_no_description':
+              'Aucun détail supplémentaire n’a été fourni pour cette annonce.',
+          'announcement_detail_chip_published': 'Publié le @date',
+          'announcement_detail_chip_audience': 'Public : @audience',
+          'announcement_detail_edit_tooltip': 'Modifier l’annonce',
+          'announcement_detail_audience_summary_multiple': '@count groupes',
+          'announcement_detail_overview_title': 'Aperçu de l’annonce',
+          'announcement_detail_target_audiences': 'Destinataires ciblés',
+          'announcement_detail_section_announcement': 'Annonce',
+          'announcement_detail_admin_tools_title': 'Outils administrateur',
+          'announcement_detail_admin_tools_message':
+              'Téléchargez une copie PDF mise en forme pour les archives ou le partage hors ligne. Les annonces restent visibles pendant sept jours par défaut.',
+          'announcement_detail_admin_tools_download':
+              'Télécharger l’annonce en PDF',
+          'announcement_detail_badge_published': 'Publié le @date',
+          'announcement_detail_badge_expires_on': 'Expire le @date',
+          'announcement_detail_expired_on': 'Expirée le @date',
+          'announcement_detail_expires_in_days': 'Expire dans @count jour(s)',
+          'announcement_detail_expires_in_hours': 'Expire dans @count heure(s)',
+          'announcement_detail_expires_soon': 'Expire bientôt',
+          'announcement_pdf_published': 'Publié : @date',
+          'announcement_pdf_audience_label': 'Destinataires',
+          'announcement_pdf_announcement_label': 'Annonce',
+          'announcement_pdf_expires_on': 'Expire le @date',
+          'announcement_pdf_download_ready': 'Téléchargement prêt',
+          'announcement_pdf_saved_to': 'Enregistré dans @path',
+          'announcement_pdf_not_saved':
+              'Le PDF n’a pas été enregistré. Vérifiez les autorisations de stockage ou réessayez.',
+          'announcement_pdf_download_failed':
+              'Échec du téléchargement',
+          'announcement_pdf_download_error':
+              'Impossible de générer le PDF. @error',
         },
         'ar': {
           'settings_title': 'الإعدادات',
@@ -402,6 +596,101 @@ class AppTranslations extends Translations {
           'messaging_contacts_no_results_message':
               'جرّب البحث باسم أو دور مختلف.',
           'messaging_contact_placeholder': 'جهة اتصال',
+          'announcement_form_appbar_edit': 'تعديل الإعلان',
+          'announcement_form_appbar_add': 'إضافة إعلان',
+          'announcement_form_card_title_edit': 'حدّث تفاصيل الإعلان',
+          'announcement_form_card_title_add': 'انشر إعلانًا جديدًا',
+          'announcement_form_card_message':
+              'تنتهي الإعلانات تلقائيًا بعد سبعة أيام. احرص على تقديم عنوان واضح ومعلومات موجزة.',
+          'announcement_form_title_label': 'عنوان الإعلان',
+          'announcement_form_title_hint': 'مثال: جدول اختبارات منتصف الفصل',
+          'announcement_form_title_error_empty': 'يرجى إدخال عنوان.',
+          'announcement_form_title_error_short':
+              'يجب أن يتكون العنوان من 4 أحرف على الأقل.',
+          'announcement_form_message_label': 'الرسالة',
+          'announcement_form_message_hint':
+              'شارك تفاصيل الإعلان والتواريخ وأي تعليمات مهمة.',
+          'announcement_form_message_error_empty':
+              'يرجى وصف الإعلان.',
+          'announcement_form_message_error_short':
+              'أضف مزيدًا من السياق ليتضح للجميع.',
+          'announcement_form_audience_label': 'الفئة المستهدفة',
+          'announcement_audience_teachers': 'المعلمين',
+          'announcement_audience_parents': 'أولياء الأمور',
+          'announcement_form_summary_selected': 'سيتم إشعار: @audiences',
+          'announcement_form_summary_empty':
+              'حدد فئة واحدة على الأقل لإشعارها.',
+          'announcement_form_characters_left': 'متبقي @count حرفًا',
+          'announcement_form_characters_over_limit':
+              'تم تجاوز الحد بـ @count حرفًا',
+          'announcement_form_saving': 'جارٍ الحفظ...',
+          'announcement_form_submit_update': 'تحديث الإعلان',
+          'announcement_form_submit_publish': 'نشر الإعلان',
+          'announcement_snackbar_select_title': 'اختر الفئة المستهدفة',
+          'announcement_snackbar_select_message':
+              'اختر فئة واحدة على الأقل لهذا الإعلان.',
+          'announcement_snackbar_update_title': 'تم تحديث الإعلان',
+          'announcement_snackbar_publish_title': 'تم نشر الإعلان',
+          'announcement_snackbar_update_message':
+              'تم حفظ التغييرات بنجاح.',
+          'announcement_snackbar_publish_message':
+              'أصبح إعلانك مرئيًا الآن للفئات المختارة.',
+          'announcement_snackbar_error_title': 'خطأ',
+          'announcement_snackbar_save_error':
+              'فشل حفظ الإعلان. @error',
+          'announcement_list_title': 'الإعلانات',
+          'announcement_list_new': 'إعلان جديد',
+          'announcement_list_empty_title': 'لا توجد إعلانات بعد',
+          'announcement_list_empty_message':
+              'ترقب! ستظهر الإعلانات الجديدة هنا.',
+          'announcement_section_today': 'اليوم',
+          'announcement_section_yesterday': 'أمس',
+          'announcement_action_edit': 'تعديل',
+          'announcement_action_delete': 'حذف',
+          'announcement_action_cancel': 'إلغاء',
+          'announcement_confirm_delete_title': 'حذف الإعلان',
+          'announcement_confirm_delete_message':
+              'هل أنت متأكد أنك تريد حذف هذا الإعلان؟',
+          'announcement_audience_all': 'جميع الفئات',
+          'announcement_expiry_expired': 'منتهي',
+          'announcement_expiry_days_only': 'متبقي @days يومًا',
+          'announcement_expiry_days_hours': 'متبقي @days يومًا و@hours ساعة',
+          'announcement_expiry_hours_only': 'متبقي @hours ساعة',
+          'announcement_expiry_hours_minutes':
+              'متبقي @hours ساعة و@minutes دقيقة',
+          'announcement_expiry_minutes': 'متبقي @minutes دقيقة',
+          'announcement_detail_fallback_title': 'الإعلان',
+          'announcement_detail_no_description':
+              'لم يتم توفير تفاصيل إضافية لهذا الإعلان.',
+          'announcement_detail_chip_published': 'نشر في @date',
+          'announcement_detail_chip_audience': 'الفئة: @audience',
+          'announcement_detail_edit_tooltip': 'تعديل الإعلان',
+          'announcement_detail_audience_summary_multiple': '@count فئات',
+          'announcement_detail_overview_title': 'نظرة عامة على الإعلان',
+          'announcement_detail_target_audiences': 'الفئات المستهدفة',
+          'announcement_detail_section_announcement': 'الإعلان',
+          'announcement_detail_admin_tools_title': 'أدوات المشرف',
+          'announcement_detail_admin_tools_message':
+              'قم بتنزيل نسخة PDF منسقة للأرشفة أو للمشاركة دون اتصال. تبقى الإعلانات مرئية لمدة سبعة أيام بشكل افتراضي.',
+          'announcement_detail_admin_tools_download':
+              'تنزيل الإعلان بصيغة PDF',
+          'announcement_detail_badge_published': 'تم النشر @date',
+          'announcement_detail_badge_expires_on': 'ينتهي @date',
+          'announcement_detail_expired_on': 'انتهى في @date',
+          'announcement_detail_expires_in_days': 'ينتهي خلال @count يوم',
+          'announcement_detail_expires_in_hours': 'ينتهي خلال @count ساعة',
+          'announcement_detail_expires_soon': 'سينتهي قريبًا',
+          'announcement_pdf_published': 'تم النشر: @date',
+          'announcement_pdf_audience_label': 'الفئة المستهدفة',
+          'announcement_pdf_announcement_label': 'الإعلان',
+          'announcement_pdf_expires_on': 'ينتهي في @date',
+          'announcement_pdf_download_ready': 'التنزيل جاهز',
+          'announcement_pdf_saved_to': 'تم الحفظ في @path',
+          'announcement_pdf_not_saved':
+              'لم يتم حفظ ملف PDF. يرجى التحقق من أذونات التخزين أو المحاولة مرة أخرى.',
+          'announcement_pdf_download_failed': 'فشل التنزيل',
+          'announcement_pdf_download_error':
+              'تعذر إنشاء ملف PDF. @error',
         },
       };
 }

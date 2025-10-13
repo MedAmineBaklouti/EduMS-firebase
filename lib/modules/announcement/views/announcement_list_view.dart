@@ -27,7 +27,7 @@ class AnnouncementListView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Announcements'),
+        title: Text('announcement_list_title'.tr),
         centerTitle: true,
       ),
       body: Container(
@@ -100,7 +100,7 @@ class AnnouncementListView extends StatelessWidget {
               heroTag: 'announcementFab',
               onPressed: () => controller.openForm(),
               icon: const Icon(Icons.add),
-              label: const Text('New Announcement'),
+              label: Text('announcement_list_new'.tr),
             )
           : null,
     );
@@ -127,7 +127,7 @@ class AnnouncementListView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'No announcements yet',
+          'announcement_list_empty_title'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
@@ -135,7 +135,7 @@ class AnnouncementListView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Stay tuned! New announcements will appear here.',
+          'announcement_list_empty_message'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -295,10 +295,10 @@ class AnnouncementListView extends StatelessWidget {
     final target = DateTime(timestamp.year, timestamp.month, timestamp.day);
 
     if (_isSameDay(target, today)) {
-      return 'Today';
+      return 'announcement_section_today'.tr;
     }
     if (_isSameDay(target, yesterday)) {
-      return 'Yesterday';
+      return 'announcement_section_yesterday'.tr;
     }
     if (target.isAfter(lastWeek)) {
       return _weekdaySectionFormat.format(timestamp);
@@ -323,14 +323,14 @@ class AnnouncementListView extends StatelessWidget {
         alignment: Alignment.centerLeft,
         color: theme.colorScheme.primary,
         icon: Icons.edit_outlined,
-        label: 'Edit',
+        label: 'announcement_action_edit'.tr,
       ),
       secondaryBackground: _buildSwipeBackground(
         context,
         alignment: Alignment.centerRight,
         color: theme.colorScheme.error,
         icon: Icons.delete_outline,
-        label: 'Delete',
+        label: 'announcement_action_delete'.tr,
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -431,19 +431,26 @@ class AnnouncementListView extends StatelessWidget {
 
   String _formatRemainingTime(int remainingMinutes) {
     if (remainingMinutes <= 0) {
-      return 'Expired';
+      return 'announcement_expiry_expired'.tr;
     }
     if (remainingMinutes >= 1440) {
       final days = remainingMinutes ~/ 1440;
       final hours = (remainingMinutes % 1440) ~/ 60;
-      return hours > 0 ? '${days}d ${hours}h left' : '${days}d left';
+      return hours > 0
+          ? 'announcement_expiry_days_hours'
+              .trParams({'days': '$days', 'hours': '$hours'})
+          : 'announcement_expiry_days_only'.trParams({'days': '$days'});
     }
     if (remainingMinutes >= 60) {
       final hours = remainingMinutes ~/ 60;
       final minutes = remainingMinutes % 60;
-      return minutes > 0 ? '${hours}h ${minutes}m left' : '${hours}h left';
+      return minutes > 0
+          ? 'announcement_expiry_hours_minutes'
+              .trParams({'hours': '$hours', 'minutes': '$minutes'})
+          : 'announcement_expiry_hours_only'.trParams({'hours': '$hours'});
     }
-    return '$remainingMinutes min left';
+    return 'announcement_expiry_minutes'
+        .trParams({'minutes': '$remainingMinutes'});
   }
 
   Widget _buildSwipeBackground(
@@ -509,19 +516,29 @@ class AnnouncementListView extends StatelessWidget {
 
   List<String> _audienceLabels(AnnouncementModel ann) {
     if (ann.audience.isEmpty) {
-      return ['All audiences'];
+      return ['announcement_audience_all'.tr];
     }
     final seen = <String>{};
     final labels = <String>[];
     for (final item in ann.audience) {
-      final formatted = _capitalize(item.trim());
-      if (formatted.isEmpty) continue;
-      final key = formatted.toLowerCase();
-      if (seen.add(key)) {
-        labels.add(formatted);
+      final normalized = item.trim().toLowerCase();
+      if (normalized.isEmpty || !seen.add(normalized)) {
+        continue;
       }
+      labels.add(_audienceLabelForKey(normalized));
     }
     return labels;
+  }
+
+  String _audienceLabelForKey(String key) {
+    switch (key) {
+      case 'teachers':
+        return 'announcement_audience_teachers'.tr;
+      case 'parents':
+        return 'announcement_audience_parents'.tr;
+      default:
+        return _capitalize(key);
+    }
   }
 
   String _capitalize(String value) {
@@ -534,21 +551,20 @@ class AnnouncementListView extends StatelessWidget {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete announcement'),
-        content:
-            const Text('Are you sure you want to delete this announcement?'),
+        title: Text('announcement_confirm_delete_title'.tr),
+        content: Text('announcement_confirm_delete_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
-              'Cancel',
+              'announcement_action_cancel'.tr,
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
-              'Delete',
+              'announcement_action_delete'.tr,
               style: TextStyle(color: theme.colorScheme.error),
             ),
           ),

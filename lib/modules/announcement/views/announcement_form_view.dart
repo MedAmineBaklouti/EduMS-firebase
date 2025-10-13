@@ -16,7 +16,11 @@ class AnnouncementFormView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: Text(isEditing ? 'Edit Announcement' : 'Add Announcement'),
+        title: Text(
+          isEditing
+              ? 'announcement_form_appbar_edit'.tr
+              : 'announcement_form_appbar_add'.tr,
+        ),
         centerTitle: true,
       ),
       body: GestureDetector(
@@ -64,15 +68,15 @@ class AnnouncementFormView extends StatelessWidget {
                                     children: [
                                       Text(
                                         isEditing
-                                            ? 'Update the announcement details'
-                                            : 'Share a new announcement',
+                                            ? 'announcement_form_card_title_edit'.tr
+                                            : 'announcement_form_card_title_add'.tr,
                                         style: theme.textTheme.titleMedium?.copyWith(
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'Announcements automatically expire after seven days. Make sure to provide a clear title and concise information.',
+                                        'announcement_form_card_message'.tr,
                                         style: theme.textTheme.bodyMedium?.copyWith(
                                           color: theme.colorScheme.onSurfaceVariant,
                                           height: 1.4,
@@ -89,17 +93,17 @@ class AnnouncementFormView extends StatelessWidget {
                         TextFormField(
                           controller: controller.titleController,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Announcement title',
-                            border: OutlineInputBorder(),
-                            hintText: 'e.g. Midterm exams schedule',
+                          decoration: InputDecoration(
+                            labelText: 'announcement_form_title_label'.tr,
+                            border: const OutlineInputBorder(),
+                            hintText: 'announcement_form_title_hint'.tr,
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please enter a title.';
+                              return 'announcement_form_title_error_empty'.tr;
                             }
                             if (value.trim().length < 4) {
-                              return 'The title should be at least 4 characters long.';
+                              return 'announcement_form_title_error_short'.tr;
                             }
                             return null;
                           },
@@ -110,20 +114,20 @@ class AnnouncementFormView extends StatelessWidget {
                           minLines: 5,
                           maxLines: 12,
                           maxLength: 600,
-                          decoration: const InputDecoration(
-                            labelText: 'Message',
+                          decoration: InputDecoration(
+                            labelText: 'announcement_form_message_label'.tr,
                             alignLabelWithHint: true,
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                             hintText:
-                                'Share the announcement details, dates and any important instructions.',
+                                'announcement_form_message_hint'.tr,
                             counterText: '',
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please describe the announcement.';
+                              return 'announcement_form_message_error_empty'.tr;
                             }
                             if (value.trim().length < 10) {
-                              return 'Add a bit more context so everyone understands.';
+                              return 'announcement_form_message_error_short'.tr;
                             }
                             return null;
                           },
@@ -137,8 +141,10 @@ class AnnouncementFormView extends StatelessWidget {
                               alignment: Alignment.centerRight,
                               child: Text(
                                 remaining >= 0
-                                    ? '$remaining characters left'
-                                    : 'Limit exceeded by ${remaining.abs()} characters',
+                                    ? 'announcement_form_characters_left'
+                                        .trParams({'count': '$remaining'})
+                                    : 'announcement_form_characters_over_limit'
+                                        .trParams({'count': '${remaining.abs()}'})
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: remaining >= 0
                                       ? theme.colorScheme.onSurfaceVariant
@@ -150,7 +156,7 @@ class AnnouncementFormView extends StatelessWidget {
                         ),
                         const SizedBox(height: 32),
                         Text(
-                          'Audience',
+                          'announcement_form_audience_label'.tr,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -163,7 +169,7 @@ class AnnouncementFormView extends StatelessWidget {
                             children: [
                               _buildAudienceChip(
                                 context,
-                                label: 'Teachers',
+                                label: 'announcement_audience_teachers'.tr,
                                 icon: Icons.school_outlined,
                                 selected: controller.teachersSelected.value,
                                 onChanged: (value) =>
@@ -171,7 +177,7 @@ class AnnouncementFormView extends StatelessWidget {
                               ),
                               _buildAudienceChip(
                                 context,
-                                label: 'Parents',
+                                label: 'announcement_audience_parents'.tr,
                                 icon: Icons.family_restroom_outlined,
                                 selected: controller.parentsSelected.value,
                                 onChanged: (value) =>
@@ -186,10 +192,12 @@ class AnnouncementFormView extends StatelessWidget {
                               controller.parentsSelected.value;
                           final selectedGroups = <String>[];
                           if (controller.teachersSelected.value) {
-                            selectedGroups.add('Teachers');
+                            selectedGroups.add(
+                                'announcement_audience_teachers'.tr);
                           }
                           if (controller.parentsSelected.value) {
-                            selectedGroups.add('Parents');
+                            selectedGroups.add(
+                                'announcement_audience_parents'.tr);
                           }
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
@@ -216,8 +224,12 @@ class AnnouncementFormView extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     hasSelection
-                                        ? 'Will notify: ${selectedGroups.join(', ')}'
-                                        : 'Select at least one audience to notify.',
+                                        ? 'announcement_form_summary_selected'
+                                            .trParams({
+                                                'audiences':
+                                                    selectedGroups.join(', ')
+                                              })
+                                        : 'announcement_form_summary_empty'.tr,
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       color: hasSelection
                                           ? theme.colorScheme.onSurfaceVariant
@@ -251,10 +263,10 @@ class AnnouncementFormView extends StatelessWidget {
                                     ),
                               label: Text(
                                 saving
-                                    ? 'Saving...'
+                                    ? 'announcement_form_saving'.tr
                                     : isEditing
-                                        ? 'Update announcement'
-                                        : 'Publish announcement',
+                                        ? 'announcement_form_submit_update'.tr
+                                        : 'announcement_form_submit_publish'.tr,
                               ),
                               onPressed:
                                   saving ? null : controller.saveAnnouncement,
