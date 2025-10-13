@@ -42,16 +42,16 @@ class _ContactUsViewState extends State<ContactUsView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final onPrimary = theme.colorScheme.onPrimary;
+    final primary = theme.colorScheme.primary;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Contact us'),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: onPrimary,
+        backgroundColor: primary,
+        foregroundColor: theme.colorScheme.onPrimary,
       ),
       body: Container(
-        color: theme.colorScheme.primary,
+        color: Colors.white,
         width: double.infinity,
         child: Center(
           child: SingleChildScrollView(
@@ -61,30 +61,45 @@ class _ContactUsViewState extends State<ContactUsView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Get in touch with EduMS',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: onPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Image.asset(
+                    'assets/CU.png',
+                    width: 320,
+                    fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Choose one of the contact options below to reach our team directly.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: onPrimary.withOpacity(0.85),
+                  const SizedBox(height: 32),
+                  Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                  ),
-                  const SizedBox(height: 40),
-                  Wrap(
-                    spacing: 32,
-                    runSpacing: 32,
-                    alignment: WrapAlignment.center,
-                    children: _actions
-                        .map((action) => _buildContactAction(theme, action, onPrimary))
-                        .toList(),
+                    color: theme.cardColor,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 32,
+                        horizontal: 24,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Get in touch with EduMS',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Choose one of the contact options below to reach our team directly.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                          const SizedBox(height: 28),
+                          ..._buildContactActions(theme),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -95,49 +110,58 @@ class _ContactUsViewState extends State<ContactUsView> {
     );
   }
 
+  List<Widget> _buildContactActions(ThemeData theme) {
+    final primary = theme.colorScheme.primary;
+
+    final widgets = <Widget>[];
+    for (var i = 0; i < _actions.length; i++) {
+      widgets.add(_buildContactAction(theme, _actions[i], primary));
+      if (i != _actions.length - 1) {
+        widgets.add(const Divider());
+      }
+    }
+    return widgets;
+  }
+
   Widget _buildContactAction(
     ThemeData theme,
     _ContactActionData action,
-    Color onPrimary,
+    Color primary,
   ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _launchUri(action.uri),
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          width: 200,
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.24),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: onPrimary,
+                  color: primary.withOpacity(0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   action.icon,
-                  color: theme.colorScheme.primary,
-                  size: 28,
+                  color: primary,
+                  size: 24,
                 ),
               ),
-              const SizedBox(height: 18),
-              Text(
-                action.label,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: onPrimary,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  action.label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: primary,
               ),
             ],
           ),
