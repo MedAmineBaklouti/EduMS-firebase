@@ -89,13 +89,15 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         title: Text(
-          _homework.title.isNotEmpty ? _homework.title : 'Homework details',
+          _homework.title.isNotEmpty
+              ? _homework.title
+              : 'homework_detail_title'.tr,
         ),
         centerTitle: true,
         actions: [
           if (widget.onEdit != null)
             IconButton(
-              tooltip: 'Edit homework',
+              tooltip: 'homework_detail_edit_tooltip'.tr,
               icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
                 await widget.onEdit?.call();
@@ -114,11 +116,11 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
             const SizedBox(height: 24),
             _buildSectionCard(
               context,
-              title: 'Homework details',
+              title: 'homework_detail_title'.tr,
               child: Text(
                 _homework.description.isNotEmpty
                     ? _homework.description
-                    : 'No additional details were provided for this homework assignment.',
+                    : 'homework_detail_no_description'.tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.6,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -141,7 +143,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
                   Icons.picture_as_pdf_outlined,
                   color: Colors.white,
                 ),
-                label: const Text('Download as PDF'),
+                label: Text('homework_detail_download_pdf'.tr),
                 onPressed: () => _downloadPdf(context),
               ),
             ),
@@ -157,12 +159,16 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
       _buildHeroChip(
         context,
         icon: Icons.event_available_outlined,
-        label: 'Due ${DateFormat('MMM d, yyyy').format(_homework.dueDate)}',
+        label: 'homework_due_date'.trParams({
+          'date': DateFormat('MMM d, yyyy').format(_homework.dueDate),
+        }),
       ),
       _buildHeroChip(
         context,
         icon: Icons.calendar_today_outlined,
-        label: 'Assigned ${DateFormat('MMM d, yyyy').format(_homework.assignedDate)}',
+        label: 'homework_assigned_date'.trParams({
+          'date': DateFormat('MMM d, yyyy').format(_homework.assignedDate),
+        }),
       ),
     ];
 
@@ -211,7 +217,9 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _homework.title.isNotEmpty ? _homework.title : 'Homework',
+            _homework.title.isNotEmpty
+                ? _homework.title
+                : 'homework_hero_title_fallback'.tr,
             style: theme.textTheme.headlineSmall?.copyWith(
               color: theme.colorScheme.onPrimary,
               fontWeight: FontWeight.w700,
@@ -234,22 +242,25 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
     String? childStatusSummary;
     if (widget.showParentControls) {
       if (_parentEntries.isEmpty) {
-        childStatusSummary =
-            'No children from your account are linked to this homework yet.';
+        childStatusSummary = 'homework_parent_no_children'.tr;
       } else {
         final completed =
             _parentEntries.where((entry) => entry.completed).length;
         final total = _parentEntries.length;
-        childStatusSummary =
-            '$completed of $total of your children have completed this homework.';
+        childStatusSummary = 'homework_parent_completion_summary'.trParams({
+          'completed': '$completed',
+          'total': '$total',
+        });
       }
     } else if (widget.showTeacherInsights) {
       final total = _assignedChildrenCount ?? 0;
       if (total > 0) {
         final completed =
             _homework.completionByChildId.values.where((value) => value).length;
-        childStatusSummary =
-            '$completed of $total students have completed this homework.';
+        childStatusSummary = 'homework_teacher_completion_summary'.trParams({
+          'completed': '$completed',
+          'total': '$total',
+        });
       }
     }
 
@@ -263,7 +274,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Homework overview',
+              'homework_overview_title'.tr,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -286,8 +297,10 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
                 _buildOverviewBadge(
                   context,
                   icon: Icons.school_outlined,
-                  label:
-                      'Assigned ${DateFormat('MMM d, yyyy').format(_homework.assignedDate)}',
+                  label: 'homework_assigned_date'.trParams({
+                    'date':
+                        DateFormat('MMM d, yyyy').format(_homework.assignedDate),
+                  }),
                 ),
               ],
             ),
@@ -354,9 +367,9 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
     if (_parentEntries.isEmpty) {
       return _buildSectionCard(
         context,
-        title: 'Manage completion',
+        title: 'homework_manage_completion_title'.tr,
         child: Text(
-          'No children from your account are linked to this homework yet.',
+          'homework_parent_no_children'.tr,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.5,
@@ -367,14 +380,14 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
 
     return _buildSectionCard(
       context,
-      title: 'Manage completion',
+      title: 'homework_manage_completion_title'.tr,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             isLocked
-                ? 'The due date has passed. Updates are disabled.'
-                : 'Mark each child as completed once they finish the assignment.',
+                ? 'homework_manage_completion_locked'.tr
+                : 'homework_manage_completion_hint'.tr,
             style: theme.textTheme.bodySmall?.copyWith(
               color: isLocked
                   ? theme.colorScheme.error
@@ -420,7 +433,9 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            entry.completed ? 'Completed' : 'Pending',
+                            entry.completed
+                                ? 'homework_status_completed'.tr
+                                : 'homework_status_pending'.tr,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: statusColor,
                               fontWeight: FontWeight.w600,
@@ -456,7 +471,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
     if (_isTeacherChildrenLoading) {
       return _buildSectionCard(
         context,
-        title: 'Student progress',
+        title: 'homework_teacher_progress_title'.tr,
         child: const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
           child: Center(child: CircularProgressIndicator()),
@@ -467,9 +482,9 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
     if (_teacherChildrenByClass.isEmpty) {
       return _buildSectionCard(
         context,
-        title: 'Student progress',
+        title: 'homework_teacher_progress_title'.tr,
         child: Text(
-          'Student completion data will appear here once learners are linked to this homework.',
+          'homework_teacher_progress_empty'.tr,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.5,
@@ -486,16 +501,16 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
 
     return _buildSectionCard(
       context,
-      title: 'Student progress',
+      title: 'homework_teacher_progress_title'.tr,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (classIds.length > 1)
             DropdownButtonFormField<String>(
               value: selectedId,
-              decoration: const InputDecoration(
-                labelText: 'Class',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'homework_filter_label_class'.tr,
+                border: const OutlineInputBorder(),
               ),
               items: classIds
                   .map(
@@ -504,7 +519,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
                       child: Text(
                         _teacherChildrenByClass[id]?.className.isNotEmpty == true
                             ? _teacherChildrenByClass[id]!.className
-                            : 'Class',
+                            : 'homework_filter_label_class'.tr,
                       ),
                     ),
                   )
@@ -522,7 +537,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
             Text(
               selectedGroup.className.isNotEmpty
                   ? selectedGroup.className
-                  : 'Class overview',
+                  : 'homework_teacher_progress_overview'.tr,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
@@ -531,7 +546,11 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           if (selectedGroup != null) ...[
             const SizedBox(height: 12),
             Text(
-              '${selectedGroup.children.where((child) => child.completed).length} of ${selectedGroup.children.length} students completed',
+              'homework_teacher_progress_summary'.trParams({
+                'completed':
+                    '${selectedGroup.children.where((child) => child.completed).length}',
+                'total': '${selectedGroup.children.length}',
+              }),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w600,
@@ -540,7 +559,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
             const SizedBox(height: 12),
             if (selectedGroup.children.isEmpty)
               Text(
-                'No students are linked to this homework for the selected class yet.',
+                'homework_teacher_progress_none'.tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   height: 1.5,
@@ -583,8 +602,10 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
                             ),
                           ),
                         ),
-                        Text(
-                          entry.completed ? 'Completed' : 'Pending',
+                       Text(
+                          entry.completed
+                              ? 'homework_status_completed'.tr
+                              : 'homework_status_pending'.tr,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: statusColor,
                             fontWeight: FontWeight.w600,
@@ -666,35 +687,45 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
       final completed =
           _parentEntries.where((entry) => entry.completed).length;
       final total = _parentEntries.length;
-      return '$completed of $total completed';
+      return 'homework_parent_summary_partial'
+          .trParams({'completed': '$completed', 'total': '$total'});
     }
 
     final total = _assignedChildrenCount ?? _homework.completionByChildId.length;
     if (total <= 0) {
-      return 'No completion updates yet';
+      return 'homework_completion_none'.tr;
     }
     final completed =
         _homework.completionByChildId.values.where((value) => value).length;
-    return '$completed of $total completed';
+    return 'homework_parent_summary_partial'
+        .trParams({'completed': '$completed', 'total': '$total'});
   }
 
   String _dueStatusLabel() {
     final now = DateTime.now();
     if (_homework.dueDate.isBefore(now)) {
-      return 'Past due';
+      return 'homework_due_status_past'.tr;
     }
     final difference = _homework.dueDate.difference(now);
     if (difference.inDays >= 1) {
-      return 'Due in ${difference.inDays} day${difference.inDays == 1 ? '' : 's'}';
+      final count = difference.inDays;
+      return count == 1
+          ? 'homework_due_status_day'.trParams({'count': '$count'})
+          : 'homework_due_status_days'.trParams({'count': '$count'});
     }
     if (difference.inHours >= 1) {
-      return 'Due in ${difference.inHours} hour${difference.inHours == 1 ? '' : 's'}';
+      final count = difference.inHours;
+      return count == 1
+          ? 'homework_due_status_hour'.trParams({'count': '$count'})
+          : 'homework_due_status_hours'.trParams({'count': '$count'});
     }
     final minutes = difference.inMinutes;
     if (minutes <= 0) {
-      return 'Due soon';
+      return 'homework_due_status_soon'.tr;
     }
-    return 'Due in $minutes minute${minutes == 1 ? '' : 's'}';
+    return minutes == 1
+        ? 'homework_due_status_minute'.trParams({'count': '$minutes'})
+        : 'homework_due_status_minutes'.trParams({'count': '$minutes'});
   }
 
   Future<void> _toggleParentChild(String childId, bool value) async {
@@ -843,8 +874,8 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
         _isTeacherChildrenLoading = false;
       });
       Get.snackbar(
-        'Load failed',
-        'Unable to load student details for this homework.',
+        'homework_pdf_load_failed_title'.tr,
+        'homework_pdf_load_failed_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -876,7 +907,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
         ? _parentEntries
             .map(
               (entry) =>
-                  '${entry.child.name}: ${entry.completed ? 'Completed' : 'Pending'}',
+                  '${entry.child.name}: ${entry.completed ? 'homework_status_completed'.tr : 'homework_status_pending'.tr}',
             )
             .toList()
         : const <String>[];
@@ -889,8 +920,12 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
                     group.children.where((child) => child.completed).length;
                 final label = group.className.isNotEmpty
                     ? group.className
-                    : 'Class';
-                return '$label: $completed of ${group.children.length} completed';
+                    : 'homework_filter_label_class'.tr;
+                final summary = 'homework_parent_summary_partial'.trParams({
+                  'completed': '$completed',
+                  'total': '${group.children.length}',
+                });
+                return '$label: $summary';
               },
             )
             .toList()
@@ -902,7 +937,9 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           pw.Header(
             level: 0,
             child: pw.Text(
-              _homework.title.isNotEmpty ? _homework.title : 'Homework',
+              _homework.title.isNotEmpty
+                  ? _homework.title
+                  : 'homework_hero_title_fallback'.tr,
               style: pw.TextStyle(
                 fontSize: 24,
                 fontWeight: pw.FontWeight.bold,
@@ -911,24 +948,34 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           ),
           pw.SizedBox(height: 12),
           pw.Text(
-            'Class: ${_homework.className.isNotEmpty ? _homework.className : 'Not specified'}',
+            'homework_filter_chip_class'.trParams({
+              'class': _homework.className.isNotEmpty
+                  ? _homework.className
+                  : 'common_not_specified'.tr,
+            }),
             style: const pw.TextStyle(fontSize: 14),
           ),
           pw.Text(
-            'Teacher: ${_homework.teacherName.isNotEmpty ? _homework.teacherName : 'Not specified'}',
+            'homework_pdf_teacher_label'.trParams({
+              'name': _homework.teacherName.isNotEmpty
+                  ? _homework.teacherName
+                  : 'common_not_specified'.tr,
+            }),
             style: const pw.TextStyle(fontSize: 14),
           ),
           pw.Text(
-            'Assigned: ${_dateTimeFormat.format(_homework.assignedDate)}',
+            'homework_pdf_assigned_label'
+                .trParams({'date': _dateTimeFormat.format(_homework.assignedDate)}),
             style: const pw.TextStyle(fontSize: 12),
           ),
           pw.Text(
-            'Due: ${_dateTimeFormat.format(_homework.dueDate)}',
+            'homework_pdf_due_label'
+                .trParams({'date': _dateTimeFormat.format(_homework.dueDate)}),
             style: const pw.TextStyle(fontSize: 12),
           ),
           pw.SizedBox(height: 20),
           pw.Text(
-            'Completion summary',
+            'homework_pdf_completion_summary'.tr,
             style: pw.TextStyle(
               fontSize: 18,
               fontWeight: pw.FontWeight.bold,
@@ -942,7 +989,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           if (parentStatusLines.isNotEmpty) ...[
             pw.SizedBox(height: 6),
             pw.Text(
-              'Per-child progress:',
+              'homework_pdf_per_child'.tr,
               style: pw.TextStyle(
                 fontSize: 12,
                 fontWeight: pw.FontWeight.bold,
@@ -959,7 +1006,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           if (teacherStatusLines.isNotEmpty) ...[
             pw.SizedBox(height: 12),
             pw.Text(
-              'Class summaries:',
+              'homework_pdf_class_summaries'.tr,
               style: pw.TextStyle(
                 fontSize: 12,
                 fontWeight: pw.FontWeight.bold,
@@ -975,7 +1022,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           ],
           pw.SizedBox(height: 20),
           pw.Text(
-            'Homework details',
+            'homework_pdf_section_details'.tr,
             style: pw.TextStyle(
               fontSize: 18,
               fontWeight: pw.FontWeight.bold,
@@ -985,7 +1032,7 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
           pw.Text(
             _homework.description.isNotEmpty
                 ? _homework.description
-                : 'No additional details were provided for this homework assignment.',
+                : 'homework_pdf_no_details'.tr,
             style: const pw.TextStyle(fontSize: 13, height: 1.5),
           ),
         ],
@@ -998,17 +1045,17 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(
-        'Download complete',
+        'common_download_complete'.tr,
         savedPath != null
-            ? 'Saved to $savedPath'
-            : 'The PDF was not saved. Please check storage permissions or try again.',
+            ? 'homework_pdf_saved_to'.trParams({'path': savedPath})
+            : 'homework_pdf_not_saved'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       Get.closeCurrentSnackbar();
       Get.snackbar(
-        'Error',
-        'Failed to generate the PDF. ${e.toString()}',
+        'common_error'.tr,
+        'homework_pdf_error_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     }

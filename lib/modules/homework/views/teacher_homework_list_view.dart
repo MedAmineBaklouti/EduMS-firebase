@@ -22,7 +22,7 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Homework Manager'),
+        title: Text('homework_teacher_list_title'.tr),
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -31,7 +31,7 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
           Get.to(() => const TeacherHomeworkFormView());
         },
         icon: const Icon(Icons.add),
-        label: const Text('New homework'),
+        label: Text('homework_teacher_action_new'.tr),
       ),
       body: ModulePageContainer(
         child: Column(
@@ -50,12 +50,11 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding:
                               const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
+                          children: [
                             ModuleEmptyState(
                               icon: Icons.menu_book_outlined,
-                              title: 'No homework assignments found',
-                              message:
-                                  'Create your first assignment to help students stay on track.',
+                              title: 'homework_teacher_empty_title'.tr,
+                              message: 'homework_teacher_empty_message'.tr,
                             ),
                           ],
                         )
@@ -79,13 +78,13 @@ class TeacherHomeworkListView extends GetView<TeacherHomeworkController> {
                                 color:
                                     Theme.of(context).colorScheme.primary,
                                 icon: Icons.edit_outlined,
-                                label: 'Edit',
+                                label: 'common_edit'.tr,
                               ),
                               secondaryBackground: SwipeActionBackground(
                                 alignment: Alignment.centerRight,
                                 color: Theme.of(context).colorScheme.error,
                                 icon: Icons.delete_outline,
-                                label: 'Delete',
+                                label: 'common_delete'.tr,
                               ),
                               confirmDismiss: (direction) async {
                                 if (direction == DismissDirection.startToEnd) {
@@ -153,7 +152,7 @@ class _TeacherHomeworkFilters extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Filter assignments',
+                'homework_teacher_filters_title'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -164,7 +163,7 @@ class _TeacherHomeworkFilters extends StatelessWidget {
                 return TextButton.icon(
                   onPressed: hasFilter ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 );
               }),
             ],
@@ -182,7 +181,9 @@ class _TeacherHomeworkFilters extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   _ActiveFilterChip(
-                    label: 'Class: ${controller.className(classFilter)}',
+                    label: 'homework_filter_chip_class'.trParams({
+                      'class': controller.className(classFilter),
+                    }),
                     onRemoved: controller.clearFilters,
                   ),
                 ],
@@ -195,17 +196,19 @@ class _TeacherHomeworkFilters extends StatelessWidget {
             final isDisabled = classes.isEmpty;
             return DropdownButtonFormField<String?>(
               value: classFilter,
-              decoration: const InputDecoration(
-                labelText: 'Class',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'homework_filter_label_class'.tr,
+                border: const OutlineInputBorder(),
               ),
               hint: Text(
-                isDisabled ? 'No classes available' : 'All classes',
+                isDisabled
+                    ? 'homework_teacher_filter_hint_none'.tr
+                    : 'homework_filter_all_classes'.tr,
               ),
               items: [
-                const DropdownMenuItem<String?>(
+                DropdownMenuItem<String?>(
                   value: null,
-                  child: Text('All classes'),
+                  child: Text('homework_filter_all_classes'.tr),
                 ),
                 ...classes.map(
                   (item) => DropdownMenuItem<String?>(
@@ -257,15 +260,15 @@ Future<bool> _confirmDelete(BuildContext context) async {
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: const Text('Delete homework'),
-            content: const Text(
-              'Are you sure you want to delete this homework assignment?',
+            title: Text('homework_confirm_delete_title'.tr),
+            content: Text(
+              'homework_confirm_delete_message'.tr,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 child: Text(
-                  'Cancel',
+                  'common_cancel'.tr,
                   style:
                       TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),
@@ -273,7 +276,7 @@ Future<bool> _confirmDelete(BuildContext context) async {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
                 child: Text(
-                  'Delete',
+                  'common_delete'.tr,
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
               ),
@@ -304,8 +307,12 @@ class _TeacherHomeworkCard extends StatelessWidget {
         homework.completionByChildId.values.where((value) => value).length;
     final totalCount = totalChildren ?? homework.completionByChildId.length;
     final completionLabel = totalCount > 0
-        ? '$completedCount/$totalCount completed'
-        : '$completedCount completed';
+        ? 'homework_completion_summary_full'.trParams({
+            'completed': '$completedCount',
+            'total': '$totalCount',
+          })
+        : 'homework_completion_summary_partial'
+            .trParams({'completed': '$completedCount'});
     return ModuleCard(
       onTap: onTap,
       child: Column(
@@ -343,7 +350,8 @@ class _TeacherHomeworkCard extends StatelessWidget {
               const Icon(Icons.calendar_today, size: 16),
               const SizedBox(width: 6),
               Text(
-                'Due ${dateFormat.format(homework.dueDate)}',
+                'homework_due_date'
+                    .trParams({'date': dateFormat.format(homework.dueDate)}),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,

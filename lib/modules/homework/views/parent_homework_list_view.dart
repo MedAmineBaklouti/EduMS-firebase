@@ -20,7 +20,7 @@ class ParentHomeworkListView extends GetView<ParentHomeworkController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Homework Overview'),
+        title: Text('homework_parent_list_title'.tr),
         centerTitle: true,
       ),
       body: ModulePageContainer(
@@ -40,12 +40,11 @@ class ParentHomeworkListView extends GetView<ParentHomeworkController> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding:
                               const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
+                          children: [
                             ModuleEmptyState(
                               icon: Icons.checklist_rtl_outlined,
-                              title: 'No homework assignments are available',
-                              message:
-                                  'When teachers publish new homework, it will appear here for your review.',
+                              title: 'homework_parent_empty_title'.tr,
+                              message: 'homework_parent_empty_message'.tr,
                             ),
                           ],
                         )
@@ -86,7 +85,7 @@ class _ParentHomeworkFilters extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Filter homeworks',
+                      'homework_filters_title'.tr,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -95,7 +94,7 @@ class _ParentHomeworkFilters extends StatelessWidget {
                       onPressed: hasFilters ? controller.clearFilters : null,
                       icon:
                           const Icon(Icons.filter_alt_off_outlined, size: 18),
-                      label: const Text('Clear'),
+                      label: Text('common_clear'.tr),
                     ),
                   ],
                 ),
@@ -107,15 +106,16 @@ class _ParentHomeworkFilters extends StatelessWidget {
                     children: [
                       if (hasChildFilter)
                         _ParentFilterChip(
-                          label:
-                              'Child: ${controller.childName(childFilter!)}',
+                          label: 'homework_filter_chip_child'.trParams({
+                            'child': controller.childName(childFilter!),
+                          }),
                           onRemoved: () => controller.setChildFilter(null),
                         ),
                       if (hasStatusFilter)
                         _ParentFilterChip(
                           label: completionFilter == true
-                              ? 'Status: Completed'
-                              : 'Status: Pending',
+                              ? 'homework_filter_chip_status_completed'.tr
+                              : 'homework_filter_chip_status_pending'.tr,
                           onRemoved: () => controller.setCompletionFilter(null),
                         ),
                     ],
@@ -124,15 +124,15 @@ class _ParentHomeworkFilters extends StatelessWidget {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(
                   value: childFilter,
-                  decoration: const InputDecoration(
-                    labelText: 'Child',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'homework_filter_label_child'.tr,
+                    border: const OutlineInputBorder(),
                   ),
-                  hint: const Text('All children'),
+                  hint: Text('homework_filter_all_children'.tr),
                   items: [
-                    const DropdownMenuItem<String?>(
+                    DropdownMenuItem<String?>(
                       value: null,
-                      child: Text('All children'),
+                      child: Text('homework_filter_all_children'.tr),
                     ),
                     ...controller.children.map(
                       (child) => DropdownMenuItem<String?>(
@@ -146,22 +146,22 @@ class _ParentHomeworkFilters extends StatelessWidget {
                 const SizedBox(height: 12),
                 DropdownButtonFormField<bool?>(
                   value: completionFilter,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'homework_filter_label_status'.tr,
+                    border: const OutlineInputBorder(),
                   ),
-                  items: const [
+                  items: [
                     DropdownMenuItem<bool?>(
                       value: null,
-                      child: Text('All homeworks'),
+                      child: Text('homework_filter_status_all'.tr),
                     ),
                     DropdownMenuItem<bool?>(
                       value: false,
-                      child: Text('Pending only'),
+                      child: Text('homework_filter_status_pending'.tr),
                     ),
                     DropdownMenuItem<bool?>(
                       value: true,
-                      child: Text('Completed only'),
+                      child: Text('homework_filter_status_completed'.tr),
                     ),
                   ],
                   onChanged: controller.setCompletionFilter,
@@ -231,10 +231,13 @@ class _ParentHomeworkCard extends StatelessWidget {
             ? Colors.green
             : theme.colorScheme.secondary;
     final summaryLabel = totalChildren == 0
-        ? 'No linked children'
+        ? 'homework_parent_summary_none'.tr
         : allCompleted
-            ? 'Completed for all children'
-            : '$completedChildren of $totalChildren completed';
+            ? 'homework_parent_summary_all'.tr
+            : 'homework_parent_summary_partial'.trParams({
+                'completed': '$completedChildren',
+                'total': '$totalChildren',
+              });
     return ModuleCard(
       onTap: onTap,
       child: Column(
@@ -265,8 +268,10 @@ class _ParentHomeworkCard extends StatelessWidget {
                       children: [
                         const Icon(Icons.calendar_today, size: 16),
                         const SizedBox(width: 6),
-                        Text(
-                          'Due ${dateFormat.format(homework.dueDate)}',
+                    Text(
+                      'homework_due_date'.trParams(
+                        {'date': dateFormat.format(homework.dueDate)},
+                      ),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -291,7 +296,7 @@ class _ParentHomeworkCard extends StatelessWidget {
           if (isLocked) ...[
             const SizedBox(height: 6),
             Text(
-              'Marked as closed. Updates can be managed from the homework details.',
+              'homework_parent_locked_message'.tr,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -336,7 +341,7 @@ class _ParentHomeworkCard extends StatelessWidget {
           else ...[
             const SizedBox(height: 12),
             Text(
-              'This homework isn\'t linked to any of your children.',
+              'homework_parent_unlinked'.tr,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
