@@ -84,7 +84,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                               color: onPrimary,
                             ),
                           )
-                        : const Icon(Icons.save_outlined),
+                        : Icon(Icons.save_outlined, color: onPrimary),
                     label: Text(_isSubmitting ? 'Saving...' : 'Save changes'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
