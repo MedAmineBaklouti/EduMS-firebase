@@ -89,6 +89,9 @@ class _RoleDashboardState extends State<RoleDashboard> {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final onPrimary = theme.colorScheme.onPrimary;
+    final dashboardBackgroundAsset = theme.brightness == Brightness.dark
+        ? 'assets/splash/background_dark.png'
+        : 'assets/splash/background.png';
 
     final authService =
         Get.isRegistered<AuthService>() ? Get.find<AuthService>() : null;
@@ -148,9 +151,9 @@ class _RoleDashboardState extends State<RoleDashboard> {
             ],
           ),
           body: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/splash/background.png'),
+                image: AssetImage(dashboardBackgroundAsset),
                 fit: BoxFit.cover,
               ),
             ),

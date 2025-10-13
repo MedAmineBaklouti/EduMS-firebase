@@ -16,9 +16,13 @@ class LoginView extends StatelessWidget {
       onTap: _authController.unfocusFields,
       child: Scaffold(
         body: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/splash/background.png'),
+              image: AssetImage(
+                Theme.of(context).brightness == Brightness.dark
+                    ? 'assets/splash/background_dark.png'
+                    : 'assets/splash/background.png',
+              ),
               fit: BoxFit.cover,
             ),
           ),

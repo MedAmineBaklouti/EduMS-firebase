@@ -45,5 +45,6 @@ flutter:
     - assets/icon/icon.png
     - assets/EduMS_logo.png
     - assets/splash/background.png
+    - assets/splash/background_dark.png
     - assets/Denet_logo.png
     - assets/CU.png
