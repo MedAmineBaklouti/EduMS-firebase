@@ -565,8 +565,12 @@ class MessagingService extends GetxService {
             final formattedSubjects = _formatList(subjectLabels);
             if (formattedChildren.isNotEmpty) {
               relationship = formattedSubjects.isNotEmpty
-                  ? '$formattedSubjects teacher of $formattedChildren'
-                  : 'Teacher of $formattedChildren';
+                  ? 'messaging_relationship_subject_teacher_of'.trParams({
+                      'subject': formattedSubjects,
+                      'name': formattedChildren,
+                    })
+                  : 'messaging_relationship_teacher_of'
+                      .trParams({'name': formattedChildren});
             }
           }
         }
@@ -616,7 +620,8 @@ class MessagingService extends GetxService {
             .toList();
         final relationship = childNames.isEmpty
             ? null
-            : 'Parent of ${_formatList(childNames)}';
+            : 'messaging_relationship_parent_of'
+                .trParams({'name': _formatList(childNames)});
         addContact(MessagingContact(
           id: id,
           userId: resolvedUserId,
