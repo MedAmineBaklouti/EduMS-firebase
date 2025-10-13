@@ -10,10 +10,18 @@ import 'modules/messaging/services/messaging_push_handler.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase before registering background handlers or using any
+  // Firebase services. Calling initializeApp early ensures the plugin channel
+  // is ready when the background isolate starts.
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    print('Firebase init failed: $e');
+  }
+
   // Ensure background push notifications are handled when the app is
-  // terminated or running in the background. This must be set up before
-  // Firebase is initialized and before runApp is called so the handler is
-  // available as soon as the Flutter engine starts in the background.
+  // terminated or running in the background. The handler must be registered
+  // after Firebase is initialized so platform channels are available.
   FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
 
   // Load .env
@@ -22,13 +30,6 @@ Future<void> main() async {
     print('.env loaded');
   } catch (e) {
     print('Could not load .env: $e');
-  }
-
-  // Initialize Firebase
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    print('Firebase init failed: $e');
   }
 
   // Initialize your GetX bindings (SharedPreferences, AuthService, etc.)
