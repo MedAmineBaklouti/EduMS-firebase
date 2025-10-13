@@ -90,4 +90,47 @@ class AuthService extends GetxService {
     await _auth.signOut();
     await prefs.setBool('isLoggedIn', false);
   }
+
+  Future<void> updateCredentials({
+    String? newEmail,
+    String? newPassword,
+    required String currentPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw 'No authenticated user found.';
+    }
+
+    if ((newEmail == null || newEmail.isEmpty) &&
+        (newPassword == null || newPassword.isEmpty)) {
+      throw 'No changes to update.';
+    }
+
+    final email = user.email;
+    if (email == null || email.isEmpty) {
+      throw 'Your account is missing an email address.';
+    }
+
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+
+      if (newEmail != null && newEmail.isNotEmpty && newEmail != email) {
+        await user.updateEmail(newEmail);
+      }
+
+      if (newPassword != null && newPassword.isNotEmpty) {
+        await user.updatePassword(newPassword);
+      }
+
+      await user.reload();
+      this.user.value = _auth.currentUser;
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Failed to update credentials.';
+    }
+  }
 }

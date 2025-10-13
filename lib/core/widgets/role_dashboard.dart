@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../../app/routes/app_pages.dart';
 import '../../data/models/conversation_model.dart';
 import '../../data/models/parent_model.dart';
 import '../../data/models/teacher_model.dart';
@@ -395,6 +396,7 @@ class _DashboardDrawer extends StatelessWidget {
           bottomRight: Radius.circular(24),
         ),
       ),
+      backgroundColor: primary,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,47 +443,54 @@ class _DashboardDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _DashboardDrawerItem(
-                    icon: Icons.settings_outlined,
-                    label: 'Settings',
-                    onTap: () => _showComingSoon(context, 'Settings'),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
                   ),
-                  _DashboardDrawerItem(
-                    icon: Icons.person_outline,
-                    label: 'Edit profile',
-                    onTap: () => _showComingSoon(context, 'Edit profile'),
-                  ),
-                  _DashboardDrawerItem(
-                    icon: Icons.smart_toy_outlined,
-                    label: 'Ask something',
-                    onTap: () => _showComingSoon(context, 'Ask something'),
-                  ),
-                  _DashboardDrawerItem(
-                    icon: Icons.contact_support_outlined,
-                    label: 'Contact us',
-                    onTap: () => _showComingSoon(context, 'Contact us'),
-                  ),
-                  _DashboardDrawerItem(
-                    icon: Icons.logout,
-                    label: 'Logout',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      onLogout();
-                    },
-                    isDestructive: true,
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Text(
-                'More tools coming soon',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                  children: [
+                    _DashboardDrawerItem(
+                      icon: Icons.settings_outlined,
+                      label: 'Settings',
+                      onTap: () => _showComingSoon(context, 'Settings'),
+                    ),
+                    _DashboardDrawerItem(
+                      icon: Icons.person_outline,
+                      label: 'Edit profile',
+                      onTap: () => _openEditProfile(context),
+                    ),
+                    _DashboardDrawerItem(
+                      icon: Icons.smart_toy_outlined,
+                      label: 'Ask something',
+                      onTap: () => _showComingSoon(context, 'Ask something'),
+                    ),
+                    _DashboardDrawerItem(
+                      icon: Icons.contact_support_outlined,
+                      label: 'Contact us',
+                      onTap: () => _openContactUs(context),
+                    ),
+                    _DashboardDrawerItem(
+                      icon: Icons.logout,
+                      label: 'Logout',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onLogout();
+                      },
+                      isDestructive: true,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'More tools coming soon',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -498,6 +507,16 @@ class _DashboardDrawer extends StatelessWidget {
       snackPosition: SnackPosition.BOTTOM,
       margin: const EdgeInsets.all(16),
     );
+  }
+
+  void _openEditProfile(BuildContext context) {
+    Navigator.of(context).pop();
+    Get.toNamed(AppPages.EDIT_PROFILE);
+  }
+
+  void _openContactUs(BuildContext context) {
+    Navigator.of(context).pop();
+    Get.toNamed(AppPages.CONTACT_US);
   }
 }
 
