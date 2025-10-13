@@ -457,7 +457,7 @@ class _DashboardDrawer extends StatelessWidget {
                     _DashboardDrawerItem(
                       icon: Icons.settings_outlined,
                       label: 'Settings',
-                      onTap: () => _showComingSoon(context, 'Settings'),
+                      onTap: () => _openSettings(context),
                     ),
                     _DashboardDrawerItem(
                       icon: Icons.person_outline,
@@ -512,6 +512,11 @@ class _DashboardDrawer extends StatelessWidget {
   void _openEditProfile(BuildContext context) {
     Navigator.of(context).pop();
     Get.toNamed(AppPages.EDIT_PROFILE);
+  }
+
+  void _openSettings(BuildContext context) {
+    Navigator.of(context).pop();
+    Get.toNamed(AppPages.SETTINGS);
   }
 
   void _openContactUs(BuildContext context) {
