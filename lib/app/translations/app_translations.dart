@@ -59,6 +59,10 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'More tools coming soon',
           'drawer_coming_soon_title': 'Coming soon',
           'drawer_coming_soon_message': '@feature will be available soon!',
+          'ai_chat_empty_title': 'Start a conversation',
+          'ai_chat_empty_message':
+              'Ask a question about math, science, history, or computer science to get started.',
+          'ai_chat_input_hint': 'Type your educational question...',
           'common_back': 'Back',
           'common_retry': 'Retry',
           'dashboard_card_courses_title': 'Courses',
@@ -637,6 +641,10 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'Plus d’outils arrivent bientôt',
           'drawer_coming_soon_title': 'Bientôt disponible',
           'drawer_coming_soon_message': '@feature sera disponible bientôt !',
+          'ai_chat_empty_title': 'Commencez une conversation',
+          'ai_chat_empty_message':
+              'Posez une question sur les mathématiques, les sciences, l’histoire ou l’informatique pour commencer.',
+          'ai_chat_input_hint': 'Tapez votre question éducative...',
           'common_back': 'Retour',
           'common_retry': 'Réessayer',
           'dashboard_card_courses_title': 'Cours',
@@ -1241,6 +1249,10 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'المزيد من الأدوات قريبًا',
           'drawer_coming_soon_title': 'قريبًا',
           'drawer_coming_soon_message': '@feature ستكون متاحة قريبًا!',
+          'ai_chat_empty_title': 'ابدأ محادثة',
+          'ai_chat_empty_message':
+              'اطرح سؤالاً عن الرياضيات أو العلوم أو التاريخ أو علوم الحاسوب لبدء التفاعل.',
+          'ai_chat_input_hint': 'اكتب سؤالك التعليمي...',
           'common_back': 'رجوع',
           'common_retry': 'إعادة المحاولة',
           'dashboard_card_courses_title': 'الدورات',
