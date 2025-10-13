@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -49,6 +50,11 @@ class AppBindings extends Bindings {
     final networkService = NetworkService();
     await networkService.init();
     Get.put(networkService, permanent: true);
+
+    // Ensure Firebase is initialized before any services depend on it.
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
 
     // Initialize DatabaseService
     final databaseService = DatabaseService();

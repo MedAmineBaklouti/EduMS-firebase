@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/child_model.dart';
@@ -10,10 +11,18 @@ import '../../data/models/teacher_model.dart';
 import '../../data/models/course_model.dart';
 
 class DatabaseService extends GetxService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final FirebaseFirestore _firestore;
   final RxBool isInitialized = false.obs;
 
   Future<DatabaseService> init() async {
+    if (Firebase.apps.isEmpty) {
+      throw StateError(
+        'Firebase has not been initialized before DatabaseService.init was called.',
+      );
+    }
+
+    _firestore = FirebaseFirestore.instance;
+
     // Configure any Firestore settings if needed
     // await _firestore.settings = const Settings(...);
 
