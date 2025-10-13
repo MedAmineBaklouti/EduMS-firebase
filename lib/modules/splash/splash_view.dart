@@ -64,13 +64,19 @@ class _SplashViewState extends State<SplashView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final onBackgroundColor = theme.colorScheme.onBackground;
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
           // Background image
           Image.asset(
-            'assets/splash/background.png',
+            isDarkMode
+                ? 'assets/splash/background_dark.png'
+                : 'assets/splash/background.png',
             fit: BoxFit.cover,
           ),
 
@@ -88,7 +94,8 @@ class _SplashViewState extends State<SplashView> {
                 SizedBox(height: 20),
                 // Loading indicator
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(onBackgroundColor),
                 ),
               ],
             ),
@@ -104,7 +111,7 @@ class _SplashViewState extends State<SplashView> {
                   Text(
                     'Made with',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: onBackgroundColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
