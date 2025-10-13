@@ -24,6 +24,8 @@ import '../../modules/pickup/views/admin_pickup_view.dart';
 import '../../modules/messaging/views/messaging_view.dart';
 import '../../modules/pickup/views/parent_pickup_view.dart';
 import '../../modules/pickup/views/teacher_pickup_view.dart';
+import '../../modules/profile/views/contact_us_view.dart';
+import '../../modules/profile/views/edit_profile_view.dart';
 import '../../modules/splash/splash_view.dart';
 import '../../modules/teachers_dashboard/views/teacher_dashboard_view.dart';
 
@@ -55,6 +57,8 @@ abstract class AppPages {
   static const TEACHER_PICKUP = '/teacher/pickup';
   static const PARENT_PICKUP = '/parent/pickup';
   static const MESSAGING = '/messaging';
+  static const EDIT_PROFILE = '/profile/edit';
+  static const CONTACT_US = '/support/contact';
 
   static final routes = [
     GetPage(name: SPLASH, page: () => SplashView()),
@@ -103,5 +107,7 @@ abstract class AppPages {
     GetPage(name: TEACHER_PICKUP, page: () => const TeacherPickupView()),
     GetPage(name: PARENT_PICKUP, page: () => const ParentPickupView()),
     GetPage(name: MESSAGING, page: () => const MessagingView()),
+    GetPage(name: EDIT_PROFILE, page: () => const EditProfileView()),
+    GetPage(name: CONTACT_US, page: () => const ContactUsView()),
   ];
 }
