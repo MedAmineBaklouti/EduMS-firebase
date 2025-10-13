@@ -120,22 +120,31 @@ class MessagingView extends GetView<MessagingController> {
                   final titleInitial = titleText.isEmpty
                       ? '?'
                       : titleText.characters.first.toUpperCase();
+                  final avatarBackgroundColor = showAdministrationAvatar
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onPrimary.withOpacity(0.15);
+                  final avatarForegroundColor = showAdministrationAvatar
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onPrimary;
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: showAdministrationAvatar
-                            ? Colors.transparent
-                            : theme.colorScheme.primary.withOpacity(0.12),
-                        foregroundColor: showAdministrationAvatar
-                            ? Colors.transparent
-                            : theme.colorScheme.primary,
+                        backgroundColor: avatarBackgroundColor,
+                        foregroundColor: avatarForegroundColor,
                         backgroundImage: showAdministrationAvatar
                             ? const AssetImage('assets/icon/icon.png')
                             : null,
-                        child:
-                            showAdministrationAvatar ? null : Text(titleInitial),
+                        child: showAdministrationAvatar
+                            ? null
+                            : Text(
+                                titleInitial,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: avatarForegroundColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

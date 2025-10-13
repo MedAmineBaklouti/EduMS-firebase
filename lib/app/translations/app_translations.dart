@@ -249,6 +249,10 @@ class AppTranslations extends Translations {
           'messaging_filter_teachers': 'Teachers',
           'messaging_filter_parents': 'Parents',
           'messaging_filter_administration': 'Administration',
+          'messaging_relationship_parent_of': 'Parent of @name',
+          'messaging_relationship_teacher_of': 'Teacher of @name',
+          'messaging_relationship_subject_teacher_of':
+              '@subject teacher of @name',
           'messaging_start_conversation_title': 'Start a new conversation',
           'messaging_search_contacts_hint': 'Search contacts…',
           'messaging_contacts_error_title': 'Unable to load contacts',
@@ -841,6 +845,10 @@ class AppTranslations extends Translations {
           'messaging_filter_teachers': 'Enseignants',
           'messaging_filter_parents': 'Parents',
           'messaging_filter_administration': 'Administration',
+          'messaging_relationship_parent_of': 'Parent de @name',
+          'messaging_relationship_teacher_of': 'Enseignant de @name',
+          'messaging_relationship_subject_teacher_of':
+              'Enseignant @subject de @name',
           'messaging_start_conversation_title':
               'Démarrer une nouvelle conversation',
           'messaging_search_contacts_hint': 'Rechercher des contacts…',
@@ -1424,6 +1432,10 @@ class AppTranslations extends Translations {
           'messaging_filter_teachers': 'المعلمين',
           'messaging_filter_parents': 'أولياء الأمور',
           'messaging_filter_administration': 'الإدارة',
+          'messaging_relationship_parent_of': 'ولي أمر @name',
+          'messaging_relationship_teacher_of': 'معلم @name',
+          'messaging_relationship_subject_teacher_of':
+              'معلم @subject لـ @name',
           'messaging_start_conversation_title': 'ابدأ محادثة جديدة',
           'messaging_search_contacts_hint': 'ابحث في جهات الاتصال…',
           'messaging_contacts_error_title': 'تعذر تحميل جهات الاتصال',
