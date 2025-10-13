@@ -21,7 +21,7 @@ class ConversationHistoryView extends StatelessWidget {
             controller: controller.searchController,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search_rounded),
-              hintText: 'Search conversations',
+              hintText: 'messaging_search_conversations_hint'.tr,
               filled: true,
               fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.4),
               border: OutlineInputBorder(
@@ -42,13 +42,13 @@ class ConversationHistoryView extends StatelessWidget {
             child: Obx(() {
               final _ = controller.contacts.length;
               if (controller.isConversationsLoading.value) {
-                return const ScrollablePlaceholder(
+                return ScrollablePlaceholder(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Loading conversations…'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text('messaging_loading_conversations'.tr),
                     ],
                   ),
                 );
@@ -59,9 +59,9 @@ class ConversationHistoryView extends StatelessWidget {
                 return ScrollablePlaceholder(
                   child: ModuleEmptyState(
                     icon: Icons.error_outline,
-                    title: 'Unable to load conversations',
+                    title: 'messaging_conversations_error_title'.tr,
                     message: error,
-                    actionLabel: 'Retry',
+                    actionLabel: 'common_retry'.tr,
                     onAction: controller.refreshConversations,
                   ),
                 );
@@ -69,12 +69,11 @@ class ConversationHistoryView extends StatelessWidget {
 
               final conversations = controller.filteredConversations;
               if (conversations.isEmpty) {
-                return const ScrollablePlaceholder(
+                return ScrollablePlaceholder(
                   child: ModuleEmptyState(
                     icon: Icons.forum_outlined,
-                    title: 'No conversations yet',
-                    message:
-                        'Start a new conversation with the button below to begin messaging.',
+                    title: 'messaging_empty_conversations_title'.tr,
+                    message: 'messaging_empty_conversations_message'.tr,
                   ),
                 );
               }
@@ -90,7 +89,7 @@ class ConversationHistoryView extends StatelessWidget {
                   final conversation = conversations[index];
                   final hasUnread = conversation.unreadCount > 0;
                   final lastMessage = conversation.lastMessagePreview.isEmpty
-                      ? 'No messages yet'
+                      ? 'messaging_no_messages_preview'.tr
                       : conversation.lastMessagePreview;
                   final timestamp = conversation.formattedTimestamp();
                   final displayTitle =

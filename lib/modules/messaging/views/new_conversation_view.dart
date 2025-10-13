@@ -78,10 +78,17 @@ class _NewConversationViewState extends State<NewConversationView> {
   }
 
   String _resolveRoleLabel(String role) {
-    if (role.isEmpty) {
-      return 'Contact';
+    final normalized = role.trim().toLowerCase();
+    switch (normalized) {
+      case 'teacher':
+        return 'role_teacher'.tr;
+      case 'parent':
+        return 'role_parent'.tr;
+      case 'admin':
+        return 'role_admin'.tr;
+      default:
+        return 'messaging_contact_placeholder'.tr;
     }
-    return role[0].toUpperCase() + role.substring(1).toLowerCase();
   }
 
   @override
@@ -90,9 +97,21 @@ class _NewConversationViewState extends State<NewConversationView> {
     final isCurrentTeacher = _controller.isTeacher;
 
     final quickFilters = <({String label, String value, IconData icon})>[
-      (label: 'Teachers', value: 'teacher', icon: Icons.school_rounded),
-      (label: 'Parents', value: 'parent', icon: Icons.family_restroom_rounded),
-      (label: 'Administration', value: 'admin', icon: Icons.apartment_rounded),
+      (
+        label: 'messaging_filter_teachers'.tr,
+        value: 'teacher',
+        icon: Icons.school_rounded,
+      ),
+      (
+        label: 'messaging_filter_parents'.tr,
+        value: 'parent',
+        icon: Icons.family_restroom_rounded,
+      ),
+      (
+        label: 'messaging_filter_administration'.tr,
+        value: 'admin',
+        icon: Icons.apartment_rounded,
+      ),
     ];
 
     return SafeArea(
@@ -159,7 +178,7 @@ class _NewConversationViewState extends State<NewConversationView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Start a new conversation',
+                          'messaging_start_conversation_title'.tr,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: theme.colorScheme.onPrimaryContainer,
@@ -181,7 +200,7 @@ class _NewConversationViewState extends State<NewConversationView> {
                       controller: _searchController,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.search_rounded),
-                        hintText: 'Search contacts…',
+                        hintText: 'messaging_search_contacts_hint'.tr,
                         filled: true,
                         fillColor: theme.colorScheme.surface,
                         border: OutlineInputBorder(
@@ -247,33 +266,32 @@ class _NewConversationViewState extends State<NewConversationView> {
                   child: Center(
                     child: ModuleEmptyState(
                       icon: Icons.error_outline,
-                      title: 'Unable to load contacts',
+                      title: 'messaging_contacts_error_title'.tr,
                       message: error,
-                      actionLabel: 'Retry',
+                      actionLabel: 'common_retry'.tr,
                       onAction: _controller.refreshContacts,
                     ),
                   ),
                 )
               else if (contacts.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
                     child: ModuleEmptyState(
                       icon: Icons.people_outline,
-                      title: 'No available contacts',
-                      message:
-                          'You currently do not have anyone to message based on your assignments.',
+                      title: 'messaging_contacts_empty_title'.tr,
+                      message: 'messaging_contacts_empty_message'.tr,
                     ),
                   ),
                 )
               else if (filtered.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
                     child: ModuleEmptyState(
                       icon: Icons.search_off_rounded,
-                      title: 'No matches found',
-                      message: 'Try searching with a different name or role.',
+                      title: 'messaging_contacts_no_results_title'.tr,
+                      message: 'messaging_contacts_no_results_message'.tr,
                     ),
                   ),
                 )

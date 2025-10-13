@@ -50,6 +50,8 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'More tools coming soon',
           'drawer_coming_soon_title': 'Coming soon',
           'drawer_coming_soon_message': '@feature will be available soon!',
+          'common_back': 'Back',
+          'common_retry': 'Retry',
           'dashboard_card_courses_title': 'Courses',
           'dashboard_card_courses_parent_subtitle': 'View class materials',
           'dashboard_card_courses_teacher_subtitle': 'Create and share lessons',
@@ -89,6 +91,44 @@ class AppTranslations extends Translations {
           'dashboard_announcements_title': 'Announcements',
           'dashboard_announcements_empty':
               'No announcements right now.\nCheck back soon for updates.',
+          'messaging_title': 'Messaging',
+          'messaging_subtitle': 'Stay connected with your school community',
+          'messaging_back_to_conversations': 'Back to conversations',
+          'messaging_action_administration': 'Administration',
+          'messaging_select_conversation_hint':
+              'Select a conversation to get started.',
+          'messaging_fab_tooltip': 'Start a new conversation',
+          'messaging_search_conversations_hint': 'Search conversations',
+          'messaging_loading_conversations': 'Loading conversations…',
+          'messaging_conversations_error_title':
+              'Unable to load conversations',
+          'messaging_empty_conversations_title': 'No conversations yet',
+          'messaging_empty_conversations_message':
+              'Start a new conversation with the button below to begin messaging.',
+          'messaging_no_messages_preview': 'No messages yet',
+          'messaging_messages_error_title': 'Unable to load messages',
+          'messaging_thread_empty_title': 'No messages yet',
+          'messaging_thread_empty_message':
+              'Start the conversation with a message below.',
+          'messaging_badge_new': 'New',
+          'messaging_status_read': 'Read',
+          'messaging_status_unread': 'Unread',
+          'messaging_input_hint': 'Write a message…',
+          'messaging_sending': 'Sending…',
+          'messaging_send_button_tooltip': 'Send message',
+          'messaging_filter_teachers': 'Teachers',
+          'messaging_filter_parents': 'Parents',
+          'messaging_filter_administration': 'Administration',
+          'messaging_start_conversation_title': 'Start a new conversation',
+          'messaging_search_contacts_hint': 'Search contacts…',
+          'messaging_contacts_error_title': 'Unable to load contacts',
+          'messaging_contacts_empty_title': 'No available contacts',
+          'messaging_contacts_empty_message':
+              'You currently do not have anyone to message based on your assignments.',
+          'messaging_contacts_no_results_title': 'No matches found',
+          'messaging_contacts_no_results_message':
+              'Try searching with a different name or role.',
+          'messaging_contact_placeholder': 'Contact',
         },
         'fr': {
           'settings_title': 'Paramètres',
@@ -142,6 +182,8 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'Plus d’outils arrivent bientôt',
           'drawer_coming_soon_title': 'Bientôt disponible',
           'drawer_coming_soon_message': '@feature sera disponible bientôt !',
+          'common_back': 'Retour',
+          'common_retry': 'Réessayer',
           'dashboard_card_courses_title': 'Cours',
           'dashboard_card_courses_parent_subtitle':
               'Voir les supports de cours',
@@ -192,6 +234,45 @@ class AppTranslations extends Translations {
           'dashboard_announcements_title': 'Annonces',
           'dashboard_announcements_empty':
               'Aucune annonce pour le moment.\nRevenez bientôt pour des nouveautés.',
+          'messaging_title': 'Messagerie',
+          'messaging_subtitle': 'Restez en contact avec votre communauté scolaire',
+          'messaging_back_to_conversations': 'Retour aux conversations',
+          'messaging_action_administration': 'Administration',
+          'messaging_select_conversation_hint':
+              'Sélectionnez une conversation pour commencer.',
+          'messaging_fab_tooltip': 'Démarrer une nouvelle conversation',
+          'messaging_search_conversations_hint': 'Rechercher des conversations',
+          'messaging_loading_conversations': 'Chargement des conversations…',
+          'messaging_conversations_error_title':
+              'Impossible de charger les conversations',
+          'messaging_empty_conversations_title': 'Aucune conversation',
+          'messaging_empty_conversations_message':
+              'Commencez une nouvelle conversation avec le bouton ci-dessous pour envoyer un message.',
+          'messaging_no_messages_preview': 'Aucun message',
+          'messaging_messages_error_title': 'Impossible de charger les messages',
+          'messaging_thread_empty_title': 'Aucun message',
+          'messaging_thread_empty_message':
+              'Lancez la discussion avec un message ci-dessous.',
+          'messaging_badge_new': 'Nouveau',
+          'messaging_status_read': 'Lu',
+          'messaging_status_unread': 'Non lu',
+          'messaging_input_hint': 'Écrire un message…',
+          'messaging_sending': 'Envoi…',
+          'messaging_send_button_tooltip': 'Envoyer le message',
+          'messaging_filter_teachers': 'Enseignants',
+          'messaging_filter_parents': 'Parents',
+          'messaging_filter_administration': 'Administration',
+          'messaging_start_conversation_title':
+              'Démarrer une nouvelle conversation',
+          'messaging_search_contacts_hint': 'Rechercher des contacts…',
+          'messaging_contacts_error_title': 'Impossible de charger les contacts',
+          'messaging_contacts_empty_title': 'Aucun contact disponible',
+          'messaging_contacts_empty_message':
+              'Vous n’avez actuellement personne à qui écrire selon vos affectations.',
+          'messaging_contacts_no_results_title': 'Aucun résultat',
+          'messaging_contacts_no_results_message':
+              'Essayez une autre recherche par nom ou rôle.',
+          'messaging_contact_placeholder': 'Contact',
         },
         'ar': {
           'settings_title': 'الإعدادات',
@@ -241,6 +322,8 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'المزيد من الأدوات قريبًا',
           'drawer_coming_soon_title': 'قريبًا',
           'drawer_coming_soon_message': '@feature ستكون متاحة قريبًا!',
+          'common_back': 'رجوع',
+          'common_retry': 'إعادة المحاولة',
           'dashboard_card_courses_title': 'الدورات',
           'dashboard_card_courses_parent_subtitle': 'عرض مواد الصف',
           'dashboard_card_courses_teacher_subtitle':
@@ -282,6 +365,43 @@ class AppTranslations extends Translations {
           'dashboard_announcements_title': 'الإعلانات',
           'dashboard_announcements_empty':
               'لا توجد إعلانات حاليًا.\nعد لاحقًا للاطلاع على التحديثات.',
+          'messaging_title': 'الرسائل',
+          'messaging_subtitle': 'ابقَ على تواصل مع مجتمع مدرستك',
+          'messaging_back_to_conversations': 'العودة إلى المحادثات',
+          'messaging_action_administration': 'الإدارة',
+          'messaging_select_conversation_hint':
+              'اختر محادثة للبدء.',
+          'messaging_fab_tooltip': 'ابدأ محادثة جديدة',
+          'messaging_search_conversations_hint': 'ابحث في المحادثات',
+          'messaging_loading_conversations': 'جاري تحميل المحادثات…',
+          'messaging_conversations_error_title':
+              'تعذر تحميل المحادثات',
+          'messaging_empty_conversations_title': 'لا توجد محادثات بعد',
+          'messaging_empty_conversations_message':
+              'ابدأ محادثة جديدة بالزر أدناه لبدء المراسلة.',
+          'messaging_no_messages_preview': 'لا توجد رسائل بعد',
+          'messaging_messages_error_title': 'تعذر تحميل الرسائل',
+          'messaging_thread_empty_title': 'لا توجد رسائل بعد',
+          'messaging_thread_empty_message': 'ابدأ المحادثة برسالة من الأسفل.',
+          'messaging_badge_new': 'جديد',
+          'messaging_status_read': 'مقروء',
+          'messaging_status_unread': 'غير مقروء',
+          'messaging_input_hint': 'اكتب رسالة…',
+          'messaging_sending': 'جاري الإرسال…',
+          'messaging_send_button_tooltip': 'إرسال الرسالة',
+          'messaging_filter_teachers': 'المعلمين',
+          'messaging_filter_parents': 'أولياء الأمور',
+          'messaging_filter_administration': 'الإدارة',
+          'messaging_start_conversation_title': 'ابدأ محادثة جديدة',
+          'messaging_search_contacts_hint': 'ابحث في جهات الاتصال…',
+          'messaging_contacts_error_title': 'تعذر تحميل جهات الاتصال',
+          'messaging_contacts_empty_title': 'لا توجد جهات اتصال متاحة',
+          'messaging_contacts_empty_message':
+              'ليس لديك حاليًا أي شخص يمكنك مراسلته بناءً على مهامك.',
+          'messaging_contacts_no_results_title': 'لم يتم العثور على نتائج',
+          'messaging_contacts_no_results_message':
+              'جرّب البحث باسم أو دور مختلف.',
+          'messaging_contact_placeholder': 'جهة اتصال',
         },
       };
 }
