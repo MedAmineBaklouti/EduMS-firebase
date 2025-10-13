@@ -19,7 +19,7 @@ class TeacherPickupView extends GetView<TeacherPickupController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Pickup Queue'),
+        title: Text('pickup_teacher_title'.tr),
         centerTitle: true,
       ),
       body: ModulePageContainer(
@@ -41,12 +41,11 @@ class TeacherPickupView extends GetView<TeacherPickupController> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding:
                               const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
+                          children: [
                             ModuleEmptyState(
                               icon: Icons.directions_car_outlined,
-                              title: 'No pickup tickets',
-                              message:
-                                  'Parents will appear here when they confirm pickups that require your validation.',
+                              title: 'pickup_teacher_empty_title'.tr,
+                              message: 'pickup_teacher_empty_message'.tr,
                             ),
                           ],
                         )
@@ -95,7 +94,7 @@ class _TeacherPickupFilters extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Filter queue',
+                'pickup_teacher_filters_title'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -106,7 +105,7 @@ class _TeacherPickupFilters extends StatelessWidget {
                 return TextButton.icon(
                   onPressed: hasFilter ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 );
               }),
             ],
@@ -124,7 +123,9 @@ class _TeacherPickupFilters extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   _ActiveFilterChip(
-                    label: 'Class: ${controller.className(classFilter)}',
+                    label: 'pickup_filter_chip_class'.trParams({
+                      'name': controller.className(classFilter),
+                    }),
                     onRemoved: controller.clearFilters,
                   ),
                 ],
@@ -137,17 +138,19 @@ class _TeacherPickupFilters extends StatelessWidget {
             final isDisabled = classes.isEmpty;
             return DropdownButtonFormField<String?>(
               value: classFilter,
-              decoration: const InputDecoration(
-                labelText: 'Class',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'pickup_filter_class_label'.tr,
+                border: const OutlineInputBorder(),
               ),
               hint: Text(
-                isDisabled ? 'No classes available' : 'All classes',
+                isDisabled
+                    ? 'pickup_filter_class_empty'.tr
+                    : 'pickup_filter_class_all'.tr,
               ),
               items: [
-                const DropdownMenuItem<String?>(
+                DropdownMenuItem<String?>(
                   value: null,
-                  child: Text('All classes'),
+                  child: Text('pickup_filter_class_all'.tr),
                 ),
                 ...classes.map(
                   (schoolClass) => DropdownMenuItem<String?>(
