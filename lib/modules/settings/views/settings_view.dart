@@ -12,6 +12,8 @@ class SettingsView extends GetView<SettingsController> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text('settings_title'.tr),
       ),
       body: Obx(
