@@ -23,7 +23,7 @@ class ParentAttendanceView extends GetView<ParentAttendanceController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Attendance'),
+        title: Text('attendance_parent_title'.tr),
         centerTitle: true,
       ),
       body: ModulePageContainer(
@@ -43,12 +43,11 @@ class ParentAttendanceView extends GetView<ParentAttendanceController> {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding:
                               const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                          children: const [
+                          children: [
                             ModuleEmptyState(
                               icon: Icons.event_busy_outlined,
-                              title: 'No attendance records',
-                              message:
-                                  'Attendance updates for your children will appear here once they are recorded.',
+                              title: 'attendance_parent_empty_title'.tr,
+                              message: 'attendance_parent_empty_message'.tr,
                             ),
                           ],
                         )
@@ -141,9 +140,19 @@ class _ParentChildSummaryCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      '${summary.totalSubjects} subject${summary.totalSubjects == 1 ? '' : 's'} tracked',
-                      style: theme.textTheme.bodySmall,
+                    Builder(
+                      builder: (context) {
+                        final subjectKey = summary.totalSubjects == 1
+                            ? 'attendance_summary_subjects_single'
+                            : 'attendance_summary_subjects_plural';
+                        final subjectLabel = subjectKey.trParams({
+                          'count': summary.totalSubjects.toString(),
+                        });
+                        return Text(
+                          subjectLabel,
+                          style: theme.textTheme.bodySmall,
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -165,28 +174,38 @@ class _ParentChildSummaryCard extends StatelessWidget {
                       theme.colorScheme.secondary.withOpacity(0.12),
                   iconColor: theme.colorScheme.secondary,
                   icon: Icons.event,
-                  label: 'Latest: $latestDateLabel',
+                  label: 'attendance_summary_latest'
+                      .trParams({'date': latestDateLabel}),
                 ),
               if (presentCount > 0)
                 _AttendanceSummaryPill(
                   backgroundColor: Colors.green.shade50,
                   iconColor: Colors.green.shade600,
                   icon: Icons.check_circle,
-                  label: '$presentCount present',
+                  label: (presentCount == 1
+                          ? 'attendance_summary_present_single'
+                          : 'attendance_summary_present_plural')
+                      .trParams({'count': presentCount.toString()}),
                 ),
               if (absentCount > 0)
                 _AttendanceSummaryPill(
                   backgroundColor: theme.colorScheme.error.withOpacity(0.12),
                   iconColor: theme.colorScheme.error,
                   icon: Icons.cancel_outlined,
-                  label: '$absentCount absent',
+                  label: (absentCount == 1
+                          ? 'attendance_summary_absent_single'
+                          : 'attendance_summary_absent_plural')
+                      .trParams({'count': absentCount.toString()}),
                 ),
               if (pendingCount > 0)
                 _AttendanceSummaryPill(
                   backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
                   iconColor: theme.colorScheme.primary,
                   icon: Icons.hourglass_empty,
-                  label: '$pendingCount pending',
+                  label: (pendingCount == 1
+                          ? 'attendance_summary_pending_single'
+                          : 'attendance_summary_pending_plural')
+                      .trParams({'count': pendingCount.toString()}),
                 ),
             ],
           ),
@@ -217,7 +236,7 @@ class _ParentAttendanceFilters extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Filter attendance',
+                  'attendance_filters_title'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -225,7 +244,7 @@ class _ParentAttendanceFilters extends StatelessWidget {
                 TextButton.icon(
                   onPressed: hasFilters ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 ),
               ],
             );
@@ -238,10 +257,11 @@ class _ParentAttendanceFilters extends StatelessWidget {
             if (childId != null && childId.isNotEmpty) {
               final child = controller.children
                   .firstWhereOrNull((element) => element.id == childId);
-              final childName = child?.name ?? 'Child';
+              final childName = child?.name ?? 'attendance_filters_child_label'.tr;
               chips.add(
                 _ActiveFilterChip(
-                  label: 'Child: $childName',
+                  label: 'attendance_filters_child_chip'
+                      .trParams({'name': childName}),
                   onRemoved: () => controller.setChildFilter(null),
                 ),
               );
@@ -249,7 +269,8 @@ class _ParentAttendanceFilters extends StatelessWidget {
             if (date != null) {
               chips.add(
                 _ActiveFilterChip(
-                  label: 'Date: ${dateFormat.format(date)}',
+                  label: 'attendance_filters_date_chip'
+                      .trParams({'date': dateFormat.format(date)}),
                   onRemoved: () => controller.setDateFilter(null),
                 ),
               );
@@ -271,14 +292,14 @@ class _ParentAttendanceFilters extends StatelessWidget {
             final childValue = controller.childFilter.value;
             return DropdownButtonFormField<String?>(
               value: childValue,
-              decoration: const InputDecoration(
-                labelText: 'Child',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'attendance_filters_child_label'.tr,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem<String?>(
+                DropdownMenuItem<String?>(
                   value: null,
-                  child: Text('All children'),
+                  child: Text('attendance_filters_child_all'.tr),
                 ),
                 ...children.map(
                   (child) => DropdownMenuItem<String?>(
@@ -302,24 +323,27 @@ class _ParentAttendanceFilters extends StatelessWidget {
             final hasDate = selectedDate != null;
             final dateLabel = hasDate
                 ? dateFormat.format(selectedDate!)
-                : 'All dates';
+                : 'attendance_overview_date_all'.tr;
             final rawChildName = child?.name ?? '';
             final normalizedChildName = rawChildName.trim();
             final hasNamedChild = normalizedChildName.isNotEmpty;
             final childLabel = child == null
-                ? 'All children'
+                ? 'attendance_overview_child_all'.tr
                 : hasNamedChild
                     ? normalizedChildName
-                    : 'Selected child';
+                    : 'attendance_overview_child_selected'.tr;
             final messageChild = child == null
-                ? 'all children'
+                ? 'attendance_overview_message_all_children'.tr
                 : hasNamedChild
                     ? normalizedChildName
-                    : 'your child';
-            final overviewLabel = '$childLabel • $dateLabel';
+                    : 'attendance_overview_message_selected_child'.tr;
+            final overviewLabel = 'attendance_overview_label'
+                .trParams({'child': childLabel, 'date': dateLabel});
             final description = hasDate
-                ? 'Showing attendance updates for $messageChild on $dateLabel.'
-                : 'Showing attendance updates for $messageChild across all dates.';
+                ? 'attendance_overview_description_date'
+                    .trParams({'child': messageChild, 'date': dateLabel})
+                : 'attendance_overview_description_all_dates'
+                    .trParams({'child': messageChild});
             return AttendanceDateCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,7 +356,7 @@ class _ParentAttendanceFilters extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Attendance overview',
+                              'attendance_overview_title'.tr,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -356,7 +380,8 @@ class _ParentAttendanceFilters extends StatelessWidget {
                             OutlinedButton.icon(
                               onPressed: () => controller.setDateFilter(null),
                               icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text('Clear date'),
+                              label:
+                                  Text('attendance_filters_clear_date'.tr),
                             ),
                           TextButton.icon(
                             onPressed: () async {
@@ -373,7 +398,9 @@ class _ParentAttendanceFilters extends StatelessWidget {
                             },
                             icon: const Icon(Icons.calendar_today, size: 18),
                             label: Text(
-                              hasDate ? 'Change date' : 'Select date',
+                              hasDate
+                                  ? 'attendance_filters_change_date'.tr
+                                  : 'attendance_filters_select_date'.tr,
                             ),
                           ),
                         ],
