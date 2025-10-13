@@ -144,7 +144,7 @@ class AnnouncementFormView extends StatelessWidget {
                                     ? 'announcement_form_characters_left'
                                         .trParams({'count': '$remaining'})
                                     : 'announcement_form_characters_over_limit'
-                                        .trParams({'count': '${remaining.abs()}'})
+                                        .trParams({'count': '${remaining.abs()}'}),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: remaining >= 0
                                       ? theme.colorScheme.onSurfaceVariant
