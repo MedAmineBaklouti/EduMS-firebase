@@ -20,7 +20,7 @@ class ParentPickupView extends GetView<ParentPickupController> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('Pickup Confirmation'),
+        title: Text('pickup_parent_title'.tr),
         centerTitle: true,
       ),
       body: ModulePageContainer(
@@ -39,12 +39,11 @@ class ParentPickupView extends GetView<ParentPickupController> {
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(16, 120, 16, 160),
-                      children: const [
+                      children: [
                         ModuleEmptyState(
                           icon: Icons.local_taxi_outlined,
-                          title: 'No pickup tickets available',
-                          message:
-                              'When the school opens pickup for your children, the tickets will appear here.',
+                          title: 'pickup_parent_empty_title'.tr,
+                          message: 'pickup_parent_empty_message'.tr,
                         ),
                       ],
                     ),
@@ -85,7 +84,8 @@ class ParentPickupView extends GetView<ParentPickupController> {
                             children: [
                               _PickupStageChip(stage: stage),
                               Text(
-                                'Created ${dateFormat.format(ticket.createdAt)}',
+                                'pickup_metadata_created'
+                                    .trParams({'time': dateFormat.format(ticket.createdAt)}),
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
@@ -98,13 +98,15 @@ class ParentPickupView extends GetView<ParentPickupController> {
                               alignment: Alignment.centerRight,
                               child: ElevatedButton(
                                 onPressed: () => controller.confirmPickup(ticket),
-                                child: const Text('Confirm pickup'),
+                                child: Text('pickup_parent_confirm_button'.tr),
                               ),
                             ),
                           ] else if (ticket.parentConfirmedAt != null) ...[
                             const SizedBox(height: 12),
                             Text(
-                              'Confirmed at ${dateFormat.format(ticket.parentConfirmedAt!)}',
+                              'pickup_parent_confirmed'.trParams({
+                                'time': dateFormat.format(ticket.parentConfirmedAt!),
+                              }),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.green,
                                   ),
@@ -143,7 +145,7 @@ class _ParentPickupFilters extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Filter tickets',
+                  'pickup_parent_filters_title'.tr,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -151,7 +153,7 @@ class _ParentPickupFilters extends StatelessWidget {
                 TextButton.icon(
                   onPressed: hasFilter ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 ),
               ],
             );
@@ -164,11 +166,12 @@ class _ParentPickupFilters extends StatelessWidget {
             }
             final child = controller.children
                 .firstWhereOrNull((element) => element.id == childId);
-            final childName = child?.name ?? 'Child';
+            final childName = child?.name ?? 'pickup_filter_child_placeholder'.tr;
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _ActiveFilterChip(
-                label: 'Child: $childName',
+                label:
+                    'pickup_filter_chip_child'.trParams({'name': childName}),
                 onRemoved: controller.clearFilters,
               ),
             );
@@ -178,14 +181,14 @@ class _ParentPickupFilters extends StatelessWidget {
             final childFilter = controller.childFilter.value;
             return DropdownButtonFormField<String?>(
               value: childFilter,
-              decoration: const InputDecoration(
-                labelText: 'Child',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'pickup_filter_child_label'.tr,
+                border: const OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem<String?>(
+                DropdownMenuItem<String?>(
                   value: null,
-                  child: Text('All children'),
+                  child: Text('pickup_filter_child_all'.tr),
                 ),
                 ...children.map(
                   (child) => DropdownMenuItem<String?>(
@@ -240,19 +243,19 @@ class _PickupStageChip extends StatelessWidget {
     switch (stage) {
       case PickupStage.awaitingParent:
         color = Colors.orange;
-        label = 'Awaiting parent';
+        label = 'pickup_stage_awaiting_parent'.tr;
         break;
       case PickupStage.awaitingTeacher:
         color = Colors.blue;
-        label = 'Teacher validation';
+        label = 'pickup_stage_awaiting_teacher'.tr;
         break;
       case PickupStage.awaitingAdmin:
         color = Colors.purple;
-        label = 'Admin validation';
+        label = 'pickup_stage_awaiting_admin'.tr;
         break;
       case PickupStage.completed:
         color = Colors.green;
-        label = 'Completed';
+        label = 'pickup_stage_completed'.tr;
         break;
     }
     return Container(

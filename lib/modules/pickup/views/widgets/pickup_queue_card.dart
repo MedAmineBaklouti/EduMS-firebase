@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/models/pickup_model.dart';
@@ -74,7 +75,7 @@ class PickupQueueCard extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onValidate,
                   icon: Icon(actionIcon ?? Icons.verified_outlined, size: 18),
-                  label: Text(actionLabel ?? 'Validate pickup'),
+                  label: Text(actionLabel ?? 'pickup_action_validate'.tr),
                 ),
               if (trailing != null) ...[
                 if (onValidate != null) const SizedBox(width: 12),
@@ -96,7 +97,9 @@ class PickupQueueCard extends StatelessWidget {
     items.add(
       _InfoChip(
         icon: Icons.schedule,
-        label: 'Created ${timeFormat.format(ticket.createdAt)}',
+        label: 'pickup_metadata_created'.trParams({
+          'time': timeFormat.format(ticket.createdAt),
+        }),
       ),
     );
 
@@ -104,7 +107,9 @@ class PickupQueueCard extends StatelessWidget {
       items.add(
         _InfoChip(
           icon: Icons.directions_walk,
-          label: 'Parent arrived ${timeFormat.format(parentConfirmed)}',
+          label: 'pickup_metadata_parent_arrived'.trParams({
+            'time': timeFormat.format(parentConfirmed),
+          }),
         ),
       );
     }
@@ -113,7 +118,9 @@ class PickupQueueCard extends StatelessWidget {
       items.add(
         _InfoChip(
           icon: Icons.verified_outlined,
-          label: 'Teacher released ${timeFormat.format(teacherValidated)}',
+          label: 'pickup_metadata_teacher_released'.trParams({
+            'time': timeFormat.format(teacherValidated),
+          }),
         ),
       );
     }
@@ -122,7 +129,9 @@ class PickupQueueCard extends StatelessWidget {
       items.add(
         _InfoChip(
           icon: Icons.admin_panel_settings_outlined,
-          label: 'Admin released ${timeFormat.format(adminValidated)}',
+          label: 'pickup_metadata_admin_released'.trParams({
+            'time': timeFormat.format(adminValidated),
+          }),
         ),
       );
     }
@@ -185,13 +194,13 @@ class _InfoChip extends StatelessWidget {
 String _stageLabel(PickupStage stage) {
   switch (stage) {
     case PickupStage.awaitingParent:
-      return 'Waiting for parent';
+      return 'pickup_stage_awaiting_parent'.tr;
     case PickupStage.awaitingTeacher:
-      return 'Waiting for release';
+      return 'pickup_stage_awaiting_teacher'.tr;
     case PickupStage.awaitingAdmin:
-      return 'Waiting for admin';
+      return 'pickup_stage_awaiting_admin'.tr;
     case PickupStage.completed:
-      return 'Completed';
+      return 'pickup_stage_completed'.tr;
   }
 }
 
