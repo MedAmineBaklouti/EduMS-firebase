@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app/bindings/app-binding.dart';
 import 'my_app.dart';
 import 'modules/messaging/services/messaging_push_handler.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +17,9 @@ Future<void> main() async {
   // is ready when the background isolate starts.
   try {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     }
   } catch (e, stackTrace) {
     // Surface the initialization failure instead of silently continuing. Most
@@ -29,7 +33,9 @@ Future<void> main() async {
   // Ensure background push notifications are handled when the app is
   // terminated or running in the background. The handler must be registered
   // after Firebase is initialized so platform channels are available.
-  FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
+  }
 
   // Load .env
   try {
