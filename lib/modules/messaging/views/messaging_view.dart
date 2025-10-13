@@ -70,14 +70,14 @@ class MessagingView extends GetView<MessagingController> {
               if (viewMode == MessagingViewMode.conversationThread) {
                 return IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Back to conversations',
+                  tooltip: 'messaging_back_to_conversations'.tr,
                   onPressed: controller.clearActiveConversation,
                 );
               }
               if (canPop) {
                 return IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Back',
+                  tooltip: 'common_back'.tr,
                   onPressed: () {
                     navigator.maybePop();
                   },
@@ -93,14 +93,14 @@ class MessagingView extends GetView<MessagingController> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Messaging',
+                        'messaging_title'.tr,
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: theme.colorScheme.onPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        'Stay connected with your school community',
+                        'messaging_subtitle'.tr,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onPrimary.withOpacity(0.8),
                         ),
@@ -171,12 +171,12 @@ class MessagingView extends GetView<MessagingController> {
               if (controller.shouldShowAdministrationAction)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: TextButton(
-                    onPressed: controller.startConversationWithAdministration,
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.primary,
-                    ),
-                    child: const Text('Administration'),
+                    child: TextButton(
+                      onPressed: controller.startConversationWithAdministration,
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.primary,
+                      ),
+                    child: Text('messaging_action_administration'.tr),
                   ),
                 ),
             ],
@@ -187,8 +187,8 @@ class MessagingView extends GetView<MessagingController> {
                 return ConversationHistoryView(controller: controller);
               case MessagingViewMode.conversationThread:
                 if (activeConversation == null) {
-                  return const ScrollablePlaceholder(
-                    child: Text('Select a conversation to get started.'),
+                  return ScrollablePlaceholder(
+                    child: Text('messaging_select_conversation_hint'.tr),
                   );
                 }
                 return ConversationThreadView(controller: controller, theme: theme);
@@ -197,7 +197,7 @@ class MessagingView extends GetView<MessagingController> {
           floatingActionButton:
               viewMode == MessagingViewMode.conversationList
                   ? FloatingActionButton(
-                      tooltip: 'Start a new conversation',
+                      tooltip: 'messaging_fab_tooltip'.tr,
                       onPressed: openNewConversationDialog,
                       child: const Icon(Icons.add_comment_rounded),
                     )

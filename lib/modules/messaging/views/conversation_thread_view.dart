@@ -176,20 +176,20 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
                 return ScrollablePlaceholder(
                   child: ModuleEmptyState(
                     icon: Icons.error_outline,
-                    title: 'Unable to load messages',
+                    title: 'messaging_messages_error_title'.tr,
                     message: error,
-                    actionLabel: 'Retry',
+                    actionLabel: 'common_retry'.tr,
                     onAction: controller.refreshMessages,
                   ),
                 );
               }
 
               if (controller.messages.isEmpty) {
-                return const ScrollablePlaceholder(
+                return ScrollablePlaceholder(
                   child: ModuleEmptyState(
                     icon: Icons.forum_outlined,
-                    title: 'No messages yet',
-                    message: 'Start the conversation with a message below.',
+                    title: 'messaging_thread_empty_title'.tr,
+                    message: 'messaging_thread_empty_message'.tr,
                   ),
                 );
               }
@@ -290,7 +290,7 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'New',
+                                      'messaging_badge_new'.tr,
                                       style: theme.textTheme.labelSmall?.copyWith(
                                         color: theme.colorScheme.primary,
                                         fontWeight: FontWeight.w600,
@@ -337,7 +337,10 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      isReadByOthers ? 'Read' : 'Unread',
+                                      (isReadByOthers
+                                              ? 'messaging_status_read'
+                                              : 'messaging_status_unread')
+                                          .tr,
                                       style: theme.textTheme.labelSmall?.copyWith(
                                         color: theme.colorScheme.onPrimary
                                             .withOpacity(0.85),
@@ -427,7 +430,7 @@ class MessageComposer extends StatelessWidget {
                             color: theme.colorScheme.onSurface,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'Write a message…',
+                            hintText: 'messaging_input_hint'.tr,
                             hintStyle: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -446,7 +449,9 @@ class MessageComposer extends StatelessWidget {
                 Obx(() {
                   final sending = controller.isSending.value;
                   return Tooltip(
-                    message: sending ? 'Sending…' : 'Send message',
+                    message: sending
+                        ? 'messaging_sending'.tr
+                        : 'messaging_send_button_tooltip'.tr,
                     child: FilledButton(
                       onPressed: sending ? null : controller.sendCurrentMessage,
                       style: FilledButton.styleFrom(
