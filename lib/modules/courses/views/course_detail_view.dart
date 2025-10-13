@@ -29,7 +29,7 @@ class CourseDetailView extends StatelessWidget {
         actions: [
           if (onEdit != null)
             IconButton(
-              tooltip: 'Edit course',
+              tooltip: 'courses_action_edit'.tr,
               icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
                 await onEdit?.call();
@@ -48,11 +48,11 @@ class CourseDetailView extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSectionCard(
               context,
-              title: 'Description',
+              title: 'courses_section_description'.tr,
               child: Text(
                 course.description.isNotEmpty
                     ? course.description
-                    : 'No description provided for this course.',
+                    : 'courses_description_missing'.tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   height: 1.6,
@@ -62,7 +62,7 @@ class CourseDetailView extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSectionCard(
               context,
-              title: 'Learning content',
+              title: 'courses_section_learning_content'.tr,
               child: _buildContentBody(context),
             ),
             const SizedBox(height: 32),
@@ -73,7 +73,7 @@ class CourseDetailView extends StatelessWidget {
                     Icons.picture_as_pdf_outlined,
                   color: Colors.white,
                 ),
-                label: const Text('Download as PDF'),
+                label: Text('courses_download_pdf'.tr),
                 onPressed: () => _downloadPdf(context),
               ),
             ),
@@ -88,10 +88,10 @@ class CourseDetailView extends StatelessWidget {
     final createdLabel = DateFormat('MMM d, yyyy').format(course.createdAt);
     final subject = course.subjectName.isNotEmpty
         ? course.subjectName
-        : 'Subject not specified';
+        : 'courses_subject_not_specified'.tr;
     final teacher = course.teacherName.isNotEmpty
         ? course.teacherName
-        : 'Teacher unknown';
+        : 'courses_teacher_unknown'.tr;
 
     return Container(
       width: double.infinity,
@@ -142,7 +142,8 @@ class CourseDetailView extends StatelessWidget {
               _buildHeroChip(
                 context,
                 icon: Icons.calendar_today_outlined,
-                label: 'Created $createdLabel',
+                label:
+                    'courses_created_on'.trParams({'date': createdLabel}),
               ),
             ],
           ),
@@ -166,7 +167,7 @@ class CourseDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Course overview',
+              'courses_overview_title'.tr,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -180,21 +181,28 @@ class CourseDetailView extends StatelessWidget {
                   context,
                   icon: Icons.groups_outlined,
                   label: classes.isEmpty
-                      ? 'No classes linked yet'
-                      : '${classes.length} class${classes.length == 1 ? '' : 'es'} linked',
+                      ? 'courses_classes_none'.tr
+                      : classes.length == 1
+                          ? 'courses_classes_single'.tr
+                          : 'courses_classes_plural'.trParams({
+                              'count': classes.length.toString(),
+                            }),
                 ),
                 if (wordCount > 0)
                   _buildOverviewBadge(
                     context,
                     icon: Icons.menu_book,
-                    label: '$wordCount word${wordCount == 1 ? '' : 's'} of content',
+                    label: wordCount == 1
+                        ? 'courses_overview_word_count_single'.tr
+                        : 'courses_overview_word_count_plural'
+                            .trParams({'count': wordCount.toString()}),
                   ),
               ],
             ),
             if (classes.isNotEmpty) ...[
               const SizedBox(height: 20),
               Text(
-                'Assigned classes',
+                'courses_overview_assigned_classes'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -248,7 +256,7 @@ class CourseDetailView extends StatelessWidget {
     final segments = _contentSegments();
     if (segments.isEmpty) {
       return Text(
-        'This course does not include additional content yet.',
+        'courses_content_missing'.tr,
         style: theme.textTheme.bodyLarge?.copyWith(
           height: 1.6,
           color: theme.colorScheme.onSurfaceVariant,
@@ -297,7 +305,7 @@ class CourseDetailView extends StatelessWidget {
   Future<void> _downloadPdf(BuildContext context) async {
     final doc = pw.Document();
     final classList = course.classNames.isEmpty
-        ? 'No classes assigned'
+        ? 'courses_class_not_assigned'.tr
         : course.classNames.join(', ');
 
     doc.addPage(
@@ -315,24 +323,34 @@ class CourseDetailView extends StatelessWidget {
           ),
           pw.SizedBox(height: 12),
           pw.Text(
-            'Subject: ${course.subjectName.isNotEmpty ? course.subjectName : 'Subject not specified'}',
+            'courses_pdf_subject'.trParams({
+              'subject': course.subjectName.isNotEmpty
+                  ? course.subjectName
+                  : 'courses_subject_not_specified'.tr,
+            }),
             style: const pw.TextStyle(fontSize: 14),
           ),
           pw.Text(
-            'Teacher: ${course.teacherName.isNotEmpty ? course.teacherName : 'Teacher unknown'}',
+            'courses_pdf_teacher'.trParams({
+              'teacher': course.teacherName.isNotEmpty
+                  ? course.teacherName
+                  : 'courses_teacher_unknown'.tr,
+            }),
             style: const pw.TextStyle(fontSize: 14),
           ),
           pw.Text(
-            'Classes: $classList',
+            'courses_pdf_classes'.trParams({'classes': classList}),
             style: const pw.TextStyle(fontSize: 14),
           ),
           pw.Text(
-            'Created: ${DateFormat('MMM d, yyyy • h:mm a').format(course.createdAt)}',
+            'courses_pdf_created'.trParams({
+              'date': DateFormat('MMM d, yyyy • h:mm a').format(course.createdAt),
+            }),
             style: const pw.TextStyle(fontSize: 12),
           ),
           pw.SizedBox(height: 24),
           pw.Text(
-            'Description',
+            'courses_pdf_description'.tr,
             style: pw.TextStyle(
               fontSize: 18,
               fontWeight: pw.FontWeight.bold,
@@ -342,12 +360,12 @@ class CourseDetailView extends StatelessWidget {
           pw.Text(
             course.description.isNotEmpty
                 ? course.description
-                : 'No description provided for this course.',
+                : 'courses_description_missing'.tr,
             style: const pw.TextStyle(fontSize: 13),
           ),
           pw.SizedBox(height: 20),
           pw.Text(
-            'Content',
+            'courses_pdf_content'.tr,
             style: pw.TextStyle(
               fontSize: 18,
               fontWeight: pw.FontWeight.bold,
@@ -357,7 +375,7 @@ class CourseDetailView extends StatelessWidget {
           pw.Text(
             course.content.isNotEmpty
                 ? course.content
-                : 'This course does not include additional content yet.',
+                : 'courses_content_missing'.tr,
             style: const pw.TextStyle(fontSize: 13, height: 1.5),
           ),
         ],
@@ -370,17 +388,18 @@ class CourseDetailView extends StatelessWidget {
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(
-        'Download complete',
+        'common_download_complete'.tr,
         savedPath != null
-            ? 'Saved to $savedPath'
-            : 'The PDF was not saved. Please check storage permissions or try again.',
+            ? 'courses_download_saved_to'
+                .trParams({'path': savedPath})
+            : 'courses_download_not_saved'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       Get.closeCurrentSnackbar();
       Get.snackbar(
-        'Error',
-        'Failed to generate the PDF. ${e.toString()}',
+        'common_error'.tr,
+        'courses_download_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -483,7 +502,7 @@ class CourseDetailView extends StatelessWidget {
   String _pdfFileName() {
     final trimmed = course.title.trim();
     if (trimmed.isEmpty) {
-      return 'Course.pdf';
+      return 'courses_pdf_default_filename'.tr;
     }
     final sanitized = trimmed
         .replaceAll(RegExp(r'[\\/:*?"<>|]'), '')

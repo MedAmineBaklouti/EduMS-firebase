@@ -41,8 +41,8 @@ class ParentCoursesController extends GetxController {
       final uid = _auth.currentUser?.uid;
       if (uid == null) {
         Get.snackbar(
-          'Error',
-          'Unable to determine the authenticated parent.',
+          'common_error'.tr,
+          'courses_parent_auth_error'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -57,8 +57,8 @@ class ParentCoursesController extends GetxController {
       });
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to load courses. ${e.toString()}',
+        'common_error'.tr,
+        'courses_load_failed_message'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -119,14 +119,15 @@ class ParentCoursesController extends GetxController {
   }
 
   String childName(String id) {
-    return children.firstWhereOrNull((child) => child.id == id)?.name ?? 'Child';
+    return children.firstWhereOrNull((child) => child.id == id)?.name ??
+        'courses_filter_label_child'.tr;
   }
 
   String subjectName(String id) {
     return subjectOptions
             .firstWhereOrNull((option) => option.id == id)
             ?.name ??
-        'Subject';
+        'courses_filter_label_subject'.tr;
   }
 
   void _applyFilters() {

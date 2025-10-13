@@ -19,7 +19,7 @@ class TeacherCoursesView extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
-        title: const Text('My Courses'),
+        title: Text('courses_my_title'.tr),
         centerTitle: true,
       ),
       body: Obx(() {
@@ -60,13 +60,13 @@ class TeacherCoursesView extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 color: theme.colorScheme.primary,
                                 icon: Icons.edit_outlined,
-                                label: 'Edit',
+                                label: 'common_edit'.tr,
                               ),
                               secondaryBackground: SwipeActionBackground(
                                 alignment: Alignment.centerRight,
                                 color: theme.colorScheme.error,
                                 icon: Icons.delete_outline,
-                                label: 'Delete',
+                                label: 'common_delete'.tr,
                               ),
                               confirmDismiss: (direction) async {
                                 if (direction == DismissDirection.startToEnd) {
@@ -109,7 +109,9 @@ class TeacherCoursesView extends StatelessWidget {
           heroTag: 'teacherCoursesFab',
           onPressed: hasClasses ? () => controller.openForm() : null,
           icon: const Icon(Icons.add),
-          label: Text(hasClasses ? 'New Course' : 'No classes available'),
+          label: Text(hasClasses
+              ? 'courses_new_course'.tr
+              : 'courses_no_classes_available'.tr),
         );
       }),
     );
@@ -137,7 +139,7 @@ class TeacherCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'No courses yet',
+          'courses_teacher_empty_title'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
@@ -145,7 +147,7 @@ class TeacherCoursesView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Tap the button below to publish your first course.',
+          'courses_teacher_empty_message'.tr,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -167,7 +169,7 @@ class TeacherCoursesView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Filter courses',
+                'courses_filter_title'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -178,7 +180,7 @@ class TeacherCoursesView extends StatelessWidget {
                 return TextButton.icon(
                   onPressed: hasFilter ? controller.clearFilters : null,
                   icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-                  label: const Text('Clear'),
+                  label: Text('common_clear'.tr),
                 );
               }),
             ],
@@ -197,7 +199,9 @@ class TeacherCoursesView extends StatelessWidget {
                 children: [
                   _buildActiveFilterChip(
                     context,
-                    label: 'Class: ${controller.className(selectedId)}',
+                    label: 'courses_filter_chip_class'.trParams({
+                      'class': controller.className(selectedId),
+                    }),
                     onRemoved: () => controller.updateClassFilter(''),
                   ),
                 ],
@@ -210,17 +214,19 @@ class TeacherCoursesView extends StatelessWidget {
               value: controller.selectedFilterClassId.value.isEmpty
                   ? null
                   : controller.selectedFilterClassId.value,
-              decoration: const InputDecoration(
-                labelText: 'Class',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'courses_filter_label_class'.tr,
+                border: const OutlineInputBorder(),
               ),
               hint: Text(
-                classes.isNotEmpty ? 'All classes' : 'No classes available',
+                classes.isNotEmpty
+                    ? 'courses_filter_option_all_classes'.tr
+                    : 'courses_no_classes_available'.tr,
               ),
               items: [
-                const DropdownMenuItem<String>(
+                DropdownMenuItem<String>(
                   value: '',
-                  child: Text('All classes'),
+                  child: Text('courses_filter_option_all_classes'.tr),
                 ),
                 ...classes
                     .map(
@@ -268,20 +274,20 @@ class TeacherCoursesView extends StatelessWidget {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete course'),
-        content: const Text('Are you sure you want to delete this course?'),
+        title: Text('courses_confirm_delete_title'.tr),
+        content: Text('courses_confirm_delete_message'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
-              'Cancel',
+              'common_cancel'.tr,
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
-              'Delete',
+              'common_delete'.tr,
               style: TextStyle(color: theme.colorScheme.error),
             ),
           ),
@@ -301,7 +307,7 @@ class _CourseListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final classes = course.classNames.isEmpty
-        ? 'No class assigned'
+        ? 'courses_class_not_assigned'.tr
         : course.classNames.join(', ');
     return Material(
       color: Colors.transparent,
