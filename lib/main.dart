@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -30,6 +31,10 @@ Future<void> main() async {
   } catch (e) {
     print('Firebase init failed: $e');
   }
+
+  // Configure the default language for Firebase auth flows to silence
+  // locale-related warnings in the logs.
+  await FirebaseAuth.instance.setLanguageCode('en');
 
   // Initialize your GetX bindings (SharedPreferences, AuthService, etc.)
   final binding = AppBindings();
