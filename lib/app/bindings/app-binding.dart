@@ -37,6 +37,8 @@ class AppBindings extends Bindings {
   }
 
   Future<void> _initializeCoreServices() async {
+    await _ensureFirebaseInitialized();
+
     // Initialize SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     Get.put(prefs, permanent: true);
@@ -50,13 +52,6 @@ class AppBindings extends Bindings {
     final networkService = NetworkService();
     await networkService.init();
     Get.put(networkService, permanent: true);
-
-    // Ensure Firebase is initialized before any services depend on it.
-    if (Firebase.apps.isEmpty) {
-      throw StateError(
-        'Firebase must be initialized before calling AppBindings.dependencies.',
-      );
-    }
 
     // Initialize DatabaseService
     final databaseService = DatabaseService();
@@ -98,5 +93,19 @@ class AppBindings extends Bindings {
     Get.lazyPut(() => ParentPickupController(), fenix: true);
     Get.lazyPut(() => MessagingController(), fenix: true);
     Get.put(ParentPickupNotificationService(), permanent: true);
+  }
+
+  Future<void> _ensureFirebaseInitialized() async {
+    if (Firebase.apps.isNotEmpty) {
+      return;
+    }
+
+    try {
+      await Firebase.initializeApp();
+    } catch (error, stackTrace) {
+      Get.log('Firebase initialization failed: $error');
+      Get.log(stackTrace.toString());
+      rethrow;
+    }
   }
 }
