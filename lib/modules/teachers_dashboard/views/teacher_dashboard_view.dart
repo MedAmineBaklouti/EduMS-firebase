@@ -12,7 +12,7 @@ class TeacherDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RoleDashboard(
-      roleName: 'Teacher',
+      roleNameKey: 'role_teacher',
       onLogout: _controller.logout,
       onMessagesTap: () => Get.toNamed(AppPages.MESSAGING),
       announcementAudience: 'teachers',
@@ -20,36 +20,36 @@ class TeacherDashboard extends StatelessWidget {
       cards: [
         DashboardCard(
           icon: Icons.menu_book,
-          title: 'Courses',
-          subtitle: 'Create and share lessons',
+          title: 'dashboard_card_courses_title'.tr,
+          subtitle: 'dashboard_card_courses_teacher_subtitle'.tr,
           color: Colors.teal,
           onTap: () => Get.toNamed(AppPages.TEACHER_COURSES),
         ),
         DashboardCard(
           icon: Icons.assignment,
-          title: 'Homework',
-          subtitle: 'Assign tasks',
+          title: 'dashboard_card_homework_title'.tr,
+          subtitle: 'dashboard_card_homework_teacher_subtitle'.tr,
           color: Colors.green,
           onTap: () => Get.toNamed(AppPages.TEACHER_HOMEWORK),
         ),
         DashboardCard(
           icon: Icons.calendar_today,
-          title: 'Attendance',
-          subtitle: 'Record presence',
+          title: 'dashboard_card_attendance_title'.tr,
+          subtitle: 'dashboard_card_attendance_teacher_subtitle'.tr,
           color: Colors.orange,
           onTap: () => Get.toNamed(AppPages.TEACHER_ATTENDANCE),
         ),
         DashboardCard(
           icon: Icons.emoji_people,
-          title: 'Behavior',
-          subtitle: 'Student reports',
+          title: 'dashboard_card_behavior_title'.tr,
+          subtitle: 'dashboard_card_behavior_teacher_subtitle'.tr,
           color: Colors.red,
           onTap: () => Get.toNamed(AppPages.TEACHER_BEHAVIOR),
         ),
         DashboardCard(
           icon: Icons.directions_bus,
-          title: 'Pickup',
-          subtitle: 'Parent coordination',
+          title: 'dashboard_card_pickup_title'.tr,
+          subtitle: 'dashboard_card_pickup_teacher_subtitle'.tr,
           color: Colors.indigo,
           onTap: () => Get.toNamed(AppPages.TEACHER_PICKUP),
         ),
