@@ -33,13 +33,13 @@ class AnnouncementDetailView extends StatelessWidget {
         title: Text(
           announcement.title.isNotEmpty
               ? announcement.title
-              : 'Announcement',
+              : 'announcement_detail_fallback_title'.tr,
         ),
         centerTitle: true,
         actions: [
           if (isAdmin && onEdit != null)
             IconButton(
-              tooltip: 'Edit announcement',
+              tooltip: 'announcement_detail_edit_tooltip'.tr,
               icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
                 await onEdit?.call();
@@ -58,11 +58,11 @@ class AnnouncementDetailView extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSectionCard(
               context,
-              title: 'Announcement',
+              title: 'announcement_detail_section_announcement'.tr,
               child: Text(
                 announcement.description.isNotEmpty
                     ? announcement.description
-                    : 'No additional details were provided for this announcement.',
+                    : 'announcement_detail_no_description'.tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   height: 1.6,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -88,7 +88,8 @@ class AnnouncementDetailView extends StatelessWidget {
       _buildHeroChip(
         context,
         icon: Icons.calendar_today_outlined,
-        label: 'Published $publishedLabel',
+        label: 'announcement_detail_chip_published'
+            .trParams({'date': publishedLabel}),
       ),
     ];
 
@@ -103,17 +104,20 @@ class AnnouncementDetailView extends StatelessWidget {
     }
 
     if (isAdmin) {
+      final allAudienceLabel = 'announcement_audience_all'.tr;
       final audienceSummary = audienceLabels.isEmpty ||
-              audienceLabels.contains('All audiences')
-          ? 'All audiences'
+              audienceLabels.contains(allAudienceLabel)
+          ? allAudienceLabel
           : audienceLabels.length == 1
               ? audienceLabels.first
-              : '${audienceLabels.length} audiences';
+              : 'announcement_detail_audience_summary_multiple'
+                  .trParams({'count': '${audienceLabels.length}'});
       chips.add(
         _buildHeroChip(
           context,
           icon: Icons.people_outline,
-          label: 'Audience: $audienceSummary',
+          label: 'announcement_detail_chip_audience'
+              .trParams({'audience': audienceSummary}),
         ),
       );
     }
@@ -171,7 +175,8 @@ class AnnouncementDetailView extends StatelessWidget {
       _buildOverviewBadge(
         context,
         icon: Icons.event_available_outlined,
-        label: 'Published $published',
+        label: 'announcement_detail_badge_published'
+            .trParams({'date': published}),
       ),
     ];
 
@@ -190,16 +195,19 @@ class AnnouncementDetailView extends StatelessWidget {
           _buildOverviewBadge(
             context,
             icon: Icons.calendar_month_outlined,
-            label: 'Expires $expiryLabel',
+            label: 'announcement_detail_badge_expires_on'
+                .trParams({'date': expiryLabel}),
           ),
         );
     }
 
     if (isAdmin) {
+      final allAudienceLabel = 'announcement_audience_all'.tr;
       final audienceBadgeLabel = audienceLabels.isEmpty ||
-              audienceLabels.contains('All audiences')
-          ? 'All audiences'
-          : '${audienceLabels.length} audience${audienceLabels.length == 1 ? '' : 's'}';
+              audienceLabels.contains(allAudienceLabel)
+          ? allAudienceLabel
+          : 'announcement_detail_audience_summary_multiple'
+              .trParams({'count': '${audienceLabels.length}'});
       badges.add(
         _buildOverviewBadge(
           context,
@@ -209,8 +217,9 @@ class AnnouncementDetailView extends StatelessWidget {
       );
     }
 
+    final allAudienceLabel = 'announcement_audience_all'.tr;
     final specificAudienceLabels = audienceLabels
-        .where((label) => label.toLowerCase() != 'all audiences')
+        .where((label) => label != allAudienceLabel)
         .toList();
 
     return Card(
@@ -223,7 +232,7 @@ class AnnouncementDetailView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Announcement overview',
+              'announcement_detail_overview_title'.tr,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -237,7 +246,7 @@ class AnnouncementDetailView extends StatelessWidget {
             if (isAdmin && specificAudienceLabels.isNotEmpty) ...[
               const SizedBox(height: 20),
               Text(
-                'Target audiences',
+                'announcement_detail_target_audiences'.tr,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -290,12 +299,12 @@ class AnnouncementDetailView extends StatelessWidget {
     final theme = Theme.of(context);
     return _buildSectionCard(
       context,
-      title: 'Admin tools',
+      title: 'announcement_detail_admin_tools_title'.tr,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Download a formatted PDF copy for records or offline sharing. Announcements remain visible for seven days by default.',
+            'announcement_detail_admin_tools_message'.tr,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -308,7 +317,7 @@ class AnnouncementDetailView extends StatelessWidget {
                   Icons.picture_as_pdf_outlined,
                 color: Colors.white,
               ),
-              label: const Text('Download announcement PDF'),
+              label: Text('announcement_detail_admin_tools_download'.tr),
               onPressed: () => _downloadPdf(context),
             ),
           ),
@@ -392,19 +401,29 @@ class AnnouncementDetailView extends StatelessWidget {
 
   List<String> _audienceLabels() {
     if (announcement.audience.isEmpty) {
-      return ['All audiences'];
+      return ['announcement_audience_all'.tr];
     }
     final seen = <String>{};
     final labels = <String>[];
     for (final item in announcement.audience) {
-      final formatted = _capitalize(item.trim());
-      if (formatted.isEmpty) continue;
-      final key = formatted.toLowerCase();
-      if (seen.add(key)) {
-        labels.add(formatted);
+      final normalized = item.trim().toLowerCase();
+      if (normalized.isEmpty || !seen.add(normalized)) {
+        continue;
       }
+      labels.add(_audienceLabelForKey(normalized));
     }
     return labels;
+  }
+
+  String _audienceLabelForKey(String key) {
+    switch (key) {
+      case 'teachers':
+        return 'announcement_audience_teachers'.tr;
+      case 'parents':
+        return 'announcement_audience_parents'.tr;
+      default:
+        return _capitalize(key);
+    }
   }
 
   String _capitalize(String value) {
@@ -416,15 +435,18 @@ class AnnouncementDetailView extends StatelessWidget {
     final expiry = announcement.createdAt.add(const Duration(days: 7));
     final remaining = expiry.difference(DateTime.now());
     if (remaining.isNegative) {
-      return 'Expired on ${DateFormat('MMM d, yyyy').format(expiry)}';
+      return 'announcement_detail_expired_on'
+          .trParams({'date': DateFormat('MMM d, yyyy').format(expiry)});
     }
     if (remaining.inDays > 0) {
-      return 'Expires in ${remaining.inDays} day${remaining.inDays == 1 ? '' : 's'}';
+      return 'announcement_detail_expires_in_days'
+          .trParams({'count': '${remaining.inDays}'});
     }
     if (remaining.inHours > 0) {
-      return 'Expires in ${remaining.inHours} hour${remaining.inHours == 1 ? '' : 's'}';
+      return 'announcement_detail_expires_in_hours'
+          .trParams({'count': '${remaining.inHours}'});
     }
-    return 'Expires soon';
+    return 'announcement_detail_expires_soon'.tr;
   }
 
   Future<void> _downloadPdf(BuildContext context) async {
@@ -449,7 +471,7 @@ class AnnouncementDetailView extends StatelessWidget {
                 ),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Published: $dateText',
+                  'announcement_pdf_published'.trParams({'date': dateText}),
                   style: const pw.TextStyle(fontSize: 12),
                 ),
               ],
@@ -457,7 +479,7 @@ class AnnouncementDetailView extends StatelessWidget {
           ),
           pw.SizedBox(height: 16),
           pw.Text(
-            'Audience',
+            'announcement_pdf_audience_label'.tr,
             style: pw.TextStyle(
               fontSize: 16,
               fontWeight: pw.FontWeight.bold,
@@ -466,13 +488,13 @@ class AnnouncementDetailView extends StatelessWidget {
           pw.SizedBox(height: 6),
           pw.Text(
             audience.isEmpty
-                ? 'All audiences'
+                ? 'announcement_audience_all'.tr
                 : audience.join(', '),
             style: const pw.TextStyle(fontSize: 12),
           ),
           pw.SizedBox(height: 16),
           pw.Text(
-            'Announcement',
+            'announcement_pdf_announcement_label'.tr,
             style: pw.TextStyle(
               fontSize: 16,
               fontWeight: pw.FontWeight.bold,
@@ -485,7 +507,8 @@ class AnnouncementDetailView extends StatelessWidget {
           ),
           pw.SizedBox(height: 20),
           pw.Text(
-            'Expires on ${DateFormat('MMM d, yyyy • h:mm a').format(expiry)}',
+            'announcement_pdf_expires_on'
+                .trParams({'date': DateFormat('MMM d, yyyy • h:mm a').format(expiry)}),
             style: const pw.TextStyle(fontSize: 11),
           ),
         ],
@@ -500,17 +523,17 @@ class AnnouncementDetailView extends StatelessWidget {
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(
-        'Download ready',
+        'announcement_pdf_download_ready'.tr,
         savedPath != null
-            ? 'Saved to $savedPath'
-            : 'The PDF was not saved. Please check storage permissions or try again.',
+            ? 'announcement_pdf_saved_to'.trParams({'path': savedPath})
+            : 'announcement_pdf_not_saved'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       Get.closeCurrentSnackbar();
       Get.snackbar(
-        'Download failed',
-        'Unable to generate the PDF. ${e.toString()}',
+        'announcement_pdf_download_failed'.tr,
+        'announcement_pdf_download_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     }

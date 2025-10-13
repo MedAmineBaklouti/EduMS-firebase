@@ -75,8 +75,8 @@ class AnnouncementController extends GetxController {
     }
     if (!teachersSelected.value && !parentsSelected.value) {
       Get.snackbar(
-        'Select audience',
-        'Choose at least one audience for this announcement.',
+        'announcement_snackbar_select_title'.tr,
+        'announcement_snackbar_select_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -107,16 +107,18 @@ class AnnouncementController extends GetxController {
 
       Get.back();
       Get.snackbar(
-        isEditingExisting ? 'Announcement updated' : 'Announcement published',
         isEditingExisting
-            ? 'Changes have been saved successfully.'
-            : 'Your announcement is now visible to the selected audience.',
+            ? 'announcement_snackbar_update_title'.tr
+            : 'announcement_snackbar_publish_title'.tr,
+        isEditingExisting
+            ? 'announcement_snackbar_update_message'.tr
+            : 'announcement_snackbar_publish_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to save the announcement. ${e.toString()}',
+        'announcement_snackbar_error_title'.tr,
+        'announcement_snackbar_save_error'.trParams({'error': e.toString()}),
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
