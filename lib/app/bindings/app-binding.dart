@@ -53,7 +53,9 @@ class AppBindings extends Bindings {
 
     // Ensure Firebase is initialized before any services depend on it.
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp();
+      throw StateError(
+        'Firebase must be initialized before calling AppBindings.dependencies.',
+      );
     }
 
     // Initialize DatabaseService
