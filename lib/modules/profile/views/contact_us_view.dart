@@ -76,12 +76,55 @@ class _ContactUsViewState extends State<ContactUsView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset(
-                    'assets/CU.png',
-                    width: 320,
-                    fit: BoxFit.contain,
+                  Card(
+                    elevation: 12,
+                    shadowColor: primary.withOpacity(0.24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    color: primary,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 32,
+                        horizontal: 28,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.onPrimary.withOpacity(0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.support_agent_outlined,
+                              color: theme.colorScheme.onPrimary,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Get in touch with EduMS',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: theme.colorScheme.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'We are here to help! Reach out to our team using your preferred method below.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onPrimary.withOpacity(0.85),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   Card(
                     elevation: 10,
                     shadowColor: primary.withOpacity(0.18),
@@ -108,33 +151,21 @@ class _ContactUsViewState extends State<ContactUsView> {
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: onPrimaryContainer.withOpacity(0.08),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.support_agent_outlined,
-                                color: onPrimaryContainer,
-                                size: 32,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
                             Text(
-                              'Get in touch with EduMS',
+                              'Contact information',
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.headlineSmall?.copyWith(
+                              style: theme.textTheme.titleLarge?.copyWith(
                                 color: onPrimaryContainer,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                             Text(
                               'Choose one of the contact options below to reach our team directly.',
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyLarge?.copyWith(
+                              style: theme.textTheme.bodyMedium?.copyWith(
                                 color: onPrimaryContainer.withOpacity(0.85),
                               ),
                             ),
