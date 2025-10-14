@@ -72,6 +72,12 @@ class AppTranslations extends Translations {
           'edu_chat_new_conversation': 'Start new conversation',
           'edu_chat_conversation_default_title': 'Conversation @index',
           'edu_chat_thread_updated': 'Updated @timestamp',
+          'edu_chat_confirm_delete_title': 'Delete conversation',
+          'edu_chat_confirm_delete_message':
+              'Are you sure you want to delete this conversation? This action cannot be undone.',
+          'edu_chat_delete_success': 'Conversation deleted.',
+          'edu_chat_delete_error':
+              'Unable to delete the conversation. Please try again.',
           'edu_chat_select_thread_hint':
               'Select a conversation from your history to continue.',
           'edu_chat_offline_fallback':
@@ -263,6 +269,12 @@ class AppTranslations extends Translations {
           'messaging_loading_conversations': 'Loading conversations…',
           'messaging_conversations_error_title':
               'Unable to load conversations',
+          'messaging_confirm_delete_title': 'Delete conversation',
+          'messaging_confirm_delete_message':
+              'Are you sure you want to delete this conversation? This action cannot be undone.',
+          'messaging_delete_success': 'Conversation deleted.',
+          'messaging_delete_error':
+              'We could not delete the conversation. Please try again.',
           'messaging_empty_conversations_title': 'No conversations yet',
           'messaging_empty_conversations_message':
               'Start a new conversation with the button below to begin messaging.',
@@ -685,6 +697,12 @@ class AppTranslations extends Translations {
           'edu_chat_new_conversation': 'Nouvelle conversation',
           'edu_chat_conversation_default_title': 'Conversation @index',
           'edu_chat_thread_updated': 'Mis à jour @timestamp',
+          'edu_chat_confirm_delete_title': 'Supprimer la conversation',
+          'edu_chat_confirm_delete_message':
+              'Voulez-vous vraiment supprimer cette conversation ? Cette action est irréversible.',
+          'edu_chat_delete_success': 'Conversation supprimée.',
+          'edu_chat_delete_error':
+              'Impossible de supprimer la conversation. Veuillez réessayer.',
           'edu_chat_select_thread_hint':
               'Sélectionnez une conversation dans votre historique pour continuer.',
           'edu_chat_offline_fallback':
@@ -895,6 +913,12 @@ class AppTranslations extends Translations {
           'messaging_loading_conversations': 'Chargement des conversations…',
           'messaging_conversations_error_title':
               'Impossible de charger les conversations',
+          'messaging_confirm_delete_title': 'Supprimer la conversation',
+          'messaging_confirm_delete_message':
+              'Voulez-vous vraiment supprimer cette conversation ? Cette action est irréversible.',
+          'messaging_delete_success': 'Conversation supprimée.',
+          'messaging_delete_error':
+              'Impossible de supprimer la conversation. Veuillez réessayer.',
           'messaging_empty_conversations_title': 'Aucune conversation',
           'messaging_empty_conversations_message':
               'Commencez une nouvelle conversation avec le bouton ci-dessous pour envoyer un message.',
@@ -1325,6 +1349,12 @@ class AppTranslations extends Translations {
           'edu_chat_new_conversation': 'ابدأ محادثة جديدة',
           'edu_chat_conversation_default_title': 'محادثة @index',
           'edu_chat_thread_updated': 'تم التحديث @timestamp',
+          'edu_chat_confirm_delete_title': 'حذف المحادثة',
+          'edu_chat_confirm_delete_message':
+              'هل أنت متأكد من رغبتك في حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.',
+          'edu_chat_delete_success': 'تم حذف المحادثة.',
+          'edu_chat_delete_error':
+              'تعذّر حذف المحادثة. يرجى المحاولة مرة أخرى.',
           'edu_chat_select_thread_hint': 'اختر محادثة من السجل للمتابعة.',
           'edu_chat_offline_fallback':
               'تلقيت سؤالك ويعمل المساعد حاليًا في وضع العرض دون اتصال. إليك ملخص سريع لما طلبته: "@preview". يرجى توصيل خدمة المساعد للحصول على إجابات كاملة.',
@@ -1517,6 +1547,12 @@ class AppTranslations extends Translations {
           'messaging_loading_conversations': 'جاري تحميل المحادثات…',
           'messaging_conversations_error_title':
               'تعذر تحميل المحادثات',
+          'messaging_confirm_delete_title': 'حذف المحادثة',
+          'messaging_confirm_delete_message':
+              'هل تريد بالتأكيد حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.',
+          'messaging_delete_success': 'تم حذف المحادثة.',
+          'messaging_delete_error':
+              'تعذّر حذف المحادثة. يرجى المحاولة مرة أخرى.',
           'messaging_empty_conversations_title': 'لا توجد محادثات بعد',
           'messaging_empty_conversations_message':
               'ابدأ محادثة جديدة بالزر أدناه لبدء المراسلة.',

@@ -198,6 +198,55 @@ class EduChatService extends GetxService {
     );
   }
 
+  Future<void> deleteChatThread(String chatId) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw const EduChatException(
+        'User not authenticated',
+        type: EduChatErrorType.unauthenticated,
+      );
+    }
+
+    final chatRef = _userChatsCollection(user.uid).doc(chatId);
+    final messagesRef = chatRef.collection('messages');
+
+    try {
+      const batchSize = 500;
+      while (true) {
+        final snapshot = await messagesRef.limit(batchSize).get();
+        if (snapshot.docs.isEmpty) {
+          break;
+        }
+        final batch = _firestore.batch();
+        for (final doc in snapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
+
+      await chatRef.delete();
+    } on FirebaseException catch (error) {
+      final code = error.code.toLowerCase();
+      EduChatErrorType type = EduChatErrorType.unknown;
+      if (code == 'permission-denied' || code == 'unauthenticated') {
+        type = EduChatErrorType.unauthenticated;
+      } else if (code == 'unavailable' ||
+          code == 'deadline-exceeded' ||
+          code == 'cancelled') {
+        type = EduChatErrorType.network;
+      }
+      throw EduChatException(
+        error.message ?? error.code,
+        type: type,
+      );
+    } catch (error) {
+      throw EduChatException(
+        error.toString(),
+        type: EduChatErrorType.unknown,
+      );
+    }
+  }
+
   Future<EduChatProxyResponse> requestEducationalAssistant({
     required String prompt,
   }) async {

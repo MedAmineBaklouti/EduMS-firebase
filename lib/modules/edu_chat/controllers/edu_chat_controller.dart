@@ -268,6 +268,45 @@ class EduChatController extends GetxController {
     }
   }
 
+  Future<bool> deleteThread(EduChatThread thread) async {
+    final threadId = thread.id;
+    final wasActive = activeThreadId.value == threadId;
+    final index = threads.indexWhere((item) => item.id == threadId);
+    EduChatThread? removedThread;
+    if (index >= 0) {
+      removedThread = threads.removeAt(index);
+    }
+
+    try {
+      await _service.deleteChatThread(threadId);
+      if (wasActive) {
+        showThreadList();
+      }
+      Get.snackbar(
+        'edu_chat_title'.tr,
+        'edu_chat_delete_success'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return true;
+    } on EduChatException catch (error) {
+      _restoreThreadAfterDeletionFailure(
+        removedThread: removedThread,
+        index: index,
+        wasActive: wasActive,
+      );
+      _showThreadDeletionError(error);
+    } catch (_) {
+      _restoreThreadAfterDeletionFailure(
+        removedThread: removedThread,
+        index: index,
+        wasActive: wasActive,
+      );
+      _showThreadDeletionError();
+    }
+
+    return false;
+  }
+
   Future<void> selectThread(String chatId) async {
     await _selectThread(chatId);
   }
@@ -416,6 +455,49 @@ class EduChatController extends GetxController {
       message,
       snackPosition: SnackPosition.BOTTOM,
     );
+  }
+
+  void _showThreadDeletionError([EduChatException? error]) {
+    String message = 'edu_chat_delete_error'.tr;
+    if (error != null) {
+      switch (error.type) {
+        case EduChatErrorType.unauthenticated:
+          message = 'edu_chat_error_not_authenticated'.tr;
+          break;
+        case EduChatErrorType.network:
+          message = 'edu_chat_error_network'.tr;
+          break;
+        default:
+          message = 'edu_chat_delete_error'.tr;
+      }
+    }
+
+    Get.snackbar(
+      'edu_chat_title'.tr,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  void _restoreThreadAfterDeletionFailure({
+    EduChatThread? removedThread,
+    required int index,
+    required bool wasActive,
+  }) {
+    if (removedThread != null) {
+      final targetIndex =
+          index >= 0 && index <= threads.length ? index : threads.length;
+      threads.insert(targetIndex, removedThread);
+    } else {
+      threads.refresh();
+    }
+
+    if (wasActive) {
+      activeThreadId.value = removedThread?.id ?? activeThreadId.value;
+      if (removedThread != null) {
+        activeView.value = EduChatViewMode.threadConversation;
+      }
+    }
   }
 
   @override

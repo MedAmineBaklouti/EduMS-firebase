@@ -313,45 +313,86 @@ class _ThreadHistoryList extends StatelessWidget {
                 final thread = threads[index];
                 final title = controller.resolveThreadTitle(thread);
                 final timestamp = controller.formatThreadUpdatedAt(thread);
-                return Card(
-                  key: ValueKey(thread.id),
-                  shape: RoundedRectangleBorder(
+                return Dismissible(
+                  key: ValueKey('eduChatThread-${thread.id}'),
+                  direction: DismissDirection.endToStart,
+                  background: _DismissibleDeleteBackground(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  elevation: 1,
-                  clipBehavior: Clip.antiAlias,
-                  child: ListTile(
-                    onTap: () => controller.selectThread(thread.id),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    leading: CircleAvatar(
-                      backgroundColor:
-                          theme.colorScheme.primary.withOpacity(0.12),
-                      foregroundColor: theme.colorScheme.primary,
-                      child: const Icon(Icons.chat_bubble_outline),
-                    ),
-                    title: Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: timestamp != null
-                        ? Text(
-                            'edu_chat_thread_updated'
-                                .trParams({'timestamp': timestamp}),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                  confirmDismiss: (_) async {
+                    final shouldDelete = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) {
+                        return AlertDialog(
+                          title: Text('edu_chat_confirm_delete_title'.tr),
+                          content:
+                              Text('edu_chat_confirm_delete_message'.tr),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(dialogContext)
+                                  .pop(false),
+                              child: Text('common_cancel'.tr),
                             ),
-                          )
-                        : null,
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                            TextButton(
+                              onPressed: () => Navigator.of(dialogContext)
+                                  .pop(true),
+                              child: Text(
+                                'common_delete'.tr,
+                                style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    if (shouldDelete != true) {
+                      return false;
+                    }
+
+                    final success = await controller.deleteThread(thread);
+                    return success;
+                  },
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 1,
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      onTap: () => controller.selectThread(thread.id),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      leading: CircleAvatar(
+                        backgroundColor:
+                            theme.colorScheme.primary.withOpacity(0.12),
+                        foregroundColor: theme.colorScheme.primary,
+                        child: const Icon(Icons.chat_bubble_outline),
+                      ),
+                      title: Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: timestamp != null
+                          ? Text(
+                              'edu_chat_thread_updated'
+                                  .trParams({'timestamp': timestamp}),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            )
+                          : null,
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
                   ),
                 );
               },
@@ -359,6 +400,29 @@ class _ThreadHistoryList extends StatelessWidget {
           }),
         ),
       ],
+    );
+  }
+}
+
+class _DismissibleDeleteBackground extends StatelessWidget {
+  const _DismissibleDeleteBackground({required this.borderRadius});
+
+  final BorderRadius borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      alignment: AlignmentDirectional.centerEnd,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer,
+        borderRadius: borderRadius,
+      ),
+      padding: const EdgeInsetsDirectional.only(end: 20),
+      child: Icon(
+        Icons.delete_outline,
+        color: theme.colorScheme.onErrorContainer,
+      ),
     );
   }
 }
