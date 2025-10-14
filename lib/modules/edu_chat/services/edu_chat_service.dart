@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,6 +8,7 @@ import 'package:get/get.dart';
 import '../models/edu_chat_exception.dart';
 import '../models/edu_chat_message.dart';
 import '../models/edu_chat_proxy_response.dart';
+import '../models/edu_chat_thread.dart';
 
 const String kEduChatProxyUrl = String.fromEnvironment(
   'EDU_CHAT_PROXY_URL',
@@ -28,6 +31,9 @@ class EduChatService extends GetxService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String get _proxyUrl => kEduChatProxyUrl;
+  bool get _isProxyConfigured =>
+      _proxyUrl.isNotEmpty &&
+      !_proxyUrl.contains('your-proxy-endpoint.example.com');
 
   CollectionReference<Map<String, dynamic>> _userChatsCollection(String uid) {
     return _firestore.collection('users').doc(uid).collection('eduChats');
@@ -50,11 +56,43 @@ class EduChatService extends GetxService {
 
     final docRef = chatsRef.doc();
     await docRef.set({
-      'title': 'Educational Assistant',
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
     return docRef.id;
+  }
+
+  Future<String> createChatThread({String? title}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw const EduChatException(
+        'User not authenticated',
+        type: EduChatErrorType.unauthenticated,
+      );
+    }
+
+    final docRef = _userChatsCollection(user.uid).doc();
+    final sanitizedTitle = title?.trim();
+    await docRef.set({
+      if (sanitizedTitle?.isNotEmpty == true) 'title': sanitizedTitle,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    return docRef.id;
+  }
+
+  Stream<List<EduChatThread>> watchChatThreads() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return const Stream.empty();
+    }
+
+    return _userChatsCollection(user.uid)
+        .orderBy('updatedAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => EduChatThread.fromSnapshot(doc))
+            .toList());
   }
 
   Stream<List<EduChatMessage>> watchMessages(String chatId) {
@@ -93,8 +131,13 @@ class EduChatService extends GetxService {
 
     final chatRef = _userChatsCollection(user.uid).doc(chatId);
     await chatRef.collection('messages').add(message);
+    final preview = _buildMessagePreview(content);
+
     await chatRef.set(
-      {'updatedAt': FieldValue.serverTimestamp()},
+      {
+        'updatedAt': FieldValue.serverTimestamp(),
+        if (preview.isNotEmpty) 'title': preview,
+      },
       SetOptions(merge: true),
     );
   }
@@ -174,6 +217,11 @@ class EduChatService extends GetxService {
       );
     }
 
+    if (!_isProxyConfigured) {
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      return _buildFallbackResponse(prompt);
+    }
+
     try {
       final response = await _dio.post<dynamic>(
         _proxyUrl,
@@ -210,10 +258,8 @@ class EduChatService extends GetxService {
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.connectionError) {
-        throw const EduChatException(
-          'Network error',
-          type: EduChatErrorType.network,
-        );
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        return _buildFallbackResponse(prompt);
       }
 
       throw EduChatException(
@@ -224,10 +270,40 @@ class EduChatService extends GetxService {
       if (error is EduChatException) {
         rethrow;
       }
-      throw EduChatException(
-        error.toString(),
-        type: EduChatErrorType.unknown,
-      );
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      return _buildFallbackResponse(prompt);
     }
+  }
+
+  String _buildMessagePreview(String content) {
+    final sanitized = content.trim();
+    if (sanitized.length <= 60) {
+      return sanitized;
+    }
+    return '${sanitized.substring(0, 57)}...';
+  }
+
+  EduChatProxyResponse _buildFallbackResponse(String prompt) {
+    final trimmed = prompt.trim();
+    if (trimmed.isEmpty) {
+      return const EduChatProxyResponse(text: '');
+    }
+
+    final preview = trimmed.length <= 240
+        ? trimmed
+        : '${trimmed.substring(0, 237)}...';
+
+    final explanation =
+        'edu_chat_offline_fallback'.trParams({'preview': preview});
+
+    final tokensEstimate = preview.isEmpty
+        ? 0
+        : preview.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).length * 4;
+
+    return EduChatProxyResponse(
+      text: explanation,
+      model: 'demo-offline-assistant',
+      tokens: tokensEstimate,
+    );
   }
 }

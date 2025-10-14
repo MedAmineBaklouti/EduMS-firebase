@@ -8,6 +8,7 @@ import '../../../core/services/auth_service.dart';
 import '../models/edu_chat_exception.dart';
 import '../models/edu_chat_message.dart';
 import '../models/edu_chat_proxy_response.dart';
+import '../models/edu_chat_thread.dart';
 import '../services/edu_chat_service.dart';
 
 class EduChatController extends GetxController {
@@ -19,15 +20,19 @@ class EduChatController extends GetxController {
   final AuthService _authService;
 
   final RxList<EduChatMessage> messages = <EduChatMessage>[].obs;
+  final RxList<EduChatThread> threads = <EduChatThread>[].obs;
   final RxBool isLoading = true.obs;
   final RxBool isSending = false.obs;
+  final RxBool isCreatingThread = false.obs;
   final RxnString loadError = RxnString();
   final RxString inputText = ''.obs;
+  final RxnString activeThreadId = RxnString();
 
   final TextEditingController composerController = TextEditingController();
   final ScrollController scrollController = ScrollController();
 
   StreamSubscription<List<EduChatMessage>>? _messagesSubscription;
+  StreamSubscription<List<EduChatThread>>? _threadsSubscription;
   String? _chatId;
 
   String? get currentUserId => _authService.currentUser?.uid;
@@ -39,10 +44,10 @@ class EduChatController extends GetxController {
       inputText.value = composerController.text;
     });
     ever<List<EduChatMessage>>(messages, (_) => _scrollToBottom());
-    Future.microtask(() => _initializeChat());
+    Future.microtask(() => _startWatchingThreads());
   }
 
-  Future<void> _initializeChat() async {
+  Future<void> _startWatchingThreads() async {
     isLoading.value = true;
     loadError.value = null;
 
@@ -54,24 +59,38 @@ class EduChatController extends GetxController {
     }
 
     try {
-      final chatId = await _service.ensureChatThread();
-      _chatId = chatId;
-      _messagesSubscription?.cancel();
-      _messagesSubscription = _service.watchMessages(chatId).listen(
-        (event) {
-          messages.assignAll(event);
-          isLoading.value = false;
+      _threadsSubscription?.cancel();
+      _threadsSubscription = _service.watchChatThreads().listen(
+        (items) async {
+          threads.assignAll(items);
+          loadError.value = null;
+
+          if (items.isEmpty) {
+            await _createInitialThread();
+            return;
+          }
+
+          final current = activeThreadId.value;
+          if (current != null && items.any((thread) => thread.id == current)) {
+            if (_chatId == null) {
+              await _subscribeToMessages(current);
+            }
+            return;
+          }
+
+          await _selectThread(items.first.id, force: true);
         },
         onError: (error) {
           loadError.value = 'edu_chat_error_generic'.tr;
           isLoading.value = false;
         },
+        cancelOnError: false,
       );
     } on EduChatException catch (error) {
       _handleInitializationError(error);
+      isLoading.value = false;
     } catch (_) {
       loadError.value = 'edu_chat_error_generic'.tr;
-    } finally {
       isLoading.value = false;
     }
   }
@@ -93,16 +112,12 @@ class EduChatController extends GetxController {
   }
 
   Future<void> retry() async {
-    await _initializeChat();
+    await _startWatchingThreads();
   }
 
   Future<void> sendMessage() async {
-    final chatId = _chatId;
-    if (chatId == null) {
-      await _initializeChat();
-      if (_chatId == null) {
-        return;
-      }
+    if (!await _ensureActiveThread()) {
+      return;
     }
 
     final text = composerController.text.trim();
@@ -173,6 +188,29 @@ class EduChatController extends GetxController {
     await sendMessage();
   }
 
+  Future<void> startNewChat() async {
+    if (isCreatingThread.value) {
+      return;
+    }
+
+    isCreatingThread.value = true;
+    try {
+      final newId = await _service.createChatThread();
+      await _selectThread(newId, force: true);
+      messages.clear();
+    } on EduChatException catch (error) {
+      _showThreadError(error);
+    } catch (_) {
+      _showThreadError();
+    } finally {
+      isCreatingThread.value = false;
+    }
+  }
+
+  Future<void> selectThread(String chatId) async {
+    await _selectThread(chatId);
+  }
+
   Future<void> _handleSendError(
     EduChatException error,
     String chatId,
@@ -233,9 +271,91 @@ class EduChatController extends GetxController {
     });
   }
 
+  Future<void> _createInitialThread() async {
+    try {
+      final chatId = await _service.createChatThread();
+      await _selectThread(chatId, force: true);
+    } on EduChatException catch (error) {
+      _handleInitializationError(error);
+      isLoading.value = false;
+    } catch (_) {
+      loadError.value = 'edu_chat_error_generic'.tr;
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _selectThread(String chatId, {bool force = false}) async {
+    if (!force && _chatId == chatId) {
+      return;
+    }
+
+    _chatId = chatId;
+    activeThreadId.value = chatId;
+    await _subscribeToMessages(chatId);
+  }
+
+  Future<void> _subscribeToMessages(String chatId) async {
+    isLoading.value = true;
+    loadError.value = null;
+    messages.clear();
+
+    _messagesSubscription?.cancel();
+    _messagesSubscription = _service.watchMessages(chatId).listen(
+      (event) {
+        messages.assignAll(event);
+        isLoading.value = false;
+      },
+      onError: (error) {
+        loadError.value = 'edu_chat_error_generic'.tr;
+        isLoading.value = false;
+      },
+      cancelOnError: false,
+    );
+  }
+
+  Future<bool> _ensureActiveThread() async {
+    if (_chatId != null) {
+      return true;
+    }
+
+    if (threads.isNotEmpty) {
+      await _selectThread(threads.first.id, force: true);
+      return _chatId != null;
+    }
+
+    await _createInitialThread();
+    return _chatId != null;
+  }
+
+  void _showThreadError([EduChatException? error]) {
+    String message = 'edu_chat_error_generic'.tr;
+    if (error != null) {
+      switch (error.type) {
+        case EduChatErrorType.unauthenticated:
+          message = 'edu_chat_error_not_authenticated'.tr;
+          break;
+        case EduChatErrorType.network:
+          message = 'edu_chat_error_network'.tr;
+          break;
+        case EduChatErrorType.rateLimited:
+          message = 'edu_chat_error_rate_limited'.tr;
+          break;
+        default:
+          message = 'edu_chat_error_generic'.tr;
+      }
+    }
+
+    Get.snackbar(
+      'edu_chat_title'.tr,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   @override
   void onClose() {
     _messagesSubscription?.cancel();
+    _threadsSubscription?.cancel();
     composerController.dispose();
     scrollController.dispose();
     super.onClose();
