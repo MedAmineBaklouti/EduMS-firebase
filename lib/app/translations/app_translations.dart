@@ -59,6 +59,26 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'More tools coming soon',
           'drawer_coming_soon_title': 'Coming soon',
           'drawer_coming_soon_message': '@feature will be available soon!',
+          'edu_chat_title': 'Educational Assistant',
+          'edu_chat_input_hint':
+              'Ask about math, science, history, languages, programming...',
+          'edu_chat_empty_state_title': 'Start the conversation',
+          'edu_chat_empty_state_message':
+              'Ask the assistant to explain a concept, walk through practice problems, or share study strategies.',
+          'edu_chat_copy_toast': 'Copied to clipboard',
+          'edu_chat_system_label': 'System',
+          'edu_chat_error_generic': 'Something went wrong. Please try again.',
+          'edu_chat_error_not_authenticated':
+              'You need to be signed in to use the Educational Assistant.',
+          'edu_chat_error_network':
+              'Unable to reach the assistant. Check your connection and try again.',
+          'edu_chat_error_rate_limited':
+              'The assistant is receiving many requests. Please try again soon.',
+          'edu_chat_system_error_message':
+              'I ran into a problem and could not respond this time. Please try again.',
+          'edu_chat_rate_limited_message':
+              'I am receiving a lot of questions right now. Please wait a moment and try again.',
+          'edu_chat_try_again': 'Try again',
           'common_back': 'Back',
           'common_retry': 'Retry',
           'dashboard_card_courses_title': 'Courses',
@@ -641,6 +661,27 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'Plus d’outils arrivent bientôt',
           'drawer_coming_soon_title': 'Bientôt disponible',
           'drawer_coming_soon_message': '@feature sera disponible bientôt !',
+          'edu_chat_title': 'Assistant pédagogique',
+          'edu_chat_input_hint':
+              'Posez une question sur les mathématiques, les sciences, l’histoire, les langues, la programmation…',
+          'edu_chat_empty_state_title': 'Commencez la conversation',
+          'edu_chat_empty_state_message':
+              'Demandez à l’assistant d’expliquer un concept, de détailler un exercice ou de proposer des méthodes de révision.',
+          'edu_chat_copy_toast': 'Copié dans le presse-papiers',
+          'edu_chat_system_label': 'Système',
+          'edu_chat_error_generic':
+              'Une erreur est survenue. Veuillez réessayer.',
+          'edu_chat_error_not_authenticated':
+              'Vous devez être connecté pour utiliser l’Assistant pédagogique.',
+          'edu_chat_error_network':
+              'Impossible de contacter l’assistant. Vérifiez votre connexion et réessayez.',
+          'edu_chat_error_rate_limited':
+              'L’assistant reçoit de nombreuses demandes. Réessayez bientôt.',
+          'edu_chat_system_error_message':
+              'Je rencontre un problème et je ne peux pas répondre pour le moment. Veuillez réessayer.',
+          'edu_chat_rate_limited_message':
+              'Je reçois beaucoup de questions en ce moment. Patientez un instant puis réessayez.',
+          'edu_chat_try_again': 'Réessayer',
           'common_back': 'Retour',
           'common_retry': 'Réessayer',
           'dashboard_card_courses_title': 'Cours',
@@ -1249,6 +1290,26 @@ class AppTranslations extends Translations {
           'drawer_more_tools': 'المزيد من الأدوات قريبًا',
           'drawer_coming_soon_title': 'قريبًا',
           'drawer_coming_soon_message': '@feature ستكون متاحة قريبًا!',
+          'edu_chat_title': 'المساعد التعليمي',
+          'edu_chat_input_hint':
+              'اطرح سؤالًا عن الرياضيات أو العلوم أو التاريخ أو اللغات أو البرمجة...',
+          'edu_chat_empty_state_title': 'ابدأ المحادثة',
+          'edu_chat_empty_state_message':
+              'اطلب من المساعد شرح مفهوم أو حل مسألة خطوة بخطوة أو اقتراح طرق للمذاكرة.',
+          'edu_chat_copy_toast': 'تم النسخ إلى الحافظة',
+          'edu_chat_system_label': 'النظام',
+          'edu_chat_error_generic': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
+          'edu_chat_error_not_authenticated':
+              'يجب تسجيل الدخول لاستخدام المساعد التعليمي.',
+          'edu_chat_error_network':
+              'تعذّر الوصول إلى المساعد. تحقّق من الاتصال بالإنترنت ثم أعد المحاولة.',
+          'edu_chat_error_rate_limited':
+              'يتلقى المساعد العديد من الطلبات. حاول مرة أخرى قريبًا.',
+          'edu_chat_system_error_message':
+              'واجهت مشكلة ولم أستطع الرد هذه المرة. يرجى المحاولة مجددًا.',
+          'edu_chat_rate_limited_message':
+              'أتلقى الكثير من الأسئلة الآن. يرجى الانتظار قليلًا ثم إعادة المحاولة.',
+          'edu_chat_try_again': 'أعد المحاولة',
           'common_back': 'رجوع',
           'common_retry': 'إعادة المحاولة',
           'dashboard_card_courses_title': 'الدورات',

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../../app/routes/app_pages.dart';
+import '../../modules/edu_chat/routes.dart';
 import '../../data/models/conversation_model.dart';
 import '../../data/models/parent_model.dart';
 import '../../data/models/teacher_model.dart';
@@ -472,8 +473,10 @@ class _DashboardDrawer extends StatelessWidget {
                     _DashboardDrawerItem(
                       icon: Icons.smart_toy_outlined,
                       labelKey: 'drawer_ask_something',
-                      onTap: () =>
-                          _showComingSoon(context, 'drawer_ask_something'),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Get.toNamed(EduChatRoutes.chat);
+                      },
                     ),
                     _DashboardDrawerItem(
                       icon: Icons.contact_support_outlined,
