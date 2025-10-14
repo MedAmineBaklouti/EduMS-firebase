@@ -15,12 +15,16 @@ bool _backgroundNotificationsInitialized = false;
 
 @pragma('vm:entry-point')
 Future<void> messagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  log('Background message handler invoked: id=${message.messageId}, data=${message.data}');
+
   WidgetsFlutterBinding.ensureInitialized();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
 
   if (!_backgroundNotificationsInitialized) {
     const initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(),
     );
 

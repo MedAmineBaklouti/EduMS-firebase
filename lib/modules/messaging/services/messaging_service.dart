@@ -982,6 +982,8 @@ class MessagingService extends GetxService {
 
   Future<void> _saveTokenToFirestore(String userId, String token) async {
     try {
+      final preview = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+      debugPrint('Saving FCM token for user $userId (preview: $preview)');
       final doc = _firestore.collection(_tokenCollection).doc(userId);
       final deviceId = _deviceId;
       final updates = <String, dynamic>{
@@ -998,6 +1000,7 @@ class MessagingService extends GetxService {
         updates,
         SetOptions(merge: true),
       );
+      debugPrint('Stored FCM token metadata for user $userId');
     } catch (error) {
       debugPrint('Failed to store FCM token: $error');
     }
@@ -1101,13 +1104,28 @@ class MessagingService extends GetxService {
           final dynamic tokens = data['tokens'];
           if (tokens is Iterable) {
             results.addAll(
-              tokens.whereType<String>().where((token) => token.isNotEmpty),
+              tokens
+                  .whereType<String>()
+                  .map((token) => token.trim())
+                  .where((token) => token.isNotEmpty),
             );
           }
         }
       } catch (error) {
         debugPrint('Failed to fetch tokens for users: $error');
       }
+    }
+
+    if (results.isEmpty) {
+      debugPrint('No FCM tokens found for userIds: $userIds');
+    } else {
+      final preview = results
+          .map((token) => token.length > 8 ? '${token.substring(0, 8)}…' : token)
+          .take(3)
+          .join(', ');
+      debugPrint(
+        'Fetched ${results.length} FCM tokens for userIds $userIds (preview: $preview)',
+      );
     }
 
     return results.toList();
@@ -1154,7 +1172,7 @@ class MessagingService extends GetxService {
 
   Future<void> _setupLocalNotifications() async {
     const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const initializationSettingsDarwin = DarwinInitializationSettings();
     const initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -1271,26 +1289,43 @@ class MessagingService extends GetxService {
     try {
       final tokens = await _fetchTokensForUsers(recipientIds);
       if (tokens.isEmpty) {
+        debugPrint('Skipping push send: no tokens for recipients $recipientIds');
         return;
       }
 
-      await _pushClient!.post<dynamic>(
-        '/fcm/send',
-        data: <String, dynamic>{
-          'registration_ids': tokens,
-          'notification': <String, dynamic>{
-            'title': message.senderName,
-            'body': message.content,
-          },
-          'data': <String, dynamic>{
-            'conversationId': message.conversationId,
-            'messageId': message.id,
-            'senderId': message.senderId,
-            'senderName': message.senderName,
-            'content': message.content,
-            'sentAt': message.sentAt.toIso8601String(),
-          },
+      debugPrint('Sending push notification to ${tokens.length} devices');
+
+      final payload = <String, dynamic>{
+        'priority': 'high',
+        'registration_ids': tokens,
+        'notification': <String, dynamic>{
+          'title': message.senderName,
+          'body': message.content,
+          'android_channel_id': messagingAndroidChannel.id,
+          'sound': 'default',
         },
+        'data': <String, dynamic>{
+          'conversationId': message.conversationId,
+          'conversation_id': message.conversationId,
+          'messageId': message.id,
+          'senderId': message.senderId,
+          'senderName': message.senderName,
+          'content': message.content,
+          'sentAt': message.sentAt.toIso8601String(),
+          'title': message.senderName,
+          'body': message.content,
+          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        },
+        'content_available': true,
+        'mutable_content': true,
+      };
+
+      final response = await _pushClient!.post<dynamic>(
+        '/fcm/send',
+        data: payload,
+      );
+      debugPrint(
+        'FCM send response (${response.statusCode}): ${response.data}',
       );
     } on DioException catch (error) {
       debugPrint('Failed to send FCM push: ${error.message ?? error.error}');
