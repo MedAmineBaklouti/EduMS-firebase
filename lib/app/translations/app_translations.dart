@@ -66,8 +66,14 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_message':
               'Ask the assistant to explain a concept, walk through practice problems, or share study strategies.',
           'edu_chat_history_label': 'Conversation history',
+          'edu_chat_history_empty_title': 'No conversations yet',
+          'edu_chat_history_empty_message':
+              'Start a new conversation to ask the assistant for help.',
           'edu_chat_new_conversation': 'Start new conversation',
           'edu_chat_conversation_default_title': 'Conversation @index',
+          'edu_chat_thread_updated': 'Updated @timestamp',
+          'edu_chat_select_thread_hint':
+              'Select a conversation from your history to continue.',
           'edu_chat_offline_fallback':
               'I received your question and am running in offline demo mode right now. Here is a quick summary based on what you asked: "@preview". Please connect the assistant service for full answers.',
           'edu_chat_copy_toast': 'Copied to clipboard',
@@ -673,8 +679,14 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_message':
               'Demandez à l’assistant d’expliquer un concept, de détailler un exercice ou de proposer des méthodes de révision.',
           'edu_chat_history_label': 'Historique des conversations',
+          'edu_chat_history_empty_title': 'Aucune conversation pour le moment',
+          'edu_chat_history_empty_message':
+              'Lancez une nouvelle conversation pour poser vos questions à l’assistant.',
           'edu_chat_new_conversation': 'Nouvelle conversation',
           'edu_chat_conversation_default_title': 'Conversation @index',
+          'edu_chat_thread_updated': 'Mis à jour @timestamp',
+          'edu_chat_select_thread_hint':
+              'Sélectionnez une conversation dans votre historique pour continuer.',
           'edu_chat_offline_fallback':
               'J’ai bien reçu votre question mais l’assistant fonctionne actuellement en mode démo hors connexion. Voici un résumé rapide de votre demande : "@preview". Connectez le service de l’assistant pour obtenir des réponses complètes.',
           'edu_chat_copy_toast': 'Copié dans le presse-papiers',
@@ -1307,8 +1319,13 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_message':
               'اطلب من المساعد شرح مفهوم أو حل مسألة خطوة بخطوة أو اقتراح طرق للمذاكرة.',
           'edu_chat_history_label': 'سجل المحادثات',
+          'edu_chat_history_empty_title': 'لا توجد محادثات بعد',
+          'edu_chat_history_empty_message':
+              'ابدأ محادثة جديدة لطرح أسئلتك على المساعد.',
           'edu_chat_new_conversation': 'ابدأ محادثة جديدة',
           'edu_chat_conversation_default_title': 'محادثة @index',
+          'edu_chat_thread_updated': 'تم التحديث @timestamp',
+          'edu_chat_select_thread_hint': 'اختر محادثة من السجل للمتابعة.',
           'edu_chat_offline_fallback':
               'تلقيت سؤالك ويعمل المساعد حاليًا في وضع العرض دون اتصال. إليك ملخص سريع لما طلبته: "@preview". يرجى توصيل خدمة المساعد للحصول على إجابات كاملة.',
           'edu_chat_copy_toast': 'تم النسخ إلى الحافظة',
