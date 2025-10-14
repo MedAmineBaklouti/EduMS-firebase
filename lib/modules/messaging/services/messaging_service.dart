@@ -77,6 +77,15 @@ class MessagingService extends GetxService {
   static Dio? _createPushClient() {
     final serverKey = AppConfig.fcmServerKey.trim();
     if (serverKey.isEmpty) {
+      debugPrint('FCM server key missing; push notifications will be disabled.');
+      return null;
+    }
+
+    final authorizationHeader = _resolveFcmAuthorizationHeader(serverKey);
+    if (authorizationHeader == null) {
+      debugPrint(
+        'FCM server key is not in a recognised format; push notifications will be disabled.',
+      );
       return null;
     }
 
@@ -87,10 +96,27 @@ class MessagingService extends GetxService {
         receiveTimeout: const Duration(seconds: 10),
         headers: <String, dynamic>{
           'Content-Type': 'application/json',
-          'Authorization': 'key=$serverKey',
+          'Authorization': authorizationHeader,
         },
       ),
     );
+  }
+
+  static String? _resolveFcmAuthorizationHeader(String rawKey) {
+    final trimmed = rawKey.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    final lower = trimmed.toLowerCase();
+    if (lower.startsWith('key=')) {
+      return trimmed;
+    }
+    if (lower.startsWith('bearer ')) {
+      return trimmed;
+    }
+
+    return 'key=$trimmed';
   }
 
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
