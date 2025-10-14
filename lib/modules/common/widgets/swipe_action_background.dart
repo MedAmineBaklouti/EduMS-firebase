@@ -23,11 +23,7 @@ class SwipeActionBackground extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.85), color],
-          begin: isLeftAligned ? Alignment.centerLeft : Alignment.centerRight,
-          end: isLeftAligned ? Alignment.centerRight : Alignment.centerLeft,
-        ),
+        color: color,
       ),
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
