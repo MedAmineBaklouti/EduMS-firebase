@@ -210,7 +210,7 @@ class EduChatService extends GetxService {
     }
 
     final idToken = await user.getIdToken();
-    if (idToken.isEmpty) {
+    if (idToken!.isEmpty) {
       throw const EduChatException(
         'Unable to retrieve ID token',
         type: EduChatErrorType.unauthenticated,
