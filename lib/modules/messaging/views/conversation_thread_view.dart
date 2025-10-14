@@ -437,6 +437,8 @@ class MessageComposer extends StatelessWidget {
                             border: InputBorder.none,
                             filled: true,
                             fillColor: Colors.transparent,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 12),
                             isDense: true,
                           ),
                           onSubmitted: (_) => controller.sendCurrentMessage(),
