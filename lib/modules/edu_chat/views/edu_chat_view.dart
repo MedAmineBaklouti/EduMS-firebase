@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controllers/edu_chat_controller.dart';
+import '../../common/widgets/swipe_action_background.dart';
 import 'widgets/edu_chat_message_bubble.dart';
 
 class EduChatView extends GetView<EduChatController> {
@@ -316,8 +317,11 @@ class _ThreadHistoryList extends StatelessWidget {
                 return Dismissible(
                   key: ValueKey('eduChatThread-${thread.id}'),
                   direction: DismissDirection.endToStart,
-                  background: _DismissibleDeleteBackground(
-                    borderRadius: BorderRadius.circular(20),
+                  background: SwipeActionBackground(
+                    alignment: Alignment.centerRight,
+                    color: theme.colorScheme.error,
+                    icon: Icons.delete_outline,
+                    label: 'common_delete'.tr,
                   ),
                   confirmDismiss: (_) async {
                     final shouldDelete = await showDialog<bool>(
@@ -400,29 +404,6 @@ class _ThreadHistoryList extends StatelessWidget {
           }),
         ),
       ],
-    );
-  }
-}
-
-class _DismissibleDeleteBackground extends StatelessWidget {
-  const _DismissibleDeleteBackground({required this.borderRadius});
-
-  final BorderRadius borderRadius;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      alignment: AlignmentDirectional.centerEnd,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer,
-        borderRadius: borderRadius,
-      ),
-      padding: const EdgeInsetsDirectional.only(end: 20),
-      child: Icon(
-        Icons.delete_outline,
-        color: theme.colorScheme.onErrorContainer,
-      ),
     );
   }
 }
