@@ -8,13 +8,13 @@ import 'my_app.dart';
 import 'modules/messaging/services/messaging_push_handler.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   // Ensure background push notifications are handled when the app is
   // terminated or running in the background. This must be set up before
   // Firebase is initialized and before runApp is called so the handler is
   // available as soon as the Flutter engine starts in the background.
   FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
-
-  WidgetsFlutterBinding.ensureInitialized();
 
   // Load .env
   try {
