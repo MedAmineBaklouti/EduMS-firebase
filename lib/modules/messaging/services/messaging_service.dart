@@ -132,6 +132,8 @@ class MessagingService extends GetxService {
       await _ensureTokenForCurrentUser();
     }
 
+    debugPrint('INIT: deviceId=$_deviceId pushGranted=$_pushPermissionGranted');
+
     return this;
   }
 
@@ -1301,6 +1303,7 @@ class MessagingService extends GetxService {
     _messageOpenedAppSubscription?.cancel();
     _messageOpenedAppSubscription =
         FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+    debugPrint('LISTENERS: onMessage + onMessageOpenedApp attached');
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -1347,6 +1350,9 @@ class MessagingService extends GetxService {
   }
 
   void _handleForegroundMessage(RemoteMessage message) {
+    debugPrint(
+      'FOREGROUND: received ${message.messageId ?? 'unknown'} data=${message.data}',
+    );
     final model = MessageModel.fromRemoteMessage(message);
     _messageStreamController.add(model);
     _showForegroundNotification(message);
@@ -1400,11 +1406,14 @@ class MessagingService extends GetxService {
     });
   }
 
+  /// Send a data-only payload so platform handlers always execute and exclude
+  /// the sender's current device token to avoid self-notifications.
   Future<void> _sendPushNotification(
     MessageModel message,
     List<ConversationParticipant> participants,
   ) async {
     if (_pushClient == null || participants.isEmpty) {
+      debugPrint('PUSH: no client/participants');
       return;
     }
 
@@ -1425,42 +1434,35 @@ class MessagingService extends GetxService {
     }
 
     if (recipientIds.isEmpty) {
+      debugPrint('PUSH: no recipientIds (after filtering sender)');
       return;
     }
 
     try {
-      debugPrint('Looking up tokens for recipientIds=$recipientIds');
+      debugPrint('PUSH: recipientIds resolved=$recipientIds');
       final tokens = await _fetchTokensForUsers(recipientIds.toList());
-      debugPrint('Resolved ${tokens.length} tokens for recipients');
-      if (tokens.isEmpty) {
-        debugPrint('Skipping push send: no tokens for recipients $recipientIds');
+      debugPrint('PUSH: token count before filter=${tokens.length}');
+
+      final currentToken = _lastKnownToken?.trim();
+      final filteredTokens = tokens
+          .map((token) => token.trim())
+          .where((token) => token.isNotEmpty)
+          .where((token) => token != currentToken)
+          .toSet()
+          .toList();
+
+      debugPrint(
+        'PUSH: token count after filter=${filteredTokens.length} (current excluded=${currentToken != null})',
+      );
+
+      if (filteredTokens.isEmpty) {
+        debugPrint('PUSH: no tokens to send (none or only sender token)');
         return;
       }
 
-      final currentToken = _lastKnownToken;
-      if (currentToken != null && currentToken.isNotEmpty) {
-        final preview =
-            currentToken.length > 8 ? '${currentToken.substring(0, 8)}…' : currentToken;
-        debugPrint(
-          'Prepared to send push. Current device token preview: $preview. Recipient count: ${tokens.length}',
-        );
-      } else {
-        debugPrint(
-          'Prepared to send push. No local current token cached. Recipient count: ${tokens.length}',
-        );
-      }
-
-      debugPrint('Sending push notification to ${tokens.length} devices');
-
       final payload = <String, dynamic>{
         'priority': 'high',
-        'registration_ids': tokens,
-        'notification': <String, dynamic>{
-          'title': message.senderName,
-          'body': message.content,
-          'android_channel_id': messagingAndroidChannel.id,
-          'sound': 'default',
-        },
+        'registration_ids': filteredTokens,
         'data': <String, dynamic>{
           'conversationId': message.conversationId,
           'conversation_id': message.conversationId,
@@ -1477,13 +1479,26 @@ class MessagingService extends GetxService {
         'mutable_content': true,
       };
 
+      debugPrint('PUSH: sending to ${filteredTokens.length} device(s)');
       final response = await _pushClient!.post<dynamic>(
         '/fcm/send',
         data: payload,
       );
-      debugPrint(
-        'FCM send response (${response.statusCode}): ${response.data}',
-      );
+      debugPrint('PUSH: FCM response (${response.statusCode}): ${response.data}');
+
+      final responseData = response.data;
+      if (responseData is Map && responseData['results'] is List) {
+        final results = (responseData['results'] as List).cast<Map?>();
+        for (var index = 0; index < results.length && index < filteredTokens.length; index++) {
+          final result = results[index];
+          final error = (result?['error'] as String?)?.trim();
+          if (error != null && error.isNotEmpty) {
+            final token = filteredTokens[index];
+            final prefix = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+            debugPrint('PUSH: token error "$error" for $prefix');
+          }
+        }
+      }
     } on DioException catch (error) {
       debugPrint('Failed to send FCM push: ${error.message ?? error.error}');
     } catch (error) {
