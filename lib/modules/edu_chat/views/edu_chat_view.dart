@@ -19,9 +19,86 @@ class EduChatView extends GetView<EduChatController> {
     return Scaffold(
       appBar: AppBar(
         title: Text('edu_chat_title'.tr),
+        actions: [
+          Obx(() {
+            final isCreating = controller.isCreatingThread.value;
+            return IconButton(
+              tooltip: 'edu_chat_new_conversation'.tr,
+              onPressed: isCreating ? null : controller.startNewChat,
+              icon: isCreating
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.appBarTheme.foregroundColor ??
+                              theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    )
+                  : const Icon(Icons.add_comment_outlined),
+            );
+          }),
+        ],
       ),
       body: Column(
         children: [
+          Obx(() {
+            final threads = controller.threads;
+            final activeId = controller.activeThreadId.value;
+            if (threads.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceVariant.withOpacity(0.35),
+                border: Border(
+                  bottom: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                  ),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'edu_chat_history_label'.tr,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (var index = 0; index < threads.length; index++)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              right: index == threads.length - 1 ? 0 : 8,
+                            ),
+                            child: _ThreadChip(
+                              label: (threads[index].title?.isNotEmpty ?? false)
+                                  ? threads[index].title!
+                                  : 'edu_chat_conversation_default_title'
+                                      .trParams({'index': '${index + 1}'}),
+                              isSelected: activeId == threads[index].id,
+                              onSelected: () =>
+                                  controller.selectThread(threads[index].id),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
           Expanded(
             child: _MessagesList(
               controller: controller,
@@ -142,6 +219,44 @@ class EduChatView extends GetView<EduChatController> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ThreadChip extends StatelessWidget {
+  const _ThreadChip({
+    required this.label,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ChoiceChip(
+      label: Text(
+        label,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          onSelected();
+        }
+      },
+      labelStyle: theme.textTheme.labelLarge?.copyWith(
+        color: isSelected
+            ? theme.colorScheme.onPrimary
+            : theme.colorScheme.onSurface,
+      ),
+      selectedColor: theme.colorScheme.primary,
+      backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.6),
+      showCheckmark: false,
     );
   }
 }

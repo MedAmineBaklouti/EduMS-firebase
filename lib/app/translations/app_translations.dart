@@ -65,6 +65,11 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_title': 'Start the conversation',
           'edu_chat_empty_state_message':
               'Ask the assistant to explain a concept, walk through practice problems, or share study strategies.',
+          'edu_chat_history_label': 'Conversation history',
+          'edu_chat_new_conversation': 'Start new conversation',
+          'edu_chat_conversation_default_title': 'Conversation @index',
+          'edu_chat_offline_fallback':
+              'I received your question and am running in offline demo mode right now. Here is a quick summary based on what you asked: "@preview". Please connect the assistant service for full answers.',
           'edu_chat_copy_toast': 'Copied to clipboard',
           'edu_chat_system_label': 'System',
           'edu_chat_error_generic': 'Something went wrong. Please try again.',
@@ -667,6 +672,11 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_title': 'Commencez la conversation',
           'edu_chat_empty_state_message':
               'Demandez à l’assistant d’expliquer un concept, de détailler un exercice ou de proposer des méthodes de révision.',
+          'edu_chat_history_label': 'Historique des conversations',
+          'edu_chat_new_conversation': 'Nouvelle conversation',
+          'edu_chat_conversation_default_title': 'Conversation @index',
+          'edu_chat_offline_fallback':
+              'J’ai bien reçu votre question mais l’assistant fonctionne actuellement en mode démo hors connexion. Voici un résumé rapide de votre demande : "@preview". Connectez le service de l’assistant pour obtenir des réponses complètes.',
           'edu_chat_copy_toast': 'Copié dans le presse-papiers',
           'edu_chat_system_label': 'Système',
           'edu_chat_error_generic':
@@ -1296,6 +1306,11 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_title': 'ابدأ المحادثة',
           'edu_chat_empty_state_message':
               'اطلب من المساعد شرح مفهوم أو حل مسألة خطوة بخطوة أو اقتراح طرق للمذاكرة.',
+          'edu_chat_history_label': 'سجل المحادثات',
+          'edu_chat_new_conversation': 'ابدأ محادثة جديدة',
+          'edu_chat_conversation_default_title': 'محادثة @index',
+          'edu_chat_offline_fallback':
+              'تلقيت سؤالك ويعمل المساعد حاليًا في وضع العرض دون اتصال. إليك ملخص سريع لما طلبته: "@preview". يرجى توصيل خدمة المساعد للحصول على إجابات كاملة.',
           'edu_chat_copy_toast': 'تم النسخ إلى الحافظة',
           'edu_chat_system_label': 'النظام',
           'edu_chat_error_generic': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',

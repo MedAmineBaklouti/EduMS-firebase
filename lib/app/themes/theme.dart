@@ -12,8 +12,21 @@ class AppTheme {
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 2,
-        backgroundColor: AppColors.lightColorScheme.surface,
-        foregroundColor: AppColors.lightColorScheme.onSurface,
+        backgroundColor: AppColors.lightColorScheme.primary,
+        foregroundColor: AppColors.lightColorScheme.onPrimary,
+        surfaceTintColor: AppColors.lightColorScheme.primary,
+        iconTheme: IconThemeData(
+          color: AppColors.lightColorScheme.onPrimary,
+        ),
+        titleTextStyle: TextStyle(
+          color: AppColors.lightColorScheme.onPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        toolbarTextStyle: TextStyle(
+          color: AppColors.lightColorScheme.onPrimary.withOpacity(0.9),
+          fontSize: 14,
+        ),
       ),
 
       // Elevated Buttons
@@ -83,8 +96,18 @@ class AppTheme {
     ).copyWith(
       // Inherit all other properties from light theme
       appBarTheme: lightTheme.appBarTheme.copyWith(
-        backgroundColor: AppColors.darkColorScheme.surface,
-        foregroundColor: AppColors.darkColorScheme.onSurface,
+        backgroundColor: AppColors.darkColorScheme.primary,
+        foregroundColor: AppColors.darkColorScheme.onPrimary,
+        surfaceTintColor: AppColors.darkColorScheme.primary,
+        iconTheme: IconThemeData(
+          color: AppColors.darkColorScheme.onPrimary,
+        ),
+        titleTextStyle: lightTheme.appBarTheme.titleTextStyle?.copyWith(
+          color: AppColors.darkColorScheme.onPrimary,
+        ),
+        toolbarTextStyle: lightTheme.appBarTheme.toolbarTextStyle?.copyWith(
+          color: AppColors.darkColorScheme.onPrimary.withOpacity(0.9),
+        ),
       ),
       elevatedButtonTheme: lightTheme.elevatedButtonTheme,
       textButtonTheme: lightTheme.textButtonTheme,
