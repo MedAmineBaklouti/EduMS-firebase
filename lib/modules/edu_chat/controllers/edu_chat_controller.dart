@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../models/edu_chat_exception.dart';
@@ -10,6 +12,11 @@ import '../models/edu_chat_message.dart';
 import '../models/edu_chat_proxy_response.dart';
 import '../models/edu_chat_thread.dart';
 import '../services/edu_chat_service.dart';
+
+enum EduChatViewMode {
+  threadList,
+  threadConversation,
+}
 
 class EduChatController extends GetxController {
   EduChatController({EduChatService? service, AuthService? authService})
@@ -27,6 +34,7 @@ class EduChatController extends GetxController {
   final RxnString loadError = RxnString();
   final RxString inputText = ''.obs;
   final RxnString activeThreadId = RxnString();
+  final Rx<EduChatViewMode> activeView = EduChatViewMode.threadList.obs;
 
   final TextEditingController composerController = TextEditingController();
   final ScrollController scrollController = ScrollController();
@@ -36,6 +44,46 @@ class EduChatController extends GetxController {
   String? _chatId;
 
   String? get currentUserId => _authService.currentUser?.uid;
+  EduChatThread? get activeThread {
+    final id = activeThreadId.value;
+    if (id == null) {
+      return null;
+    }
+    return threads.firstWhereOrNull((thread) => thread.id == id);
+  }
+
+  String resolveThreadTitle(EduChatThread thread) {
+    final title = thread.title?.trim();
+    if (title != null && title.isNotEmpty) {
+      return title;
+    }
+    final index = threads.indexWhere((item) => item.id == thread.id);
+    final displayIndex = index >= 0 ? index + 1 : threads.length + 1;
+    return 'edu_chat_conversation_default_title'
+        .trParams({'index': '$displayIndex'});
+  }
+
+  String? formatThreadUpdatedAt(EduChatThread thread) {
+    final timestamp = thread.updatedAt ?? thread.createdAt;
+    if (timestamp == null) {
+      return null;
+    }
+    final localeTag = Get.locale?.toLanguageTag();
+    final formatter = DateFormat.yMMMd(localeTag).add_jm();
+    return formatter.format(timestamp.toLocal());
+  }
+
+  void showThreadList() {
+    activeView.value = EduChatViewMode.threadList;
+    _messagesSubscription?.cancel();
+    _messagesSubscription = null;
+    _chatId = null;
+    activeThreadId.value = null;
+    messages.clear();
+    composerController.clear();
+    inputText.value = '';
+    isLoading.value = false;
+  }
 
   @override
   void onInit() {
@@ -66,23 +114,36 @@ class EduChatController extends GetxController {
           loadError.value = null;
 
           if (items.isEmpty) {
-            await _createInitialThread();
+            if (activeView.value == EduChatViewMode.threadConversation) {
+              showThreadList();
+            }
+            isLoading.value = false;
+            await _createInitialThread(activate: false);
             return;
           }
 
           final current = activeThreadId.value;
-          if (current != null && items.any((thread) => thread.id == current)) {
-            if (_chatId == null) {
+          if (current != null) {
+            final exists =
+                items.any((thread) => thread.id == current);
+            if (!exists) {
+              showThreadList();
+            } else if (_chatId == null &&
+                activeView.value == EduChatViewMode.threadConversation) {
               await _subscribeToMessages(current);
+              return;
             }
-            return;
           }
 
-          await _selectThread(items.first.id, force: true);
+          if (activeView.value == EduChatViewMode.threadList) {
+            isLoading.value = false;
+          }
         },
         onError: (error) {
           loadError.value = 'edu_chat_error_generic'.tr;
-          isLoading.value = false;
+          if (activeView.value == EduChatViewMode.threadList) {
+            isLoading.value = false;
+          }
         },
         cancelOnError: false,
       );
@@ -271,10 +332,13 @@ class EduChatController extends GetxController {
     });
   }
 
-  Future<void> _createInitialThread() async {
+  Future<String?> _createInitialThread({bool activate = true}) async {
     try {
       final chatId = await _service.createChatThread();
-      await _selectThread(chatId, force: true);
+      if (activate) {
+        await _selectThread(chatId, force: true);
+      }
+      return chatId;
     } on EduChatException catch (error) {
       _handleInitializationError(error);
       isLoading.value = false;
@@ -282,6 +346,7 @@ class EduChatController extends GetxController {
       loadError.value = 'edu_chat_error_generic'.tr;
       isLoading.value = false;
     }
+    return null;
   }
 
   Future<void> _selectThread(String chatId, {bool force = false}) async {
@@ -291,6 +356,7 @@ class EduChatController extends GetxController {
 
     _chatId = chatId;
     activeThreadId.value = chatId;
+    activeView.value = EduChatViewMode.threadConversation;
     await _subscribeToMessages(chatId);
   }
 
