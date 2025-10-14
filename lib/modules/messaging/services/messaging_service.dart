@@ -20,6 +20,12 @@ import '../../../data/models/messaging_contact.dart';
 import 'messaging_notification_channel.dart';
 import 'messaging_push_handler.dart';
 
+class _DeviceTokenSaveResult {
+  _DeviceTokenSaveResult({this.previousDeviceToken});
+
+  final String? previousDeviceToken;
+}
+
 class MessagingService extends GetxService {
   MessagingService({
     FirebaseMessaging? messaging,
@@ -890,13 +896,16 @@ class MessagingService extends GetxService {
   Future<void> _handleUserSignedIn(User user) async {
     _lastKnownUserId = user.uid;
     _deviceTokenRestored = false;
+    debugPrint('User ${user.uid} signed in. pushPermissionGranted=$_pushPermissionGranted');
     if (!_pushPermissionGranted) {
+      debugPrint('Push permission not granted yet. Deferring token registration.');
       return;
     }
 
     await _restoreDeviceToken(user.uid);
     final pending = _pendingToken;
     if (pending != null && pending.isNotEmpty) {
+      debugPrint('Registering pending FCM token for user ${user.uid}.');
       await _registerTokenForUser(user.uid, pending);
       return;
     }
@@ -933,6 +942,7 @@ class MessagingService extends GetxService {
 
   Future<void> _ensureTokenForUser(String userId) async {
     if (!_pushPermissionGranted) {
+      debugPrint('Skipped ensureTokenForUser for $userId because push permission is not granted.');
       return;
     }
 
@@ -940,7 +950,11 @@ class MessagingService extends GetxService {
       await _restoreDeviceToken(userId);
       final token = await _messaging.getToken();
       if (token != null && token.isNotEmpty) {
+        final preview = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+        debugPrint('FirebaseMessaging.getToken for $userId returned $preview');
         await _registerTokenForUser(userId, token);
+      } else {
+        debugPrint('FirebaseMessaging.getToken returned empty token for $userId.');
       }
     } catch (error) {
       debugPrint('Failed to retrieve FCM token: $error');
@@ -951,9 +965,12 @@ class MessagingService extends GetxService {
     if (token.isEmpty) {
       return;
     }
+    final preview = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+    debugPrint('Received refreshed FCM token $preview');
     _pendingToken = token;
     final userId = _authService.currentUser?.uid;
     if (userId == null) {
+      debugPrint('Token refresh received before user login; storing pending token.');
       return;
     }
 
@@ -962,11 +979,24 @@ class MessagingService extends GetxService {
 
   Future<void> _registerTokenForUser(String userId, String token) async {
     if (token.isEmpty) {
+      debugPrint('Ignoring empty FCM token for user $userId.');
       return;
     }
 
     try {
       final previousToken = _lastKnownToken;
+      if (previousToken != null && previousToken == token) {
+        debugPrint('FCM token unchanged for $userId; ensuring Firestore metadata is current.');
+      } else if (previousToken != null && previousToken.isNotEmpty) {
+        final previewPrev =
+            previousToken.length > 8 ? '${previousToken.substring(0, 8)}…' : previousToken;
+        final previewNew = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+        debugPrint('Replacing stored FCM token for $userId: $previewPrev → $previewNew');
+      } else {
+        final preview = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+        debugPrint('Registering new FCM token for $userId: $preview');
+      }
+
       await _saveTokenToFirestore(userId, token);
       if (previousToken != null && previousToken.isNotEmpty &&
           previousToken != token) {
@@ -986,25 +1016,70 @@ class MessagingService extends GetxService {
       debugPrint('Saving FCM token for user $userId (preview: $preview)');
       final doc = _firestore.collection(_tokenCollection).doc(userId);
       final deviceId = _deviceId;
-      final updates = <String, dynamic>{
-        'tokens': FieldValue.arrayUnion(<String>[token]),
-        'updatedAt': FieldValue.serverTimestamp(),
-        'lastPlatform': defaultTargetPlatform.name,
-      };
-      if (deviceId != null && deviceId.isNotEmpty) {
-        updates['deviceTokens.$deviceId'] = token;
-        updates['devicePlatforms.$deviceId'] = defaultTargetPlatform.name;
-        updates['deviceUpdatedAt.$deviceId'] = FieldValue.serverTimestamp();
+
+      final result = await _firestore
+          .runTransaction<_DeviceTokenSaveResult?>((transaction) async {
+        final snapshot = await transaction.get(doc);
+        final now = FieldValue.serverTimestamp();
+        final updates = <String, dynamic>{
+          'tokens': FieldValue.arrayUnion(<String>[token]),
+          'updatedAt': now,
+          'lastPlatform': defaultTargetPlatform.name,
+        };
+
+        String? previousDeviceToken;
+        if (!snapshot.exists) {
+          updates['createdAt'] = now;
+        }
+
+        final data = snapshot.data();
+        if (deviceId != null && deviceId.isNotEmpty) {
+          updates['deviceTokens.$deviceId'] = token;
+          updates['devicePlatforms.$deviceId'] = defaultTargetPlatform.name;
+          updates['deviceUpdatedAt.$deviceId'] = now;
+
+          if (data != null) {
+            final deviceTokens =
+                (data['deviceTokens'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+            previousDeviceToken = deviceTokens[deviceId] as String?;
+            final deviceCreatedAt =
+                (data['deviceCreatedAt'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+            if (!deviceCreatedAt.containsKey(deviceId)) {
+              updates['deviceCreatedAt.$deviceId'] = now;
+            }
+          } else {
+            updates['deviceCreatedAt.$deviceId'] = now;
+          }
+        }
+
+        transaction.set(
+          doc,
+          updates,
+          SetOptions(merge: true),
+        );
+
+        return _DeviceTokenSaveResult(previousDeviceToken: previousDeviceToken);
+      });
+
+      if (result == null) {
+        debugPrint('Stored FCM token metadata for user $userId without device association.');
+      } else {
+        final previous = result.previousDeviceToken;
+        if (previous == null || previous.isEmpty) {
+          debugPrint('Created device token entry for user $userId.');
+        } else if (previous == token) {
+          debugPrint('Device token for user $userId already up to date.');
+        } else {
+          final previewPrev =
+              previous.length > 8 ? '${previous.substring(0, 8)}…' : previous;
+          debugPrint('Updated device token for user $userId (was $previewPrev).');
+        }
       }
-      await doc.set(
-        updates,
-        SetOptions(merge: true),
-      );
-      debugPrint('Stored FCM token metadata for user $userId');
     } catch (error) {
       debugPrint('Failed to store FCM token: $error');
     }
   }
+
 
   Future<void> _removeTokenFromFirestore(
     String userId,
@@ -1023,12 +1098,15 @@ class MessagingService extends GetxService {
           updates['deviceTokens.$deviceId'] = FieldValue.delete();
           updates['devicePlatforms.$deviceId'] = FieldValue.delete();
           updates['deviceUpdatedAt.$deviceId'] = FieldValue.delete();
+          updates['deviceCreatedAt.$deviceId'] = FieldValue.delete();
         }
       }
       await doc.set(
         updates,
         SetOptions(merge: true),
       );
+      final preview = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+      debugPrint('Removed stale FCM token for $userId (preview: $preview)');
     } catch (error) {
       debugPrint('Failed to remove FCM token: $error');
     }
@@ -1076,8 +1154,17 @@ class MessagingService extends GetxService {
           final storedToken = deviceTokens[deviceId];
           if (storedToken is String && storedToken.isNotEmpty) {
             _lastKnownToken = storedToken;
+            final preview =
+                storedToken.length > 8 ? '${storedToken.substring(0, 8)}…' : storedToken;
+            debugPrint('Restored stored FCM token for $userId (preview: $preview)');
+          } else {
+            debugPrint('No stored FCM token found for device $deviceId belonging to $userId.');
           }
+        } else {
+          debugPrint('Device token map missing for user $userId while restoring token.');
         }
+      } else {
+        debugPrint('No token document found for user $userId while restoring device token.');
       }
       _deviceTokenRestored = true;
     } catch (error) {
@@ -1105,6 +1192,15 @@ class MessagingService extends GetxService {
           if (tokens is Iterable) {
             results.addAll(
               tokens
+                  .whereType<String>()
+                  .map((token) => token.trim())
+                  .where((token) => token.isNotEmpty),
+            );
+          }
+          final deviceTokens = data['deviceTokens'];
+          if (deviceTokens is Map<String, dynamic>) {
+            results.addAll(
+              deviceTokens.values
                   .whereType<String>()
                   .map((token) => token.trim())
                   .where((token) => token.isNotEmpty),
@@ -1142,9 +1238,11 @@ class MessagingService extends GetxService {
     FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
 
     final status = settings.authorizationStatus;
+    debugPrint('FirebaseMessaging.requestPermission completed with status $status');
     if (status == AuthorizationStatus.denied ||
         status == AuthorizationStatus.notDetermined) {
       _pushPermissionGranted = false;
+      debugPrint('Push permission denied. Tokens will not be requested.');
       return;
     }
 
@@ -1155,12 +1253,21 @@ class MessagingService extends GetxService {
       badge: true,
       sound: true,
     );
+    debugPrint('Foreground notification presentation options configured.');
 
     _tokenRefreshSubscription?.cancel();
     _tokenRefreshSubscription =
         _messaging.onTokenRefresh.listen(_handleNewToken, onError: (Object error) {
       debugPrint('Failed to refresh FCM token: $error');
     });
+    debugPrint('Subscribed to FCM token refresh events.');
+
+    final currentToken = _lastKnownToken;
+    if (currentToken != null && currentToken.isNotEmpty) {
+      final preview =
+          currentToken.length > 8 ? '${currentToken.substring(0, 8)}…' : currentToken;
+      debugPrint('Current device token snapshot after subscription: $preview');
+    }
 
     _foregroundMessageSubscription?.cancel();
     _foregroundMessageSubscription =
@@ -1293,6 +1400,19 @@ class MessagingService extends GetxService {
         return;
       }
 
+      final currentToken = _lastKnownToken;
+      if (currentToken != null && currentToken.isNotEmpty) {
+        final preview =
+            currentToken.length > 8 ? '${currentToken.substring(0, 8)}…' : currentToken;
+        debugPrint(
+          'Prepared to send push. Current device token preview: $preview. Recipient count: ${tokens.length}',
+        );
+      } else {
+        debugPrint(
+          'Prepared to send push. No local current token cached. Recipient count: ${tokens.length}',
+        );
+      }
+
       debugPrint('Sending push notification to ${tokens.length} devices');
 
       final payload = <String, dynamic>{
@@ -1333,6 +1453,36 @@ class MessagingService extends GetxService {
       debugPrint('Failed to send FCM push: $error');
     }
   }
+
+  @visibleForTesting
+  Future<void> ensureTokenForUserForTesting(String userId) =>
+      _ensureTokenForUser(userId);
+
+  @visibleForTesting
+  Future<void> registerTokenForUserForTesting(String userId, String token) =>
+      _registerTokenForUser(userId, token);
+
+  @visibleForTesting
+  Future<void> saveTokenToFirestoreForTesting(String userId, String token) =>
+      _saveTokenToFirestore(userId, token);
+
+  @visibleForTesting
+  Future<List<String>> fetchTokensForUsersForTesting(List<String> userIds) =>
+      _fetchTokensForUsers(userIds);
+
+  @visibleForTesting
+  void debugSetPushPermissionGranted(bool granted) {
+    _pushPermissionGranted = granted;
+  }
+
+  @visibleForTesting
+  void debugSetDeviceId(String? deviceId) {
+    _deviceId = deviceId;
+    _deviceTokenRestored = false;
+  }
+
+  @visibleForTesting
+  String? get debugLastKnownToken => _lastKnownToken;
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
