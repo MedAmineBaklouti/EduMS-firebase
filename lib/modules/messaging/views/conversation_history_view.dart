@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../common/widgets/module_empty_state.dart';
+import '../../common/widgets/swipe_action_background.dart';
 import '../controllers/messaging_controller.dart';
 import 'widgets/scrollable_placeholder.dart';
 
@@ -265,17 +266,11 @@ class _MessagingDismissBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      alignment: AlignmentDirectional.centerEnd,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsetsDirectional.only(end: 20),
-      child: Icon(
-        Icons.delete_outline,
-        color: theme.colorScheme.onErrorContainer,
-      ),
+    return SwipeActionBackground(
+      alignment: Alignment.centerRight,
+      color: theme.colorScheme.error,
+      icon: Icons.delete_outline,
+      label: 'common_delete'.tr,
     );
   }
 }
