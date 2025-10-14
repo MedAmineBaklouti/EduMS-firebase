@@ -180,6 +180,9 @@ class MessagingController extends GetxController {
 
   void _subscribeToIncomingMessages() {
     _messageSubscription = _messagingService.messageStream.listen((message) {
+      debugPrint(
+        'CONTROLLER: stream event conv=${message.conversationId} from=${message.senderId}',
+      );
       final currentUserId = _authService.currentUser?.uid;
       final existingConversation = conversations
           .firstWhereOrNull((item) => item.id == message.conversationId);

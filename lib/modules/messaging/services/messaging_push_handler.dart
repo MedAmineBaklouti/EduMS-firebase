@@ -15,7 +15,7 @@ bool _backgroundNotificationsInitialized = false;
 
 @pragma('vm:entry-point')
 Future<void> messagingBackgroundHandler(RemoteMessage message) async {
-  log('Background message handler invoked: id=${message.messageId}, data=${message.data}');
+  log('BG HANDLER: id=${message.messageId} data=${message.data}');
 
   WidgetsFlutterBinding.ensureInitialized();
   if (Firebase.apps.isEmpty) {
@@ -38,13 +38,13 @@ Future<void> messagingBackgroundHandler(RemoteMessage message) async {
     _backgroundNotificationsInitialized = true;
   }
 
-  final notification = message.notification;
   final data = message.data;
+  final notification = message.notification;
 
   await _backgroundNotifications.show(
     notification?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
     notification?.title ?? data['title'] ?? 'New message',
-    notification?.body ?? data['content'] ?? data['text'] ?? '',
+    notification?.body ?? data['body'] ?? data['content'] ?? data['text'] ?? '',
     NotificationDetails(
       android: AndroidNotificationDetails(
         messagingAndroidChannel.id,
