@@ -18,6 +18,7 @@ import '../../modules/courses/views/teacher_courses_view.dart';
 import '../../modules/homework/views/admin_homework_list_view.dart';
 import '../../modules/homework/views/parent_homework_list_view.dart';
 import '../../modules/homework/views/teacher_homework_list_view.dart';
+import '../../modules/edu_chat/routes.dart';
 import '../../modules/parents_dashboard/views/parent_dashboard_view.dart';
 import '../../modules/pickup/views/admin_archived_pickup_view.dart';
 import '../../modules/pickup/views/admin_pickup_view.dart';
@@ -59,6 +60,7 @@ abstract class AppPages {
   static const TEACHER_PICKUP = '/teacher/pickup';
   static const PARENT_PICKUP = '/parent/pickup';
   static const MESSAGING = '/messaging';
+  static const EDU_CHAT = EduChatRoutes.chat;
   static const EDIT_PROFILE = '/profile/edit';
   static const CONTACT_US = '/support/contact';
   static const SETTINGS = '/settings';
@@ -117,5 +119,6 @@ abstract class AppPages {
       page: () => const SettingsView(),
       binding: SettingsBinding(),
     ),
+    ...EduChatRoutes.routes,
   ];
 }

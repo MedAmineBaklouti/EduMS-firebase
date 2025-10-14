@@ -472,8 +472,7 @@ class _DashboardDrawer extends StatelessWidget {
                     _DashboardDrawerItem(
                       icon: Icons.smart_toy_outlined,
                       labelKey: 'drawer_ask_something',
-                      onTap: () =>
-                          _showComingSoon(context, 'drawer_ask_something'),
+                      onTap: () => _openEduChat(context),
                     ),
                     _DashboardDrawerItem(
                       icon: Icons.contact_support_outlined,
@@ -529,6 +528,11 @@ class _DashboardDrawer extends StatelessWidget {
   void _openContactUs(BuildContext context) {
     Navigator.of(context).pop();
     Get.toNamed(AppPages.CONTACT_US);
+  }
+
+  void _openEduChat(BuildContext context) {
+    Navigator.of(context).pop();
+    Get.toNamed(AppPages.EDU_CHAT);
   }
 }
 
