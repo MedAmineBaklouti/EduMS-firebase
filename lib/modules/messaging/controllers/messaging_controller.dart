@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_pages.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../data/models/conversation_model.dart';
 import '../../../data/models/message_model.dart';
@@ -49,6 +50,7 @@ class MessagingController extends GetxController {
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
       _conversationMessagesSubscription;
   String? _pendingConversationId;
+  String? _lastInAppNotificationKey;
 
   @override
   void onInit() {
@@ -208,6 +210,11 @@ class MessagingController extends GetxController {
         _applyConversationFilter();
       }
 
+      if (!isMine && activeConversation.value?.id != message.conversationId) {
+        _showIncomingMessageNotification(message);
+        return;
+      }
+
       if (activeConversation.value?.id != message.conversationId) {
         return;
       }
@@ -237,6 +244,87 @@ class MessagingController extends GetxController {
         unawaited(_markConversationAsRead(message.conversationId));
       }
     });
+  }
+
+  void _showIncomingMessageNotification(MessageModel message) {
+    if (message.conversationId.isEmpty) {
+      return;
+    }
+
+    final key = _notificationKeyFor(message);
+    if (_lastInAppNotificationKey == key) {
+      return;
+    }
+    _lastInAppNotificationKey = key;
+
+    final theme = Get.theme;
+    final senderName = message.senderName.trim().isEmpty
+        ? 'common_not_specified'.tr
+        : message.senderName.trim();
+    final title =
+        'messaging_snackbar_title'.trParams({'sender': senderName});
+    final body = message.content.trim().isEmpty
+        ? 'messaging_snackbar_body_fallback'.tr
+        : message.content.trim();
+
+    Get.closeCurrentSnackbar();
+    Get.snackbar(
+      title,
+      body,
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 4),
+      backgroundColor: theme.colorScheme.surface,
+      colorText: theme.colorScheme.onSurface,
+      mainButton: TextButton(
+        onPressed: () {
+          Get.closeCurrentSnackbar();
+          _openConversationFromNotification(message);
+        },
+        child: Text(
+          'messaging_snackbar_action'.tr,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openConversationFromNotification(MessageModel message) {
+    final conversationId = message.conversationId;
+    if (conversationId.isEmpty) {
+      return;
+    }
+
+    _pendingConversationId = conversationId;
+
+    if (Get.currentRoute != AppPages.MESSAGING) {
+      Get.toNamed(
+        AppPages.MESSAGING,
+        parameters: <String, String>{'conversationId': conversationId},
+        arguments: <String, String>{'conversationId': conversationId},
+      );
+      return;
+    }
+
+    final existing =
+        conversations.firstWhereOrNull((item) => item.id == conversationId);
+    if (existing != null) {
+      selectConversation(existing);
+      return;
+    }
+
+    unawaited(_initializeActiveConversation());
+  }
+
+  String _notificationKeyFor(MessageModel message) {
+    if (message.id.isNotEmpty) {
+      return message.id;
+    }
+    final sentAtIso = message.sentAt.toUtc().toIso8601String();
+    return '${message.senderId}::$sentAtIso::${message.content}';
   }
 
   void _listenToConversations() {
