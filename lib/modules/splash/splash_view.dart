@@ -87,7 +87,7 @@ class _SplashViewState extends State<SplashView> {
               children: [
                 // Your logo
                 Image.asset(
-                  'assets/EduMS_logo.png',
+                  'assets/EduMS_logo_dark.png',
                   width: 200,
                   height: 200,
                 ),
