@@ -188,9 +188,9 @@ class EduChatController extends GetxController {
     await sendMessage();
   }
 
-  Future<void> startNewChat() async {
+  Future<String?> startNewChat() async {
     if (isCreatingThread.value) {
-      return;
+      return null;
     }
 
     isCreatingThread.value = true;
@@ -198,10 +198,13 @@ class EduChatController extends GetxController {
       final newId = await _service.createChatThread();
       await _selectThread(newId, force: true);
       messages.clear();
+      return newId;
     } on EduChatException catch (error) {
       _showThreadError(error);
+      return null;
     } catch (_) {
       _showThreadError();
+      return null;
     } finally {
       isCreatingThread.value = false;
     }

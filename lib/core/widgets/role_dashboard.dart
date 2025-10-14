@@ -475,7 +475,7 @@ class _DashboardDrawer extends StatelessWidget {
                       labelKey: 'drawer_ask_something',
                       onTap: () {
                         Navigator.of(context).pop();
-                        Get.toNamed(EduChatRoutes.chat);
+                        Get.toNamed(EduChatRoutes.history);
                       },
                     ),
                     _DashboardDrawerItem(

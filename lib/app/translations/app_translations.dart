@@ -60,6 +60,14 @@ class AppTranslations extends Translations {
           'drawer_coming_soon_title': 'Coming soon',
           'drawer_coming_soon_message': '@feature will be available soon!',
           'edu_chat_title': 'Educational Assistant',
+          'edu_chat_history_title': 'Assistant conversations',
+          'edu_chat_history_subtitle':
+              'Pick up a past conversation or start a new one.',
+          'edu_chat_history_continue': 'Continue this conversation',
+          'edu_chat_history_start_new': 'Start new conversation',
+          'edu_chat_history_empty_title': 'No conversations yet',
+          'edu_chat_history_empty_message':
+              'Start your first conversation to see it listed here.',
           'edu_chat_input_hint':
               'Ask about math, science, history, languages, programming...',
           'edu_chat_empty_state_title': 'Start the conversation',
@@ -667,6 +675,15 @@ class AppTranslations extends Translations {
           'drawer_coming_soon_title': 'Bientôt disponible',
           'drawer_coming_soon_message': '@feature sera disponible bientôt !',
           'edu_chat_title': 'Assistant pédagogique',
+          'edu_chat_history_title': "Historique de l’assistant",
+          'edu_chat_history_subtitle':
+              'Reprenez une conversation ou démarrez-en une nouvelle.',
+          'edu_chat_history_continue': 'Poursuivre cette conversation',
+          'edu_chat_history_start_new':
+              'Démarrer une nouvelle conversation',
+          'edu_chat_history_empty_title': 'Aucune conversation pour le moment',
+          'edu_chat_history_empty_message':
+              'Lancez votre première conversation pour l’afficher ici.',
           'edu_chat_input_hint':
               'Posez une question sur les mathématiques, les sciences, l’histoire, les langues, la programmation…',
           'edu_chat_empty_state_title': 'Commencez la conversation',
@@ -1301,6 +1318,14 @@ class AppTranslations extends Translations {
           'drawer_coming_soon_title': 'قريبًا',
           'drawer_coming_soon_message': '@feature ستكون متاحة قريبًا!',
           'edu_chat_title': 'المساعد التعليمي',
+          'edu_chat_history_title': 'سجل المساعد',
+          'edu_chat_history_subtitle':
+              'تابع محادثة سابقة أو ابدأ محادثة جديدة.',
+          'edu_chat_history_continue': 'تابع هذه المحادثة',
+          'edu_chat_history_start_new': 'ابدأ محادثة جديدة',
+          'edu_chat_history_empty_title': 'لا توجد محادثات بعد',
+          'edu_chat_history_empty_message':
+              'ابدأ محادثتك الأولى لتظهر هنا.',
           'edu_chat_input_hint':
               'اطرح سؤالًا عن الرياضيات أو العلوم أو التاريخ أو اللغات أو البرمجة...',
           'edu_chat_empty_state_title': 'ابدأ المحادثة',
