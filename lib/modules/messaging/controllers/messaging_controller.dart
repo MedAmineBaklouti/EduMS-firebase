@@ -504,6 +504,52 @@ class MessagingController extends GetxController {
     _loadMessagesForConversation(conversation.id);
   }
 
+  Future<bool> deleteConversation(ConversationModel conversation) async {
+    final conversationId = conversation.id;
+    final wasActive = activeConversation.value?.id == conversationId;
+    final index = conversations.indexWhere((item) => item.id == conversationId);
+    ConversationModel? removedConversation;
+    if (index >= 0) {
+      removedConversation = conversations.removeAt(index);
+    }
+    _applyConversationFilter();
+
+    try {
+      await _messagingService.deleteConversation(conversationId);
+      if (wasActive) {
+        clearActiveConversation();
+      }
+      Get.snackbar(
+        'messaging_title'.tr,
+        'messaging_delete_success'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return true;
+    } catch (error) {
+      if (removedConversation != null) {
+        final targetIndex =
+            index >= 0 && index <= conversations.length ? index : conversations.length;
+        conversations.insert(targetIndex, removedConversation);
+      }
+      _applyConversationFilter();
+
+      if (wasActive) {
+        if (removedConversation != null) {
+          selectConversation(removedConversation);
+        } else {
+          selectConversation(conversation);
+        }
+      }
+
+      Get.snackbar(
+        'messaging_title'.tr,
+        'messaging_delete_error'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+  }
+
   void clearActiveConversation() {
     activeView.value = MessagingViewMode.conversationList;
     activeConversation.value = null;

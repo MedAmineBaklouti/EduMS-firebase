@@ -233,6 +233,34 @@ class MessagingService extends GetxService {
     }
   }
 
+  Future<void> deleteConversation(String conversationId) async {
+    final conversationRef =
+        _firestore.collection(_conversationsCollection).doc(conversationId);
+    final messagesRef = conversationRef.collection(_messagesCollection);
+
+    try {
+      const batchSize = 500;
+      while (true) {
+        final snapshot = await messagesRef.limit(batchSize).get();
+        if (snapshot.docs.isEmpty) {
+          break;
+        }
+        final batch = _firestore.batch();
+        for (final doc in snapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
+
+      await conversationRef.delete();
+    } on FirebaseException catch (error) {
+      final message = error.message ?? error.code;
+      throw Exception('Failed to delete conversation: $message');
+    } catch (error) {
+      throw Exception('Failed to delete conversation: $error');
+    }
+  }
+
   Future<MessageModel> sendMessage({
     required String conversationId,
     required String senderId,

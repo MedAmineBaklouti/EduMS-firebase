@@ -101,107 +101,151 @@ class ConversationHistoryView extends StatelessWidget {
                       : displayTitle.characters.first.toUpperCase();
                   final showAdministrationAvatar =
                       controller.shouldUseAdministrationAvatar(conversation);
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    decoration: BoxDecoration(
-                      color: hasUnread
-                          ? theme.colorScheme.primaryContainer
-                          : theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.shadowColor.withOpacity(0.05),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
+                  return Dismissible(
+                    key: ValueKey('messagingConversation-${conversation.id}'),
+                    direction: DismissDirection.endToStart,
+                    background: const _MessagingDismissBackground(),
+                    confirmDismiss: (_) async {
+                      final shouldDelete = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            title:
+                                Text('messaging_confirm_delete_title'.tr),
+                            content:
+                                Text('messaging_confirm_delete_message'.tr),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(false),
+                                child: Text('common_cancel'.tr),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(true),
+                                child: Text(
+                                  'common_delete'.tr,
+                                  style: TextStyle(
+                                    color: theme.colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                      if (shouldDelete != true) {
+                        return false;
+                      }
+
+                      final success =
+                          await controller.deleteConversation(conversation);
+                      return success;
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      decoration: BoxDecoration(
+                        color: hasUnread
+                            ? theme.colorScheme.primaryContainer
+                            : theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.shadowColor.withOpacity(0.05),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        onTap: () =>
+                            controller.selectConversation(conversation),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                      ],
-                    ),
-                    child: ListTile(
-                      onTap: () => controller.selectConversation(conversation),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      leading: CircleAvatar(
-                        backgroundColor: showAdministrationAvatar
-                            ? Colors.transparent
-                            : theme.colorScheme.primary.withOpacity(0.12),
-                        foregroundColor: showAdministrationAvatar
-                            ? Colors.transparent
-                            : theme.colorScheme.primary,
-                        backgroundImage: showAdministrationAvatar
-                            ? const AssetImage('assets/icon/icon.png')
-                            : null,
-                        child: showAdministrationAvatar
-                            ? null
-                            : Text(titleInitial),
-                      ),
-                      title: Text(
-                        displayTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight:
-                              hasUnread ? FontWeight.w700 : FontWeight.w600,
+                        leading: CircleAvatar(
+                          backgroundColor: showAdministrationAvatar
+                              ? Colors.transparent
+                              : theme.colorScheme.primary.withOpacity(0.12),
+                          foregroundColor: showAdministrationAvatar
+                              ? Colors.transparent
+                              : theme.colorScheme.primary,
+                          backgroundImage: showAdministrationAvatar
+                              ? const AssetImage('assets/icon/icon.png')
+                              : null,
+                          child: showAdministrationAvatar
+                              ? null
+                              : Text(titleInitial),
                         ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (contextLabel != null &&
-                              contextLabel.isNotEmpty) ...[
+                        title: Text(
+                          displayTitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: hasUnread
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (contextLabel != null &&
+                                contextLabel.isNotEmpty) ...[
+                              Text(
+                                contextLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: hasUnread
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                            ],
                             Text(
-                              contextLabel,
+                              lastMessage,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontWeight: hasUnread
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
-                            const SizedBox(height: 2),
                           ],
-                          Text(
-                            lastMessage,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            timestamp,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          if (hasUnread)
-                            Container(
-                              margin: const EdgeInsets.only(top: 6),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              timestamp,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '${conversation.unreadCount}',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
+                            ),
+                            if (hasUnread)
+                              Container(
+                                margin: const EdgeInsets.only(top: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${conversation.unreadCount}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onPrimary,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -211,6 +255,27 @@ class ConversationHistoryView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MessagingDismissBackground extends StatelessWidget {
+  const _MessagingDismissBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      alignment: AlignmentDirectional.centerEnd,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsetsDirectional.only(end: 20),
+      child: Icon(
+        Icons.delete_outline,
+        color: theme.colorScheme.onErrorContainer,
+      ),
     );
   }
 }
