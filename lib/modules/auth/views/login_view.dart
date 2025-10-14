@@ -9,6 +9,11 @@ class LoginView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final logoAsset =
+        isDarkMode ? 'assets/EduMS_logo_dark.png' : 'assets/EduMS_logo.png';
+
     Get.closeAllSnackbars(); // ✅ Close any lingering snackbars
     _authController.isLoading(false); // ✅ Reset loading on screen load
 
@@ -19,7 +24,7 @@ class LoginView extends StatelessWidget {
           decoration: BoxDecoration(
             image: DecorationImage(
               image: AssetImage(
-                Theme.of(context).brightness == Brightness.dark
+                isDarkMode
                     ? 'assets/splash/background_dark.png'
                     : 'assets/splash/background.png',
               ),
@@ -36,7 +41,7 @@ class LoginView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Image.asset(
-                        'assets/EduMS_logo_dark.png',
+                        logoAsset,
                         width: 200,
                         height: 200,
                       ),
@@ -52,13 +57,11 @@ class LoginView extends StatelessWidget {
                             children: [
                               Text(
                                 'Login',
-                                style: Theme.of(context)
-                                    .textTheme
+                                style: theme.textTheme
                                     .headlineMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
+                                      color: theme.colorScheme.primary,
                                     ),
                               ),
                               const SizedBox(height: 24),
@@ -69,7 +72,7 @@ class LoginView extends StatelessWidget {
                                   labelText: 'Email',
                                   prefixIcon: Icon(
                                     Icons.email,
-                                    color: Theme.of(context)
+                                    color: theme
                                         .colorScheme
                                         .onSurfaceVariant,
                                   ),
@@ -77,8 +80,7 @@ class LoginView extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   filled: true,
-                                  fillColor: Theme.of(context)
-                                      .colorScheme
+                                  fillColor: theme.colorScheme
                                       .surfaceVariant
                                       .withOpacity(0.4),
                                 ),
@@ -97,8 +99,7 @@ class LoginView extends StatelessWidget {
                                     labelText: 'Password',
                                     prefixIcon: Icon(
                                       Icons.lock,
-                                      color: Theme.of(context)
-                                          .colorScheme
+                                      color: theme.colorScheme
                                           .onSurfaceVariant,
                                     ),
                                     suffixIcon: IconButton(
@@ -106,9 +107,7 @@ class LoginView extends StatelessWidget {
                                         _obscurePassword.value
                                             ? Icons.visibility
                                             : Icons.visibility_off,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
+                                        color: theme.colorScheme.onSurfaceVariant,
                                       ),
                                       onPressed: () => _obscurePassword.toggle(),
                                     ),
@@ -116,9 +115,7 @@ class LoginView extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     filled: true,
-                                    fillColor: Theme.of(context)
-                                        .colorScheme
-                                        .surfaceVariant
+                                    fillColor: theme.colorScheme.surfaceVariant
                                         .withOpacity(0.4),
                                   ),
                                   textInputAction: TextInputAction.done,
@@ -129,10 +126,8 @@ class LoginView extends StatelessWidget {
                               Obx(
                                 () => FilledButton(
                                   style: FilledButton.styleFrom(
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.primary,
-                                    foregroundColor:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    backgroundColor: theme.colorScheme.primary,
+                                    foregroundColor: theme.colorScheme.onPrimary,
                                     minimumSize: const Size(double.infinity, 50),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),

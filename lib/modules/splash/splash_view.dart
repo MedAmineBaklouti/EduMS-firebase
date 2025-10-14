@@ -67,6 +67,8 @@ class _SplashViewState extends State<SplashView> {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final onBackgroundColor = theme.colorScheme.onBackground;
+    final logoAsset =
+        isDarkMode ? 'assets/EduMS_logo_dark.png' : 'assets/EduMS_logo.png';
 
     return Scaffold(
       body: Stack(
@@ -87,7 +89,7 @@ class _SplashViewState extends State<SplashView> {
               children: [
                 // Your logo
                 Image.asset(
-                  'assets/EduMS_logo_dark.png',
+                  logoAsset,
                   width: 200,
                   height: 200,
                 ),
