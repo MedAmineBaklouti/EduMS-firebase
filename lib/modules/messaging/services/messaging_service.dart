@@ -1408,19 +1408,30 @@ class MessagingService extends GetxService {
       return;
     }
 
-    final recipientIds = participants
-        .map((participant) =>
-            participant.userId.isNotEmpty ? participant.userId : participant.id)
-        .where((id) => id.isNotEmpty && id != message.senderId)
-        .toSet()
-        .toList();
+    final recipientIds = <String>{};
+    for (final participant in participants) {
+      final primaryId =
+          (participant.userId.isNotEmpty ? participant.userId : participant.id)
+              .trim();
+      final alternateId = participant.id.trim();
+
+      if (primaryId.isNotEmpty && primaryId != message.senderId) {
+        recipientIds.add(primaryId);
+      }
+
+      if (alternateId.isNotEmpty && alternateId != message.senderId) {
+        recipientIds.add(alternateId);
+      }
+    }
 
     if (recipientIds.isEmpty) {
       return;
     }
 
     try {
-      final tokens = await _fetchTokensForUsers(recipientIds);
+      debugPrint('Looking up tokens for recipientIds=$recipientIds');
+      final tokens = await _fetchTokensForUsers(recipientIds.toList());
+      debugPrint('Resolved ${tokens.length} tokens for recipients');
       if (tokens.isEmpty) {
         debugPrint('Skipping push send: no tokens for recipients $recipientIds');
         return;
