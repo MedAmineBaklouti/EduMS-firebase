@@ -227,9 +227,7 @@ class EduChatController extends GetxController {
       await _service.addModelMessage(chatId: targetChatId, response: response);
 
       if (response.refused == true) {
-        Get.snackbar('edu_chat_title'.tr, response.text,
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 4));
+        print('⚠️ Model refused to answer, message stored without snackbar');
       }
     } on EduChatException catch (error) {
       print('❌ EduChatException: ${error.type} - ${error.message}');
