@@ -301,7 +301,7 @@ class EduChatService extends GetxService {
               ],
             },
           ],
-          'system_instruction': {
+          'systemInstruction': {
             'role': 'system',
             'parts': [
               {
