@@ -16,13 +16,7 @@ Future<void> main() async {
   // available as soon as the Flutter engine starts in the background.
   FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
 
-  // Load .env
-  try {
-    await dotenv.load(fileName: ".env");
-    print('.env loaded');
-  } catch (e) {
-    print('Could not load .env: $e');
-  }
+  await dotenv.load(fileName: ".env");
 
   // Initialize Firebase
   try {

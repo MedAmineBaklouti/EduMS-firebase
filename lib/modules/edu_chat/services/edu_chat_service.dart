@@ -3,17 +3,13 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 
 import '../models/edu_chat_exception.dart';
 import '../models/edu_chat_message.dart';
 import '../models/edu_chat_proxy_response.dart';
 import '../models/edu_chat_thread.dart';
-
-const String kEduChatProxyUrl = String.fromEnvironment(
-  'EDU_CHAT_PROXY_URL',
-  defaultValue: 'https://your-proxy-endpoint.example.com/edu-chat',
-);
 
 class EduChatService extends GetxService {
   EduChatService({Dio? dio})
@@ -29,11 +25,19 @@ class EduChatService extends GetxService {
   final Dio _dio;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  String get _proxyUrl => kEduChatProxyUrl;
-  bool get _isProxyConfigured =>
-      _proxyUrl.isNotEmpty &&
-      !_proxyUrl.contains('your-proxy-endpoint.example.com');
+  static const List<String> _denylist = <String>[
+    'messi',
+    'ronaldo',
+    'celebrity',
+    'gossip',
+    'movie',
+    'series',
+    'tiktok',
+    'instagram',
+    'politics',
+    'adult',
+    'league',
+  ];
 
   CollectionReference<Map<String, dynamic>> _userChatsCollection(String uid) {
     return _firestore.collection('users').doc(uid).collection('eduChats');
@@ -258,42 +262,127 @@ class EduChatService extends GetxService {
       );
     }
 
-    final idToken = await user.getIdToken();
-    if (idToken!.isEmpty) {
+    final apiKey = dotenv.env['GEMINI_API_KEY']?.trim();
+    if (apiKey == null || apiKey.isEmpty) {
       throw const EduChatException(
-        'Unable to retrieve ID token',
-        type: EduChatErrorType.unauthenticated,
+        'Gemini API key is not configured',
+        type: EduChatErrorType.unknown,
       );
     }
 
-    if (!_isProxyConfigured) {
-      await Future<void>.delayed(const Duration(milliseconds: 400));
-      return _buildFallbackResponse(prompt);
+    final sanitizedPrompt = prompt.trim();
+    if (sanitizedPrompt.isEmpty) {
+      return const EduChatProxyResponse(text: '');
+    }
+
+    final lowerPrompt = sanitizedPrompt.toLowerCase();
+    final bool isDenied =
+        _denylist.any((term) => lowerPrompt.contains(term.toLowerCase()));
+    if (isDenied) {
+      return const EduChatProxyResponse(
+        text:
+            'Sorry, I can only help with educational topics. Try questions about math, science, history, languages, programming, exam prep, study skills, etc.',
+        model: 'policy-refusal',
+        refused: true,
+      );
     }
 
     try {
-      final response = await _dio.post<dynamic>(
-        _proxyUrl,
+      final response = await _dio.post<Map<String, dynamic>>(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=$apiKey',
         data: {
-          'prompt': prompt,
+          'contents': [
+            {
+              'role': 'user',
+              'parts': [
+                {
+                  'text': sanitizedPrompt,
+                },
+              ],
+            },
+          ],
+          'system_instruction': {
+            'role': 'system',
+            'parts': [
+              {
+                'text':
+                    'You are an Educational Assistant; only answer academic topics and refuse non-educational as above; be concise and structured; no URLs.',
+              },
+            ],
+          },
         },
         options: Options(
-          headers: {
-            'Authorization': 'Bearer $idToken',
+          headers: const {
             'Content-Type': 'application/json',
           },
         ),
       );
 
-      if (response.data is! Map<String, dynamic>) {
+      final data = response.data;
+      if (data == null) {
         throw const EduChatException(
-          'Invalid response shape',
+          'Invalid response from Gemini',
           type: EduChatErrorType.invalidResponse,
         );
       }
 
-      return EduChatProxyResponse.fromJson(
-        response.data as Map<String, dynamic>,
+      final candidates = data['candidates'];
+      if (candidates is! List || candidates.isEmpty) {
+        throw const EduChatException(
+          'Invalid response from Gemini',
+          type: EduChatErrorType.invalidResponse,
+        );
+      }
+
+      final candidate = candidates.first;
+      final content = candidate is Map<String, dynamic> ? candidate['content'] : null;
+      if (content is! Map<String, dynamic>) {
+        throw const EduChatException(
+          'Invalid response from Gemini',
+          type: EduChatErrorType.invalidResponse,
+        );
+      }
+
+      final parts = content['parts'];
+      if (parts is! List || parts.isEmpty) {
+        throw const EduChatException(
+          'Invalid response from Gemini',
+          type: EduChatErrorType.invalidResponse,
+        );
+      }
+
+      final buffer = StringBuffer();
+      for (final part in parts) {
+        if (part is Map<String, dynamic>) {
+          final text = part['text'];
+          if (text is String && text.trim().isNotEmpty) {
+            if (buffer.isNotEmpty) {
+              buffer.writeln();
+              buffer.writeln();
+            }
+            buffer.write(text.trim());
+          }
+        }
+      }
+
+      final resultText = buffer.toString().trim();
+      if (resultText.isEmpty) {
+        throw const EduChatException(
+          'Invalid response from Gemini',
+          type: EduChatErrorType.invalidResponse,
+        );
+      }
+
+      final wordCount = resultText
+          .split(RegExp(r'\s+'))
+          .where((segment) => segment.isNotEmpty)
+          .length;
+
+      return EduChatProxyResponse(
+        text: resultText,
+        model: 'gemini-1.5-pro',
+        refused: false,
+        tokens: wordCount * 4,
       );
     } on DioException catch (error) {
       if (error.type == DioExceptionType.badResponse &&
@@ -307,20 +396,29 @@ class EduChatService extends GetxService {
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.connectionError) {
-        await Future<void>.delayed(const Duration(milliseconds: 400));
-        return _buildFallbackResponse(prompt);
+        throw const EduChatException(
+          'Network error',
+          type: EduChatErrorType.network,
+        );
       }
 
       throw EduChatException(
         error.message ?? 'Unknown error',
         type: EduChatErrorType.unknown,
       );
+    } on FormatException catch (error) {
+      throw EduChatException(
+        error.message,
+        type: EduChatErrorType.invalidResponse,
+      );
     } catch (error) {
       if (error is EduChatException) {
         rethrow;
       }
-      await Future<void>.delayed(const Duration(milliseconds: 400));
-      return _buildFallbackResponse(prompt);
+      throw EduChatException(
+        error.toString(),
+        type: EduChatErrorType.unknown,
+      );
     }
   }
 
@@ -330,29 +428,5 @@ class EduChatService extends GetxService {
       return sanitized;
     }
     return '${sanitized.substring(0, 57)}...';
-  }
-
-  EduChatProxyResponse _buildFallbackResponse(String prompt) {
-    final trimmed = prompt.trim();
-    if (trimmed.isEmpty) {
-      return const EduChatProxyResponse(text: '');
-    }
-
-    final preview = trimmed.length <= 240
-        ? trimmed
-        : '${trimmed.substring(0, 237)}...';
-
-    final explanation =
-        'edu_chat_offline_fallback'.trParams({'preview': preview});
-
-    final tokensEstimate = preview.isEmpty
-        ? 0
-        : preview.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).length * 4;
-
-    return EduChatProxyResponse(
-      text: explanation,
-      model: 'demo-offline-assistant',
-      tokens: tokensEstimate,
-    );
   }
 }
