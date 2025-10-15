@@ -51,3 +51,4 @@ flutter:
     - assets/splash/background_dark.png
     - assets/Denet_logo.png
     - assets/CU.png
+    - .env

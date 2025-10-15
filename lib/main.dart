@@ -16,14 +16,11 @@ Future<void> main() async {
   // available as soon as the Flutter engine starts in the background.
   FirebaseMessaging.onBackgroundMessage(messagingBackgroundHandler);
 
+  //load .env file
   await dotenv.load(fileName: ".env");
 
   // Initialize Firebase
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    print('Firebase init failed: $e');
-  }
+  await Firebase.initializeApp();
 
   // Initialize your GetX bindings (SharedPreferences, AuthService, etc.)
   final binding = AppBindings();
