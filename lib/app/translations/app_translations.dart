@@ -70,6 +70,7 @@ class AppTranslations extends Translations {
           'edu_chat_history_empty_message':
               'Start a new conversation to ask the assistant for help.',
           'edu_chat_new_conversation': 'Start new conversation',
+          'edu_chat_ask_something_new': 'Ask something new',
           'edu_chat_conversation_default_title': 'Conversation @index',
           'edu_chat_thread_updated': 'Updated @timestamp',
           'edu_chat_confirm_delete_title': 'Delete conversation',
@@ -695,6 +696,7 @@ class AppTranslations extends Translations {
           'edu_chat_history_empty_message':
               'Lancez une nouvelle conversation pour poser vos questions à l’assistant.',
           'edu_chat_new_conversation': 'Nouvelle conversation',
+          'edu_chat_ask_something_new': 'Poser une nouvelle question',
           'edu_chat_conversation_default_title': 'Conversation @index',
           'edu_chat_thread_updated': 'Mis à jour @timestamp',
           'edu_chat_confirm_delete_title': 'Supprimer la conversation',
@@ -1347,6 +1349,7 @@ class AppTranslations extends Translations {
           'edu_chat_history_empty_message':
               'ابدأ محادثة جديدة لطرح أسئلتك على المساعد.',
           'edu_chat_new_conversation': 'ابدأ محادثة جديدة',
+          'edu_chat_ask_something_new': 'اطرح شيئًا جديدًا',
           'edu_chat_conversation_default_title': 'محادثة @index',
           'edu_chat_thread_updated': 'تم التحديث @timestamp',
           'edu_chat_confirm_delete_title': 'حذف المحادثة',
