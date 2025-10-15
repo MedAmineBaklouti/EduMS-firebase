@@ -14,17 +14,18 @@ import '../models/edu_chat_thread.dart';
 class EduChatService extends GetxService {
   EduChatService({Dio? dio})
       : _dio = dio ??
-            Dio(
-              BaseOptions(
-                connectTimeout: const Duration(seconds: 15),
-                receiveTimeout: const Duration(seconds: 30),
-                responseType: ResponseType.json,
-              ),
-            );
+      Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 30),
+          responseType: ResponseType.json,
+        ),
+      );
 
   final Dio _dio;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   static const List<String> _denylist = <String>[
     'messi',
     'ronaldo',
@@ -39,6 +40,17 @@ class EduChatService extends GetxService {
     'league',
   ];
 
+  // List of possible models to try
+  final List<String> _possibleModels = [
+    'gemini-2.0-flash-exp', // Most likely for free tier
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-pro',
+    'gemini-1.0-pro',
+  ];
+
+  String? _cachedWorkingModel;
+
   CollectionReference<Map<String, dynamic>> _userChatsCollection(String uid) {
     return _firestore.collection('users').doc(uid).collection('eduChats');
   }
@@ -52,13 +64,14 @@ class EduChatService extends GetxService {
       );
     }
 
-    final chatsRef = _userChatsCollection(user.uid);
-    final snapshot = await chatsRef.orderBy('updatedAt', descending: true).limit(1).get();
+    final chatsRef =
+    _userChatsCollection(user.uid).orderBy('updatedAt', descending: true);
+    final snapshot = await chatsRef.limit(1).get();
     if (snapshot.docs.isNotEmpty) {
       return snapshot.docs.first.id;
     }
 
-    final docRef = chatsRef.doc();
+    final docRef = _userChatsCollection(user.uid).doc();
     await docRef.set({
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -87,32 +100,26 @@ class EduChatService extends GetxService {
 
   Stream<List<EduChatThread>> watchChatThreads() {
     final user = _auth.currentUser;
-    if (user == null) {
-      return const Stream.empty();
-    }
+    if (user == null) return const Stream.empty();
 
     return _userChatsCollection(user.uid)
         .orderBy('updatedAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => EduChatThread.fromSnapshot(doc))
-            .toList());
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => EduChatThread.fromSnapshot(doc)).toList());
   }
 
   Stream<List<EduChatMessage>> watchMessages(String chatId) {
     final user = _auth.currentUser;
-    if (user == null) {
-      return const Stream.empty();
-    }
+    if (user == null) return const Stream.empty();
 
     final messagesRef =
-        _userChatsCollection(user.uid).doc(chatId).collection('messages');
+    _userChatsCollection(user.uid).doc(chatId).collection('messages');
     return messagesRef
         .orderBy('createdAt', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => EduChatMessage.fromSnapshot(doc))
-            .toList());
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => EduChatMessage.fromSnapshot(doc)).toList());
   }
 
   Future<void> addUserMessage({
@@ -218,9 +225,8 @@ class EduChatService extends GetxService {
       const batchSize = 500;
       while (true) {
         final snapshot = await messagesRef.limit(batchSize).get();
-        if (snapshot.docs.isEmpty) {
-          break;
-        }
+        if (snapshot.docs.isEmpty) break;
+
         final batch = _firestore.batch();
         for (final doc in snapshot.docs) {
           batch.delete(doc.reference);
@@ -239,21 +245,87 @@ class EduChatService extends GetxService {
           code == 'cancelled') {
         type = EduChatErrorType.network;
       }
-      throw EduChatException(
-        error.message ?? error.code,
-        type: type,
-      );
+      throw EduChatException(error.message ?? error.code, type: type);
     } catch (error) {
-      throw EduChatException(
-        error.toString(),
+      throw EduChatException(error.toString(), type: EduChatErrorType.unknown);
+    }
+  }
+
+  Future<String> _findWorkingModel() async {
+    // If we already found a working model, use it
+    if (_cachedWorkingModel != null) {
+      return _cachedWorkingModel!;
+    }
+
+    final apiKey = dotenv.env['GEMINI_API_KEY']?.trim();
+    if (apiKey == null || apiKey.isEmpty) {
+      throw const EduChatException(
+        'Gemini API key is not configured',
         type: EduChatErrorType.unknown,
       );
     }
+
+    const bool _debugGemini = true;
+
+    // Simple test request to check if a model works
+    final testBody = {
+      "contents": [
+        {
+          "parts": [
+            {"text": "Hello"}
+          ]
+        }
+      ]
+    };
+
+    for (final model in _possibleModels) {
+      try {
+        final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
+
+        if (_debugGemini) {
+          print('🔍 Testing model: $model');
+        }
+
+        final response = await _dio.post<Map<String, dynamic>>(
+          url,
+          data: testBody,
+          options: Options(
+            headers: {"Content-Type": "application/json"},
+          ),
+        );
+
+        if (response.statusCode == 200) {
+          if (_debugGemini) {
+            print('✅ Found working model: $model');
+          }
+          _cachedWorkingModel = model;
+          return model;
+        }
+      } on DioException catch (e) {
+        if (_debugGemini) {
+          print('❌ Model $model failed: ${e.response?.statusCode}');
+        }
+        continue; // Try next model
+      } catch (e) {
+        if (_debugGemini) {
+          print('❌ Model $model error: $e');
+        }
+        continue; // Try next model
+      }
+    }
+
+    throw const EduChatException(
+      'No working Gemini model found. Please check your API key and available models.',
+      type: EduChatErrorType.invalidResponse,
+    );
   }
 
   Future<EduChatProxyResponse> requestEducationalAssistant({
     required String prompt,
   }) async {
+    // Enable debug logging
+    const bool _debugGemini = true;
+
     final user = _auth.currentUser;
     if (user == null) {
       throw const EduChatException(
@@ -270,163 +342,199 @@ class EduChatService extends GetxService {
       );
     }
 
+    if (_debugGemini) {
+      print('🔑 API Key present: ${apiKey.isNotEmpty}');
+    }
+
     final sanitizedPrompt = prompt.trim();
     if (sanitizedPrompt.isEmpty) {
       return const EduChatProxyResponse(text: '');
     }
 
-    final lowerPrompt = sanitizedPrompt.toLowerCase();
-    final bool isDenied =
-        _denylist.any((term) => lowerPrompt.contains(term.toLowerCase()));
-    if (isDenied) {
+    // Client educational gate (quick denylist)
+    final lower = sanitizedPrompt.toLowerCase();
+    if (_denylist.any((t) => lower.contains(t))) {
       return const EduChatProxyResponse(
-        text:
-            'Sorry, I can only help with educational topics. Try questions about math, science, history, languages, programming, exam prep, study skills, etc.',
+        text: 'Sorry, I can only help with educational topics. Try questions about math, science, history, languages, programming, exam prep, study skills, etc.',
         model: 'policy-refusal',
         refused: true,
       );
     }
 
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=$apiKey',
-        data: {
-          'contents': [
-            {
-              'role': 'user',
-              'parts': [
-                {
-                  'text': sanitizedPrompt,
-                },
-              ],
-            },
-          ],
-          'systemInstruction': {
-            'role': 'system',
-            'parts': [
+      // Find a working model
+      final model = await _findWorkingModel();
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
+
+      if (_debugGemini) {
+        print('🚀 Sending request to: $url');
+        print('📝 Prompt: $sanitizedPrompt');
+      }
+
+      final body = {
+        "contents": [
+          {
+            "parts": [
               {
-                'text':
-                    'You are an Educational Assistant; only answer academic topics and refuse non-educational as above; be concise and structured; no URLs.',
-              },
-            ],
-          },
-        },
+                "text": sanitizedPrompt
+              }
+            ]
+          }
+        ]
+      };
+
+      if (_debugGemini) {
+        print('📦 Request body: ${body.toString()}');
+      }
+
+      final response = await _dio.post<Map<String, dynamic>>(
+        url,
+        data: body,
         options: Options(
-          headers: const {
-            'Content-Type': 'application/json',
+          headers: {
+            "Content-Type": "application/json",
           },
         ),
       );
 
+      if (_debugGemini) {
+        print('✅ Response status: ${response.statusCode}');
+        print('📦 Response data: ${response.data}');
+      }
+
       final data = response.data;
       if (data == null) {
         throw const EduChatException(
-          'Invalid response from Gemini',
+          'Empty response from Gemini API',
           type: EduChatErrorType.invalidResponse,
         );
       }
 
-      final candidates = data['candidates'];
-      if (candidates is! List || candidates.isEmpty) {
+      // Check for errors in response
+      if (data['error'] != null) {
+        final error = data['error'];
+        throw EduChatException(
+          error['message'] ?? 'Gemini API error',
+          type: EduChatErrorType.invalidResponse,
+        );
+      }
+
+      final candidates = data['candidates'] as List?;
+      if (candidates == null || candidates.isEmpty) {
         throw const EduChatException(
-          'Invalid response from Gemini',
+          'No candidates in response',
           type: EduChatErrorType.invalidResponse,
         );
       }
 
-      final candidate = candidates.first;
-      final content = candidate is Map<String, dynamic> ? candidate['content'] : null;
-      if (content is! Map<String, dynamic>) {
+      final firstCandidate = candidates.first as Map<String, dynamic>;
+      final content = firstCandidate['content'] as Map<String, dynamic>?;
+      final parts = content?['parts'] as List?;
+
+      if (parts == null || parts.isEmpty) {
         throw const EduChatException(
-          'Invalid response from Gemini',
+          'No content parts in response',
           type: EduChatErrorType.invalidResponse,
         );
       }
 
-      final parts = content['parts'];
-      if (parts is! List || parts.isEmpty) {
+      // Extract text from parts
+      final textParts = parts
+          .whereType<Map<String, dynamic>>()
+          .map((part) => part['text'] as String?)
+          .where((text) => text != null && text.isNotEmpty)
+          .join('\n');
+
+      if (textParts.isEmpty) {
         throw const EduChatException(
-          'Invalid response from Gemini',
+          'Empty response text',
           type: EduChatErrorType.invalidResponse,
         );
       }
 
-      final buffer = StringBuffer();
-      for (final part in parts) {
-        if (part is Map<String, dynamic>) {
-          final text = part['text'];
-          if (text is String && text.trim().isNotEmpty) {
-            if (buffer.isNotEmpty) {
-              buffer.writeln();
-              buffer.writeln();
-            }
-            buffer.write(text.trim());
-          }
+      // Extract token count from usageMetadata if available
+      int? tokens;
+      final usageMetadata = data['usageMetadata'] as Map<String, dynamic>?;
+      if (usageMetadata != null) {
+        final totalTokens = usageMetadata['totalTokenCount'];
+        if (totalTokens is int) {
+          tokens = totalTokens;
         }
       }
 
-      final resultText = buffer.toString().trim();
-      if (resultText.isEmpty) {
-        throw const EduChatException(
-          'Invalid response from Gemini',
-          type: EduChatErrorType.invalidResponse,
-        );
-      }
-
-      final wordCount = resultText
-          .split(RegExp(r'\s+'))
-          .where((segment) => segment.isNotEmpty)
-          .length;
-
       return EduChatProxyResponse(
-        text: resultText,
-        model: 'gemini-1.5-pro',
+        text: textParts,
+        model: data['modelVersion'] as String? ?? model,
+        tokens: tokens,
         refused: false,
-        tokens: wordCount * 4,
       );
-    } on DioException catch (error) {
-      if (error.type == DioExceptionType.badResponse &&
-          error.response?.statusCode == 429) {
-        throw const EduChatException(
-          'Rate limited',
-          type: EduChatErrorType.rateLimited,
-        );
+
+    } on DioException catch (e) {
+      if (_debugGemini) {
+        print('❌ DioException: ${e.type}');
+        print('📡 Response: ${e.response?.data}');
+        print('🔧 Error: ${e.message}');
       }
 
-      if (error.type == DioExceptionType.connectionTimeout ||
-          error.type == DioExceptionType.receiveTimeout ||
-          error.type == DioExceptionType.connectionError) {
+      if (e.response != null) {
+        final statusCode = e.response!.statusCode;
+        final errorData = e.response!.data;
+
+        if (_debugGemini) {
+          print('📊 Status code: $statusCode');
+          print('📄 Error response: $errorData');
+        }
+
+        if (statusCode == 400) {
+          throw const EduChatException(
+            'Bad request - check API key and parameters',
+            type: EduChatErrorType.invalidResponse,
+          );
+        } else if (statusCode == 403) {
+          throw const EduChatException(
+            'API key invalid or insufficient permissions',
+            type: EduChatErrorType.unauthenticated,
+          );
+        } else if (statusCode == 404) {
+          // Clear cached model and retry
+          _cachedWorkingModel = null;
+          throw const EduChatException(
+            'Model not found - will retry with different model',
+            type: EduChatErrorType.invalidResponse,
+          );
+        } else if (statusCode == 429) {
+          throw const EduChatException(
+            'Rate limited',
+            type: EduChatErrorType.rateLimited,
+          );
+        }
+      }
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
         throw const EduChatException(
-          'Network error',
+          'Network error - check your internet connection',
           type: EduChatErrorType.network,
         );
       }
 
       throw EduChatException(
-        error.message ?? 'Unknown error',
-        type: EduChatErrorType.unknown,
+        e.message ?? 'Network request failed',
+        type: EduChatErrorType.network,
       );
-    } on FormatException catch (error) {
-      throw EduChatException(
-        error.message,
-        type: EduChatErrorType.invalidResponse,
-      );
-    } catch (error) {
-      if (error is EduChatException) {
-        rethrow;
+    } catch (e, stackTrace) {
+      if (_debugGemini) {
+        print('❌ Unexpected error: $e');
+        print('📋 Stack trace: $stackTrace');
       }
-      throw EduChatException(
-        error.toString(),
-        type: EduChatErrorType.unknown,
-      );
+      rethrow;
     }
   }
 
   String _buildMessagePreview(String content) {
     final sanitized = content.trim();
-    if (sanitized.length <= 60) {
-      return sanitized;
-    }
+    if (sanitized.length <= 60) return sanitized;
     return '${sanitized.substring(0, 57)}...';
   }
 }

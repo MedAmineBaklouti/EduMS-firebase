@@ -109,7 +109,7 @@ class EduChatController extends GetxController {
     try {
       _threadsSubscription?.cancel();
       _threadsSubscription = _service.watchChatThreads().listen(
-        (items) async {
+            (items) async {
           threads.assignAll(items);
           loadError.value = null;
 
@@ -125,7 +125,7 @@ class EduChatController extends GetxController {
           final current = activeThreadId.value;
           if (current != null) {
             final exists =
-                items.any((thread) => thread.id == current);
+            items.any((thread) => thread.id == current);
             if (!exists) {
               showThreadList();
             } else if (_chatId == null &&
@@ -140,6 +140,7 @@ class EduChatController extends GetxController {
           }
         },
         onError: (error) {
+          print('❌ Threads subscription error: $error');
           loadError.value = 'edu_chat_error_generic'.tr;
           if (activeView.value == EduChatViewMode.threadList) {
             isLoading.value = false;
@@ -148,9 +149,12 @@ class EduChatController extends GetxController {
         cancelOnError: false,
       );
     } on EduChatException catch (error) {
+      print('❌ Thread initialization error: ${error.message}');
       _handleInitializationError(error);
       isLoading.value = false;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      print('❌ Unexpected thread error: $error');
+      print('📋 Stack trace: $stackTrace');
       loadError.value = 'edu_chat_error_generic'.tr;
       isLoading.value = false;
     }
@@ -173,16 +177,19 @@ class EduChatController extends GetxController {
   }
 
   Future<void> retry() async {
+    print('🔄 Retrying initialization...');
     await _startWatchingThreads();
   }
 
   Future<void> sendMessage() async {
     if (!await _ensureActiveThread()) {
+      print('❌ No active thread available');
       return;
     }
 
     final text = composerController.text.trim();
     if (text.isEmpty || isSending.value) {
+      print('❌ Cannot send - empty text or already sending');
       return;
     }
 
@@ -193,12 +200,16 @@ class EduChatController extends GetxController {
 
     try {
       isSending.value = true;
+      print('💾 Saving user message to Firestore...');
       await _service.addUserMessage(chatId: targetChatId, content: text);
 
+      print('🔄 Sending request to Gemini...');
       final EduChatProxyResponse response =
-          await _service.requestEducationalAssistant(prompt: text);
+      await _service.requestEducationalAssistant(prompt: text);
+      print('✅ Gemini response received: ${response.text}');
 
       if (response.isEmpty) {
+        print('❌ Empty response from Gemini');
         await _service.addSystemMessage(
           chatId: targetChatId,
           content: 'edu_chat_system_error_message'.tr,
@@ -211,6 +222,7 @@ class EduChatController extends GetxController {
         return;
       }
 
+      print('💾 Saving model response to Firestore...');
       await _service.addModelMessage(chatId: targetChatId, response: response);
 
       if (response.refused == true) {
@@ -219,8 +231,11 @@ class EduChatController extends GetxController {
             duration: const Duration(seconds: 4));
       }
     } on EduChatException catch (error) {
+      print('❌ EduChatException: ${error.type} - ${error.message}');
       await _handleSendError(error, targetChatId);
-    } catch (error) {
+    } catch (error, stackTrace) {
+      print('❌ Unexpected error in sendMessage: $error');
+      print('📋 Stack trace: $stackTrace');
       await _service.addSystemMessage(
         chatId: targetChatId,
         content: 'edu_chat_system_error_message'.tr,
@@ -237,11 +252,14 @@ class EduChatController extends GetxController {
 
   Future<void> sendSuggestion(String suggestion) async {
     if (isSending.value) {
+      print('❌ Already sending, ignoring suggestion');
       return;
     }
     if (loadError.value != null) {
+      print('❌ Load error present, ignoring suggestion');
       return;
     }
+    print('💡 Using suggestion: $suggestion');
     composerController
       ..text = suggestion
       ..selection = TextSelection.collapsed(offset: suggestion.length);
@@ -256,12 +274,17 @@ class EduChatController extends GetxController {
 
     isCreatingThread.value = true;
     try {
+      print('🆕 Creating new chat thread...');
       final newId = await _service.createChatThread();
+      print('✅ New thread created: $newId');
       await _selectThread(newId, force: true);
       messages.clear();
     } on EduChatException catch (error) {
+      print('❌ Error creating thread: ${error.message}');
       _showThreadError(error);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      print('❌ Unexpected error creating thread: $error');
+      print('📋 Stack trace: $stackTrace');
       _showThreadError();
     } finally {
       isCreatingThread.value = false;
@@ -278,6 +301,7 @@ class EduChatController extends GetxController {
     }
 
     try {
+      print('🗑️ Deleting thread: $threadId');
       await _service.deleteChatThread(threadId);
       if (wasActive) {
         showThreadList();
@@ -289,13 +313,16 @@ class EduChatController extends GetxController {
       );
       return true;
     } on EduChatException catch (error) {
+      print('❌ Error deleting thread: ${error.message}');
       _restoreThreadAfterDeletionFailure(
         removedThread: removedThread,
         index: index,
         wasActive: wasActive,
       );
       _showThreadDeletionError(error);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      print('❌ Unexpected error deleting thread: $error');
+      print('📋 Stack trace: $stackTrace');
       _restoreThreadAfterDeletionFailure(
         removedThread: removedThread,
         index: index,
@@ -308,13 +335,14 @@ class EduChatController extends GetxController {
   }
 
   Future<void> selectThread(String chatId) async {
+    print('🎯 Selecting thread: $chatId');
     await _selectThread(chatId);
   }
 
   Future<void> _handleSendError(
-    EduChatException error,
-    String chatId,
-  ) async {
+      EduChatException error,
+      String chatId,
+      ) async {
     String message;
     String systemMessage;
 
@@ -373,15 +401,19 @@ class EduChatController extends GetxController {
 
   Future<String?> _createInitialThread({bool activate = true}) async {
     try {
+      print('🆕 Creating initial thread...');
       final chatId = await _service.createChatThread();
       if (activate) {
         await _selectThread(chatId, force: true);
       }
       return chatId;
     } on EduChatException catch (error) {
+      print('❌ Error creating initial thread: ${error.message}');
       _handleInitializationError(error);
       isLoading.value = false;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      print('❌ Unexpected error creating initial thread: $error');
+      print('📋 Stack trace: $stackTrace');
       loadError.value = 'edu_chat_error_generic'.tr;
       isLoading.value = false;
     }
@@ -390,6 +422,7 @@ class EduChatController extends GetxController {
 
   Future<void> _selectThread(String chatId, {bool force = false}) async {
     if (!force && _chatId == chatId) {
+      print('ℹ️ Thread already selected: $chatId');
       return;
     }
 
@@ -406,11 +439,13 @@ class EduChatController extends GetxController {
 
     _messagesSubscription?.cancel();
     _messagesSubscription = _service.watchMessages(chatId).listen(
-      (event) {
+          (event) {
+        print('📨 Received ${event.length} messages');
         messages.assignAll(event);
         isLoading.value = false;
       },
       onError: (error) {
+        print('❌ Messages subscription error: $error');
         loadError.value = 'edu_chat_error_generic'.tr;
         isLoading.value = false;
       },
@@ -486,7 +521,7 @@ class EduChatController extends GetxController {
   }) {
     if (removedThread != null) {
       final targetIndex =
-          index >= 0 && index <= threads.length ? index : threads.length;
+      index >= 0 && index <= threads.length ? index : threads.length;
       threads.insert(targetIndex, removedThread);
     } else {
       threads.refresh();
