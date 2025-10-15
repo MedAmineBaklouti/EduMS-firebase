@@ -270,141 +270,174 @@ class _ThreadHistoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-          child: Text(
-            'edu_chat_history_label'.tr,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+    return Obx(() {
+      final threads = controller.threads;
+      final error = controller.loadError.value;
+      final isLoading = controller.isLoading.value && threads.isEmpty;
+      final isCreating = controller.isCreatingThread.value;
+
+      Widget historyContent;
+      if (isLoading) {
+        historyContent = const Center(child: CircularProgressIndicator());
+      } else if (threads.isEmpty) {
+        if (error != null) {
+          historyContent = _ErrorState(
+            message: error,
+            onRetry: controller.retry,
+          );
+        } else {
+          historyContent = _HistoryEmptyState(
+            onNewConversation: controller.startNewChat,
+            isCreating: isCreating,
+          );
+        }
+      } else {
+        historyContent = ListView.separated(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          itemCount: threads.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final thread = threads[index];
+            final title = controller.resolveThreadTitle(thread);
+            final timestamp = controller.formatThreadUpdatedAt(thread);
+            return Dismissible(
+              key: ValueKey('eduChatThread-${thread.id}'),
+              direction: DismissDirection.endToStart,
+              background: SwipeActionBackground(
+                alignment: Alignment.centerRight,
+                color: theme.colorScheme.error,
+                icon: Icons.delete_outline,
+                label: 'common_delete'.tr,
+              ),
+              confirmDismiss: (_) async {
+                final shouldDelete = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) {
+                    return AlertDialog(
+                      title: Text('edu_chat_confirm_delete_title'.tr),
+                      content: Text('edu_chat_confirm_delete_message'.tr),
+                      actions: [
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(dialogContext).pop(false),
+                          child: Text('common_cancel'.tr),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(dialogContext).pop(true),
+                          child: Text(
+                            'common_delete'.tr,
+                            style: TextStyle(
+                              color: theme.colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+                if (shouldDelete != true) {
+                  return false;
+                }
+
+                final success = await controller.deleteThread(thread);
+                return success;
+              },
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 1,
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  onTap: () => controller.selectThread(thread.id),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor:
+                        theme.colorScheme.primary.withOpacity(0.12),
+                    foregroundColor: theme.colorScheme.primary,
+                    child: const Icon(Icons.chat_bubble_outline),
+                  ),
+                  title: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: timestamp != null
+                      ? Text(
+                          'edu_chat_thread_updated'
+                              .trParams({'timestamp': timestamp}),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      : null,
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                ),
+              ),
+            );
+          },
+        );
+      }
+
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                  child: Text(
+                    'edu_chat_history_label'.tr,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(child: historyContent),
+              ],
             ),
           ),
-        ),
-        Expanded(
-          child: Obx(() {
-            final threads = controller.threads;
-            final error = controller.loadError.value;
-            final isLoading = controller.isLoading.value && threads.isEmpty;
-            final isCreating = controller.isCreatingThread.value;
-
-            if (isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (threads.isEmpty) {
-              if (error != null) {
-                return _ErrorState(message: error, onRetry: controller.retry);
-              }
-              return _HistoryEmptyState(
-                onNewConversation: controller.startNewChat,
-                isCreating: isCreating,
-              );
-            }
-
-            return ListView.separated(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
+          if (threads.isNotEmpty)
+            Positioned(
+              right: 24,
+              bottom: 24,
+              child: SafeArea(
+                child: FloatingActionButton.extended(
+                  heroTag: 'eduChatAskSomethingNewFab',
+                  onPressed:
+                      isCreating ? null : controller.startNewChat,
+                  icon: isCreating
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.smart_toy_outlined),
+                  label: Text('edu_chat_ask_something_new'.tr),
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              itemCount: threads.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final thread = threads[index];
-                final title = controller.resolveThreadTitle(thread);
-                final timestamp = controller.formatThreadUpdatedAt(thread);
-                return Dismissible(
-                  key: ValueKey('eduChatThread-${thread.id}'),
-                  direction: DismissDirection.endToStart,
-                  background: SwipeActionBackground(
-                    alignment: Alignment.centerRight,
-                    color: theme.colorScheme.error,
-                    icon: Icons.delete_outline,
-                    label: 'common_delete'.tr,
-                  ),
-                  confirmDismiss: (_) async {
-                    final shouldDelete = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogContext) {
-                        return AlertDialog(
-                          title: Text('edu_chat_confirm_delete_title'.tr),
-                          content:
-                              Text('edu_chat_confirm_delete_message'.tr),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(dialogContext)
-                                  .pop(false),
-                              child: Text('common_cancel'.tr),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(dialogContext)
-                                  .pop(true),
-                              child: Text(
-                                'common_delete'.tr,
-                                style: TextStyle(
-                                  color: theme.colorScheme.error,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                    if (shouldDelete != true) {
-                      return false;
-                    }
-
-                    final success = await controller.deleteThread(thread);
-                    return success;
-                  },
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 1,
-                    clipBehavior: Clip.antiAlias,
-                    child: ListTile(
-                      onTap: () => controller.selectThread(thread.id),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      leading: CircleAvatar(
-                        backgroundColor:
-                            theme.colorScheme.primary.withOpacity(0.12),
-                        foregroundColor: theme.colorScheme.primary,
-                        child: const Icon(Icons.chat_bubble_outline),
-                      ),
-                      title: Text(
-                        title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: timestamp != null
-                          ? Text(
-                              'edu_chat_thread_updated'
-                                  .trParams({'timestamp': timestamp}),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            )
-                          : null,
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                    ),
-                  ),
-                );
-              },
-            );
-          }),
-        ),
-      ],
-    );
+            ),
+        ],
+      );
+    });
   }
 }
 
