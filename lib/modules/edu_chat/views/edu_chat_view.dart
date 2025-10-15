@@ -87,40 +87,6 @@ class EduChatView extends GetView<EduChatController> {
               }
               return Text('edu_chat_title'.tr);
             }(),
-            actions: [
-              if (viewMode == EduChatViewMode.threadConversation &&
-                  activeThread != null)
-                Builder(
-                  builder: (context) {
-                    final actionColor = theme.appBarTheme.foregroundColor ??
-                        theme.colorScheme.onPrimary;
-                    final hasMessages = controller.messages.isNotEmpty;
-                    final isDownloading =
-                        controller.isDownloadingConversation.value;
-                    return IconButton(
-                      tooltip: 'edu_chat_download_conversation'.tr,
-                      onPressed: (!hasMessages || isDownloading)
-                          ? null
-                          : controller.downloadActiveConversationAsPdf,
-                      icon: isDownloading
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  actionColor,
-                                ),
-                              ),
-                            )
-                          : Icon(
-                              Icons.download_rounded,
-                              color: actionColor,
-                            ),
-                    );
-                  },
-                ),
-            ],
           ),
           body: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
@@ -533,13 +499,10 @@ class _HistoryEmptyState extends StatelessWidget {
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: Image.asset(
-                            'assets/EduMS_logo.png',
-                            color: Colors.white,
-                          ),
+                        const Icon(
+                          Icons.smart_toy_outlined,
+                          size: 20,
+                          color: Colors.white,
                         ),
                         const SizedBox(width: 12),
                         Text('edu_chat_new_conversation'.tr),
@@ -592,9 +555,6 @@ class _MessagesList extends StatelessWidget {
               message: message,
               isCurrentUser: isUser,
               onCopy: () => controller.copyToClipboard(message.content),
-              onDownload: (!isUser && message.role != 'system')
-                  ? () => controller.downloadMessageAsPdf(message)
-                  : null,
             ),
           );
         },
