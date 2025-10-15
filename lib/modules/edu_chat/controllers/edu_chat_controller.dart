@@ -29,7 +29,7 @@ class EduChatController extends GetxController {
   final RxList<EduChatThread> threads = <EduChatThread>[].obs;
   final RxBool isLoading = true.obs;
   final RxBool isSending = false.obs;
-  final RxBool isCreatingThread = false.obs;
+  final RxBool isDraftingNewThread = false.obs;
   final RxnString loadError = RxnString();
   final RxString inputText = ''.obs;
   final RxnString activeThreadId = RxnString();
@@ -82,6 +82,7 @@ class EduChatController extends GetxController {
     composerController.clear();
     inputText.value = '';
     isLoading.value = false;
+    isDraftingNewThread.value = false;
   }
 
   @override
@@ -113,10 +114,12 @@ class EduChatController extends GetxController {
           loadError.value = null;
 
           if (items.isEmpty) {
-            if (activeView.value == EduChatViewMode.threadConversation) {
+            if (activeView.value == EduChatViewMode.threadConversation &&
+                !isDraftingNewThread.value) {
               showThreadList();
+            } else {
+              isLoading.value = false;
             }
-            isLoading.value = false;
             return;
           }
 
@@ -266,27 +269,23 @@ class EduChatController extends GetxController {
   }
 
   Future<void> startNewChat() async {
-    if (isCreatingThread.value) {
+    if (isDraftingNewThread.value) {
+      activeView.value = EduChatViewMode.threadConversation;
       return;
     }
 
-    isCreatingThread.value = true;
-    try {
-      print('🆕 Creating new chat thread...');
-      final newId = await _service.createChatThread();
-      print('✅ New thread created: $newId');
-      await _selectThread(newId, force: true);
-      messages.clear();
-    } on EduChatException catch (error) {
-      print('❌ Error creating thread: ${error.message}');
-      _showThreadError(error);
-    } catch (error, stackTrace) {
-      print('❌ Unexpected error creating thread: $error');
-      print('📋 Stack trace: $stackTrace');
-      _showThreadError();
-    } finally {
-      isCreatingThread.value = false;
-    }
+    print('🆕 Preparing new chat draft...');
+    isDraftingNewThread.value = true;
+    activeView.value = EduChatViewMode.threadConversation;
+    _messagesSubscription?.cancel();
+    _messagesSubscription = null;
+    _chatId = null;
+    activeThreadId.value = null;
+    messages.clear();
+    composerController.clear();
+    inputText.value = '';
+    isLoading.value = false;
+    loadError.value = null;
   }
 
   Future<bool> deleteThread(EduChatThread thread) async {
@@ -427,6 +426,7 @@ class EduChatController extends GetxController {
     _chatId = chatId;
     activeThreadId.value = chatId;
     activeView.value = EduChatViewMode.threadConversation;
+    isDraftingNewThread.value = false;
     await _subscribeToMessages(chatId);
   }
 

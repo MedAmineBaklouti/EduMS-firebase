@@ -23,7 +23,7 @@ class EduChatView extends GetView<EduChatController> {
     return Obx(() {
       final viewMode = controller.activeView.value;
       final activeThread = controller.activeThread;
-      final isCreating = controller.isCreatingThread.value;
+      final isDraftingNewChat = controller.isDraftingNewThread.value;
 
       return WillPopScope(
         onWillPop: () async {
@@ -96,23 +96,37 @@ class EduChatView extends GetView<EduChatController> {
                     controller: controller,
                   )
                 : activeThread == null
-                    ? Center(
-                        key: const ValueKey('eduChatConversationPlaceholder'),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 32,
-                          ),
-                          child: Text(
-                            'edu_chat_select_thread_hint'.tr,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.7),
+                    ? isDraftingNewChat
+                        ? Column(
+                            key: const ValueKey('eduChatNewConversationDraft'),
+                            children: [
+                              Expanded(
+                                child: _NewConversationDraft(
+                                  controller: controller,
+                                  suggestions: _suggestions,
+                                ),
+                              ),
+                              _buildComposer(theme: theme),
+                            ],
+                          )
+                        : Center(
+                            key:
+                                const ValueKey('eduChatConversationPlaceholder'),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 32,
+                              ),
+                              child: Text(
+                                'edu_chat_select_thread_hint'.tr,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.7),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      )
+                          )
                     : Column(
                         key: const ValueKey('eduChatConversation'),
                         children: [
@@ -255,7 +269,7 @@ class _ThreadHistoryList extends StatelessWidget {
       final threads = controller.threads;
       final error = controller.loadError.value;
       final isLoading = controller.isLoading.value && threads.isEmpty;
-      final isCreating = controller.isCreatingThread.value;
+      final isDrafting = controller.isDraftingNewThread.value;
 
       Widget historyContent;
       if (isLoading) {
@@ -269,7 +283,7 @@ class _ThreadHistoryList extends StatelessWidget {
         } else {
           historyContent = _HistoryEmptyState(
             onNewConversation: controller.startNewChat,
-            isCreating: isCreating,
+            isDrafting: isDrafting,
           );
         }
       } else {
@@ -372,24 +386,31 @@ class _ThreadHistoryList extends StatelessWidget {
         );
       }
 
+      final Widget listContent;
+      if (threads.isNotEmpty) {
+        listContent = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              child: Text(
+                'edu_chat_history_label'.tr,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Expanded(child: historyContent),
+          ],
+        );
+      } else {
+        listContent = historyContent;
+      }
+
       return Stack(
         children: [
           Positioned.fill(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                  child: Text(
-                    'edu_chat_history_label'.tr,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Expanded(child: historyContent),
-              ],
-            ),
+            child: listContent,
           ),
           if (threads.isNotEmpty)
             Positioned(
@@ -399,19 +420,8 @@ class _ThreadHistoryList extends StatelessWidget {
                 child: FloatingActionButton.extended(
                   heroTag: 'eduChatAskSomethingNewFab',
                   onPressed:
-                      isCreating ? null : controller.startNewChat,
-                  icon: isCreating
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.onPrimary,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.smart_toy_outlined),
+                      isDrafting ? null : controller.startNewChat,
+                  icon: const Icon(Icons.smart_toy_outlined),
                   label: Text('edu_chat_ask_something_new'.tr),
                 ),
               ),
@@ -425,11 +435,11 @@ class _ThreadHistoryList extends StatelessWidget {
 class _HistoryEmptyState extends StatelessWidget {
   const _HistoryEmptyState({
     required this.onNewConversation,
-    required this.isCreating,
+    required this.isDrafting,
   });
 
   final VoidCallback onNewConversation;
-  final bool isCreating;
+  final bool isDrafting;
 
   @override
   Widget build(BuildContext context) {
@@ -444,13 +454,6 @@ class _HistoryEmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/EduMS_logo.png',
-              height: 96,
-              fit: BoxFit.contain,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 32),
             Text(
               'edu_chat_history_empty_title'.tr,
               style: theme.textTheme.headlineSmall?.copyWith(
@@ -469,7 +472,7 @@ class _HistoryEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             FilledButton(
-              onPressed: isCreating ? null : onNewConversation,
+              onPressed: isDrafting ? null : onNewConversation,
               style: FilledButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
@@ -485,29 +488,78 @@ class _HistoryEmptyState extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
-              child: isCreating
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.smart_toy_outlined,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 12),
-                        Text('edu_chat_new_conversation'.tr),
-                      ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.smart_toy_outlined,
+                    size: 20,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 12),
+                  Text('edu_chat_new_conversation'.tr),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewConversationDraft extends StatelessWidget {
+  const _NewConversationDraft({
+    required this.controller,
+    required this.suggestions,
+  });
+
+  final EduChatController controller;
+  final List<String> suggestions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'edu_chat_history_empty_title'.tr,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'edu_chat_history_empty_message'.tr,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: suggestions
+                  .map(
+                    (suggestion) => ActionChip(
+                      label: Text(suggestion),
+                      onPressed: () =>
+                          controller.sendSuggestion(suggestion),
                     ),
+                  )
+                  .toList(),
             ),
           ],
         ),
