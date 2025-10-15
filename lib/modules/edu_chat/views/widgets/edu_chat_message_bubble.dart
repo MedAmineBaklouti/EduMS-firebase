@@ -9,11 +9,13 @@ class EduChatMessageBubble extends StatelessWidget {
     required this.message,
     required this.isCurrentUser,
     required this.onCopy,
+    this.onDownload,
   });
 
   final EduChatMessage message;
   final bool isCurrentUser;
   final VoidCallback onCopy;
+  final VoidCallback? onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +94,39 @@ class EduChatMessageBubble extends StatelessWidget {
                             ),
                           ),
                       ],
+                    ),
+                  ),
+                if (!isCurrentUser &&
+                    message.role != 'system' &&
+                    onDownload != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: TextButton.icon(
+                      onPressed: onDownload,
+                      icon: Icon(
+                        Icons.picture_as_pdf_outlined,
+                        size: 18,
+                        color: textColor,
+                      ),
+                      label: Text(
+                        'edu_chat_download_pdf'.tr,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: textColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor:
+                            textColor.withOpacity(theme.brightness == Brightness.dark ? 0.08 : 0.12),
+                      ),
                     ),
                   ),
               ],

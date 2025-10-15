@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/widgets.dart' as pw;
+
+import '../../../core/services/pdf_downloader/pdf_downloader.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../models/edu_chat_exception.dart';
@@ -118,7 +121,6 @@ class EduChatController extends GetxController {
               showThreadList();
             }
             isLoading.value = false;
-            await _createInitialThread(activate: false);
             return;
           }
 
@@ -397,6 +399,89 @@ class EduChatController extends GetxController {
         curve: Curves.easeOut,
       );
     });
+  }
+
+  Future<void> downloadMessageAsPdf(EduChatMessage message) async {
+    if (message.role == 'user') {
+      return;
+    }
+
+    final threadTitle = activeThread != null
+        ? resolveThreadTitle(activeThread!)
+        : 'edu_chat_title'.tr;
+    final timestamp = message.createdAt?.toLocal() ?? DateTime.now();
+    final formattedTimestamp =
+        DateFormat.yMMMd(Get.locale?.toLanguageTag()).add_jm().format(timestamp);
+
+    final document = pw.Document();
+    document.addPage(
+      pw.Page(
+        margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        build: (context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'edu_chat_pdf_title'.tr,
+                style: pw.TextStyle(
+                  fontSize: 22,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                threadTitle,
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                'edu_chat_pdf_timestamp'
+                    .trParams({'timestamp': formattedTimestamp}),
+                style: const pw.TextStyle(fontSize: 12),
+              ),
+              pw.Divider(height: 32),
+              pw.Text(
+                message.content,
+                style: const pw.TextStyle(fontSize: 14, height: 1.4),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    final sanitizedTitle = threadTitle
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    final formattedFileTimestamp =
+        DateFormat('yyyyMMdd_HHmmss').format(timestamp);
+    final fileName = sanitizedTitle.isEmpty
+        ? 'edu_chat_response_$formattedFileTimestamp.pdf'
+        : '${sanitizedTitle}_$formattedFileTimestamp.pdf';
+
+    try {
+      final bytes = await document.save();
+      final savedPath = await savePdf(bytes, fileName);
+      Get.closeCurrentSnackbar();
+      Get.snackbar(
+        'common_download_complete'.tr,
+        savedPath != null
+            ? 'courses_download_saved_to'.trParams({'path': savedPath})
+            : 'courses_download_not_saved'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (error) {
+      Get.closeCurrentSnackbar();
+      Get.snackbar(
+        'edu_chat_title'.tr,
+        'edu_chat_download_error'.trParams({'error': '$error'}),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   Future<String?> _createInitialThread({bool activate = true}) async {

@@ -66,9 +66,14 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_message':
               'Ask the assistant to explain a concept, walk through practice problems, or share study strategies.',
           'edu_chat_history_label': 'Conversation history',
-          'edu_chat_history_empty_title': 'No conversations yet',
+          'edu_chat_history_empty_title': 'Welcome to EduChat',
           'edu_chat_history_empty_message':
-              'Start a new conversation to ask the assistant for help.',
+              'Use the Educational Assistant to ask learning questions or get help with your homework.',
+          'edu_chat_download_pdf': 'Download PDF',
+          'edu_chat_download_error':
+              'Unable to save this response. Error: @error',
+          'edu_chat_pdf_title': 'Educational Assistant response',
+          'edu_chat_pdf_timestamp': 'Generated on @timestamp',
           'edu_chat_new_conversation': 'Start new conversation',
           'edu_chat_ask_something_new': 'Ask something new',
           'edu_chat_conversation_default_title': 'Conversation @index',
@@ -692,9 +697,14 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_message':
               'Demandez à l’assistant d’expliquer un concept, de détailler un exercice ou de proposer des méthodes de révision.',
           'edu_chat_history_label': 'Historique des conversations',
-          'edu_chat_history_empty_title': 'Aucune conversation pour le moment',
+          'edu_chat_history_empty_title': 'Bienvenue dans EduChat',
           'edu_chat_history_empty_message':
-              'Lancez une nouvelle conversation pour poser vos questions à l’assistant.',
+              'Utilisez l’assistant pédagogique pour poser vos questions scolaires ou obtenir de l’aide pour vos devoirs.',
+          'edu_chat_download_pdf': 'Télécharger le PDF',
+          'edu_chat_download_error':
+              'Impossible d’enregistrer cette réponse. Erreur : @error',
+          'edu_chat_pdf_title': 'Réponse de l’assistant pédagogique',
+          'edu_chat_pdf_timestamp': 'Généré le @timestamp',
           'edu_chat_new_conversation': 'Nouvelle conversation',
           'edu_chat_ask_something_new': 'Poser une nouvelle question',
           'edu_chat_conversation_default_title': 'Conversation @index',
@@ -1345,9 +1355,14 @@ class AppTranslations extends Translations {
           'edu_chat_empty_state_message':
               'اطلب من المساعد شرح مفهوم أو حل مسألة خطوة بخطوة أو اقتراح طرق للمذاكرة.',
           'edu_chat_history_label': 'سجل المحادثات',
-          'edu_chat_history_empty_title': 'لا توجد محادثات بعد',
+          'edu_chat_history_empty_title': 'مرحبًا بك في EduChat',
           'edu_chat_history_empty_message':
-              'ابدأ محادثة جديدة لطرح أسئلتك على المساعد.',
+              'استخدم المساعد التعليمي لطرح الأسئلة التعليمية أو للحصول على مساعدة في الواجبات المنزلية.',
+          'edu_chat_download_pdf': 'تنزيل ملف PDF',
+          'edu_chat_download_error':
+              'تعذّر حفظ هذه الإجابة. الخطأ: @error',
+          'edu_chat_pdf_title': 'استجابة المساعد التعليمي',
+          'edu_chat_pdf_timestamp': 'تم الإنشاء في @timestamp',
           'edu_chat_new_conversation': 'ابدأ محادثة جديدة',
           'edu_chat_ask_something_new': 'اطرح شيئًا جديدًا',
           'edu_chat_conversation_default_title': 'محادثة @index',
