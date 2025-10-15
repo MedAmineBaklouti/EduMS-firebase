@@ -88,23 +88,38 @@ class EduChatView extends GetView<EduChatController> {
               return Text('edu_chat_title'.tr);
             }(),
             actions: [
-              IconButton(
-                tooltip: 'edu_chat_new_conversation'.tr,
-                onPressed: isCreating ? null : controller.startNewChat,
-                icon: isCreating
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.appBarTheme.foregroundColor ??
-                                theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.add_comment_outlined),
-              ),
+              if (viewMode == EduChatViewMode.threadConversation &&
+                  activeThread != null)
+                Builder(
+                  builder: (context) {
+                    final actionColor = theme.appBarTheme.foregroundColor ??
+                        theme.colorScheme.onPrimary;
+                    final hasMessages = controller.messages.isNotEmpty;
+                    final isDownloading =
+                        controller.isDownloadingConversation.value;
+                    return IconButton(
+                      tooltip: 'edu_chat_download_conversation'.tr,
+                      onPressed: (!hasMessages || isDownloading)
+                          ? null
+                          : controller.downloadActiveConversationAsPdf,
+                      icon: isDownloading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  actionColor,
+                                ),
+                              ),
+                            )
+                          : Icon(
+                              Icons.download_rounded,
+                              color: actionColor,
+                            ),
+                    );
+                  },
+                ),
             ],
           ),
           body: AnimatedSwitcher(
@@ -463,84 +478,73 @@ class _HistoryEmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.2),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
+            Image.asset(
+              'assets/EduMS_logo.png',
+              height: 96,
+              fit: BoxFit.contain,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'edu_chat_history_empty_title'.tr,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 84,
-                    height: 84,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.16),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Image.asset(
-                      'assets/EduMS_logo.png',
-                      fit: BoxFit.contain,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'edu_chat_history_empty_title'.tr,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'edu_chat_history_empty_message'.tr,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withOpacity(0.85),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
-                  FilledButton.icon(
-                    onPressed: isCreating ? null : onNewConversation,
-                    style: FilledButton.styleFrom(
-                      foregroundColor: theme.colorScheme.primary,
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 14,
-                      ),
-                      textStyle: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    icon: isCreating
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.colorScheme.primary,
-                              ),
-                            ),
-                          )
-                        : const Icon(Icons.add_comment_outlined),
-                    label: Text('edu_chat_new_conversation'.tr),
-                  ),
-                ],
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'edu_chat_history_empty_message'.tr,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
               ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            FilledButton(
+              onPressed: isCreating ? null : onNewConversation,
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              child: isCreating
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: Image.asset(
+                            'assets/EduMS_logo.png',
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text('edu_chat_new_conversation'.tr),
+                      ],
+                    ),
             ),
           ],
         ),

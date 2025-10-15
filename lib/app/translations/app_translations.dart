@@ -70,9 +70,14 @@ class AppTranslations extends Translations {
           'edu_chat_history_empty_message':
               'Use the Educational Assistant to ask learning questions or get help with your homework.',
           'edu_chat_download_pdf': 'Download PDF',
+          'edu_chat_download_conversation': 'Download conversation',
           'edu_chat_download_error':
               'Unable to save this response. Error: @error',
+          'edu_chat_download_conversation_error':
+              'Unable to save this conversation. Error: @error',
+          'edu_chat_download_empty': 'There are no messages to download yet.',
           'edu_chat_pdf_title': 'Educational Assistant response',
+          'edu_chat_pdf_conversation_title': 'Educational Assistant conversation',
           'edu_chat_pdf_timestamp': 'Generated on @timestamp',
           'edu_chat_new_conversation': 'Start new conversation',
           'edu_chat_ask_something_new': 'Ask something new',
@@ -90,6 +95,8 @@ class AppTranslations extends Translations {
               'I received your question and am running in offline demo mode right now. Here is a quick summary based on what you asked: "@preview". Please connect the assistant service for full answers.',
           'edu_chat_copy_toast': 'Copied to clipboard',
           'edu_chat_system_label': 'System',
+          'edu_chat_user_label': 'You',
+          'edu_chat_assistant_label': 'Educational Assistant',
           'edu_chat_error_generic': 'Something went wrong. Please try again.',
           'edu_chat_error_not_authenticated':
               'You need to be signed in to use the Educational Assistant.',
@@ -701,9 +708,16 @@ class AppTranslations extends Translations {
           'edu_chat_history_empty_message':
               'Utilisez l’assistant pédagogique pour poser vos questions scolaires ou obtenir de l’aide pour vos devoirs.',
           'edu_chat_download_pdf': 'Télécharger le PDF',
+          'edu_chat_download_conversation': 'Télécharger la conversation',
           'edu_chat_download_error':
               'Impossible d’enregistrer cette réponse. Erreur : @error',
+          'edu_chat_download_conversation_error':
+              'Impossible d’enregistrer cette conversation. Erreur : @error',
+          'edu_chat_download_empty':
+              'Aucun message à télécharger pour le moment.',
           'edu_chat_pdf_title': 'Réponse de l’assistant pédagogique',
+          'edu_chat_pdf_conversation_title':
+              'Conversation de l’assistant pédagogique',
           'edu_chat_pdf_timestamp': 'Généré le @timestamp',
           'edu_chat_new_conversation': 'Nouvelle conversation',
           'edu_chat_ask_something_new': 'Poser une nouvelle question',
@@ -721,6 +735,8 @@ class AppTranslations extends Translations {
               'J’ai bien reçu votre question mais l’assistant fonctionne actuellement en mode démo hors connexion. Voici un résumé rapide de votre demande : "@preview". Connectez le service de l’assistant pour obtenir des réponses complètes.',
           'edu_chat_copy_toast': 'Copié dans le presse-papiers',
           'edu_chat_system_label': 'Système',
+          'edu_chat_user_label': 'Vous',
+          'edu_chat_assistant_label': 'Assistant pédagogique',
           'edu_chat_error_generic':
               'Une erreur est survenue. Veuillez réessayer.',
           'edu_chat_error_not_authenticated':
@@ -1359,9 +1375,14 @@ class AppTranslations extends Translations {
           'edu_chat_history_empty_message':
               'استخدم المساعد التعليمي لطرح الأسئلة التعليمية أو للحصول على مساعدة في الواجبات المنزلية.',
           'edu_chat_download_pdf': 'تنزيل ملف PDF',
+          'edu_chat_download_conversation': 'تنزيل المحادثة',
           'edu_chat_download_error':
               'تعذّر حفظ هذه الإجابة. الخطأ: @error',
+          'edu_chat_download_conversation_error':
+              'تعذّر حفظ هذه المحادثة. الخطأ: @error',
+          'edu_chat_download_empty': 'لا توجد رسائل لتنزيلها بعد.',
           'edu_chat_pdf_title': 'استجابة المساعد التعليمي',
+          'edu_chat_pdf_conversation_title': 'محادثة المساعد التعليمي',
           'edu_chat_pdf_timestamp': 'تم الإنشاء في @timestamp',
           'edu_chat_new_conversation': 'ابدأ محادثة جديدة',
           'edu_chat_ask_something_new': 'اطرح شيئًا جديدًا',
@@ -1378,6 +1399,8 @@ class AppTranslations extends Translations {
               'تلقيت سؤالك ويعمل المساعد حاليًا في وضع العرض دون اتصال. إليك ملخص سريع لما طلبته: "@preview". يرجى توصيل خدمة المساعد للحصول على إجابات كاملة.',
           'edu_chat_copy_toast': 'تم النسخ إلى الحافظة',
           'edu_chat_system_label': 'النظام',
+          'edu_chat_user_label': 'أنت',
+          'edu_chat_assistant_label': 'المساعد التعليمي',
           'edu_chat_error_generic': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
           'edu_chat_error_not_authenticated':
               'يجب تسجيل الدخول لاستخدام المساعد التعليمي.',
