@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../../core/services/pdf_downloader/pdf_downloader.dart';
@@ -34,6 +35,7 @@ class EduChatController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool isSending = false.obs;
   final RxBool isCreatingThread = false.obs;
+  final RxBool isDownloadingConversation = false.obs;
   final RxnString loadError = RxnString();
   final RxString inputText = ''.obs;
   final RxnString activeThreadId = RxnString();
@@ -481,6 +483,148 @@ class EduChatController extends GetxController {
         'edu_chat_download_error'.trParams({'error': '$error'}),
         snackPosition: SnackPosition.BOTTOM,
       );
+    }
+  }
+
+  Future<void> downloadActiveConversationAsPdf() async {
+    if (isDownloadingConversation.value) {
+      return;
+    }
+
+    final thread = activeThread;
+    final conversationMessages = messages.toList(growable: false);
+    if (thread == null || conversationMessages.isEmpty) {
+      Get.closeCurrentSnackbar();
+      Get.snackbar(
+        'edu_chat_title'.tr,
+        'edu_chat_download_empty'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    isDownloadingConversation.value = true;
+
+    final threadTitle = resolveThreadTitle(thread);
+    final generatedAt = DateTime.now();
+    final localeTag = Get.locale?.toLanguageTag();
+    final formattedTimestamp =
+        DateFormat.yMMMd(localeTag).add_jm().format(generatedAt);
+
+    final document = pw.Document();
+    document.addPage(
+      pw.MultiPage(
+        margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        build: (context) {
+          return [
+            pw.Text(
+              'edu_chat_pdf_conversation_title'.tr,
+              style: pw.TextStyle(
+                fontSize: 22,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Text(
+              threadTitle,
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'edu_chat_pdf_timestamp'
+                  .trParams({'timestamp': formattedTimestamp}),
+              style: const pw.TextStyle(fontSize: 12),
+            ),
+            pw.Divider(height: 32),
+            ...conversationMessages.map((message) {
+              final label = _resolvePdfRoleLabel(message.role);
+              final createdAt = message.createdAt?.toLocal();
+              final messageTimestamp = createdAt != null
+                  ? DateFormat.yMMMd(localeTag).add_jm().format(createdAt)
+                  : null;
+              final content = message.content.trim();
+              return pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 20),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      label,
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    if (messageTimestamp != null)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(top: 2),
+                        child: pw.Text(
+                          messageTimestamp,
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.grey600,
+                          ),
+                        ),
+                      ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      content.isEmpty ? ' ' : content,
+                      style: const pw.TextStyle(fontSize: 12, height: 1.4),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ];
+        },
+      ),
+    );
+
+    final sanitizedTitle = threadTitle
+        .replaceAll(RegExp(r'[\\/:*?"<>|]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    final formattedFileTimestamp =
+        DateFormat('yyyyMMdd_HHmmss').format(generatedAt);
+    final fileName = sanitizedTitle.isEmpty
+        ? 'edu_chat_conversation_$formattedFileTimestamp.pdf'
+        : '${sanitizedTitle}_conversation_$formattedFileTimestamp.pdf';
+
+    try {
+      final bytes = await document.save();
+      final savedPath = await savePdf(bytes, fileName);
+      Get.closeCurrentSnackbar();
+      Get.snackbar(
+        'common_download_complete'.tr,
+        savedPath != null
+            ? 'courses_download_saved_to'.trParams({'path': savedPath})
+            : 'courses_download_not_saved'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (error) {
+      Get.closeCurrentSnackbar();
+      Get.snackbar(
+        'edu_chat_title'.tr,
+        'edu_chat_download_conversation_error'
+            .trParams({'error': '$error'}),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isDownloadingConversation.value = false;
+    }
+  }
+
+  String _resolvePdfRoleLabel(String role) {
+    switch (role) {
+      case 'user':
+        return 'edu_chat_user_label'.tr;
+      case 'system':
+        return 'edu_chat_system_label'.tr;
+      default:
+        return 'edu_chat_assistant_label'.tr;
     }
   }
 
