@@ -315,12 +315,24 @@ class MessagingService extends GetxService {
     final messageRef = conversationRef.collection(_messagesCollection).doc();
 
     try {
+      final message = MessageModel(
+        id: messageRef.id,
+        conversationId: conversationId,
+        senderId: senderId,
+        senderName: senderName,
+        content: content,
+        sentAt: now,
+        readBy: <String>{senderId},
+      );
+      final preview = message.preview();
+
       await messageRef.set(<String, dynamic>{
-        'conversationId': conversationId,
-        'senderId': senderId,
-        'senderName': senderName,
-        'content': content,
-        'sentAt': Timestamp.fromDate(now),
+        'conversationId': message.conversationId,
+        'senderId': message.senderId,
+        'senderName': message.senderName,
+        'content': message.content,
+        'sentAt': Timestamp.fromDate(message.sentAt),
+        'readBy': message.readBy.toList(),
       });
 
       final resolvedParticipants =
@@ -337,7 +349,7 @@ class MessagingService extends GetxService {
       }
 
       final updateData = <String, dynamic>{
-        'lastMessagePreview': content,
+        'lastMessagePreview': preview,
         'updatedAt': Timestamp.fromDate(now),
         'participantIds': FieldValue.arrayUnion(participantIds.toList()),
         'unreadBy': <String, dynamic>{
@@ -371,16 +383,6 @@ class MessagingService extends GetxService {
       if (unreadFieldUpdates.isNotEmpty) {
         await conversationRef.update(unreadFieldUpdates);
       }
-
-      final message = MessageModel(
-        id: messageRef.id,
-        conversationId: conversationId,
-        senderId: senderId,
-        senderName: senderName,
-        content: content,
-        sentAt: now,
-        readBy: <String>{senderId},
-      );
 
       _messageStreamController.add(message);
 

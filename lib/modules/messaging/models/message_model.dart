@@ -68,6 +68,33 @@ class MessageModel {
     };
   }
 
+  String preview({bool includeSender = true}) {
+    final trimmedContent = content.trim();
+    if (!includeSender) {
+      return trimmedContent;
+    }
+
+    final trimmedSender = senderName.trim();
+    if (trimmedSender.isEmpty) {
+      return trimmedContent;
+    }
+
+    final normalizedSender = trimmedSender.toLowerCase();
+    final isPlaceholder = normalizedSender == 'new message' ||
+        normalizedSender == 'message' ||
+        normalizedSender == 'user';
+
+    if (trimmedContent.isEmpty) {
+      return isPlaceholder ? '' : trimmedSender;
+    }
+
+    if (isPlaceholder) {
+      return trimmedContent;
+    }
+
+    return '$trimmedSender: $trimmedContent';
+  }
+
   MessageModel copyWith({
     Set<String>? readBy,
   }) {
