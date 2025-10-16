@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
 
+import 'messaging_notification_constants.dart';
+
 enum FCMv1SendStatus {
   success,
   invalidToken,
@@ -106,12 +108,14 @@ class FCMv1Service {
         'notification': <String, dynamic>{
           'title': title,
           'body': body,
+          'android_channel_id': messagingNotificationChannelId,
         },
         'data': enrichedData.map((key, value) => MapEntry(key, '$value')),
         'android': {
           'priority': 'high',
           'notification': {
             'sound': 'default',
+            'channelId': messagingNotificationChannelId,
           },
         },
         'apns': {
