@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'messaging_notification_channel.dart';
+import 'messaging_notification_constants.dart';
 
 final FlutterLocalNotificationsPlugin _backgroundNotifications =
     FlutterLocalNotificationsPlugin();
@@ -24,7 +25,7 @@ Future<void> messagingBackgroundHandler(RemoteMessage message) async {
 
   if (!_backgroundNotificationsInitialized) {
     const initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+      android: AndroidInitializationSettings(messagingNotificationIcon),
       iOS: DarwinInitializationSettings(),
     );
 
@@ -40,20 +41,46 @@ Future<void> messagingBackgroundHandler(RemoteMessage message) async {
 
   final data = message.data;
   final notification = message.notification;
+  final conversationId =
+      (data['conversationId'] ?? data['conversation_id'])?.toString() ?? '';
+
+  final title = notification?.title ?? data['title'] ?? 'New message';
+  final body = notification?.body ??
+      data['body'] ??
+      data['content'] ??
+      data['text'] ??
+      '';
+
+  final notificationId = conversationId.isNotEmpty
+      ? messagingNotificationIdForConversation(conversationId)
+      : (message.messageId?.hashCode ??
+          notification?.hashCode ??
+          DateTime.now().millisecondsSinceEpoch);
+
+  final androidDetails = AndroidNotificationDetails(
+    messagingAndroidChannel.id,
+    messagingAndroidChannel.name,
+    channelDescription: messagingAndroidChannel.description,
+    importance: Importance.high,
+    priority: Priority.high,
+    icon: messagingNotificationIcon,
+    tag: conversationId.isNotEmpty
+        ? messagingNotificationTagForConversation(conversationId)
+        : null,
+    styleInformation: BigTextStyleInformation(
+      body,
+      contentTitle: title,
+      htmlFormatBigText: false,
+      htmlFormatContentTitle: false,
+    ),
+  );
 
   await _backgroundNotifications.show(
-    notification?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
-    notification?.title ?? data['title'] ?? 'New message',
-    notification?.body ?? data['body'] ?? data['content'] ?? data['text'] ?? '',
+    notificationId,
+    title,
+    body,
     NotificationDetails(
-      android: AndroidNotificationDetails(
-        messagingAndroidChannel.id,
-        messagingAndroidChannel.name,
-        channelDescription: messagingAndroidChannel.description,
-        importance: Importance.high,
-        priority: Priority.high,
-        styleInformation: const DefaultStyleInformation(true, true),
-      ),
+      android: androidDetails,
       iOS: messagingDarwinNotificationDetails,
     ),
     payload: jsonEncode(<String, dynamic>{

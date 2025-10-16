@@ -156,6 +156,8 @@ class FCMv1Service {
     required Map<String, String> data,
     required String channelId,
   }) {
+    final conversationId = data['conversationId'];
+
     return {
       'message': {
         'token': token,
@@ -178,6 +180,8 @@ class FCMv1Service {
             'channel_id': channelId,
             'sound': 'default',
             'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            if (conversationId != null && conversationId.isNotEmpty)
+              'tag': messagingNotificationTagForConversation(conversationId),
             // Optional extras:
             // 'notification_count': 1,
             // 'tag': 'message_${data['conversationId']}',
