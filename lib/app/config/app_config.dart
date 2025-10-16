@@ -6,6 +6,7 @@ class AppConfig {
   static String get fcmServerKey => _readEnv('FCM_SERVER_KEY');
   static String get projectId => _readEnv('PROJECT_ID');
   static String get clientEmail => _readEnv('CLIENT_EMAIL');
+  static String get clientId => _readEnv('CLIENT_ID');
   static String get privateKeyId => _readEnv('PRIVATE_KEY_ID');
   static String get privateKey => _readEnv('PRIVATE_KEY');
 
