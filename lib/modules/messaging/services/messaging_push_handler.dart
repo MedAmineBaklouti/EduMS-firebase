@@ -45,11 +45,11 @@ Future<void> messagingBackgroundHandler(RemoteMessage message) async {
       (data['conversationId'] ?? data['conversation_id'])?.toString() ?? '';
 
   final senderName =
-      (data['senderName'] ?? data['sender_name'])?.toString().trim();
+      (data['senderName'] ?? data['sender_name'])?.toString().trim() ?? '';
 
   final title = notification?.title ??
       data['title'] ??
-      (senderName?.isNotEmpty == true ? senderName : 'New message');
+      (senderName.isNotEmpty ? senderName : 'Unknown sender');
   final body = notification?.body ??
       data['body'] ??
       data['content'] ??

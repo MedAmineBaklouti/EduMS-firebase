@@ -319,6 +319,7 @@ class AppTranslations extends Translations {
           'messaging_snackbar_action': 'Open',
           'messaging_snackbar_body_fallback':
               'You received a new message.',
+          'messaging_unknown_sender': 'Unknown sender',
           'messaging_filter_teachers': 'Teachers',
           'messaging_filter_parents': 'Parents',
           'messaging_filter_administration': 'Administration',
@@ -995,6 +996,7 @@ class AppTranslations extends Translations {
           'messaging_snackbar_action': 'Ouvrir',
           'messaging_snackbar_body_fallback':
               'Vous avez reçu un nouveau message.',
+          'messaging_unknown_sender': 'Expéditeur inconnu',
           'messaging_filter_teachers': 'Enseignants',
           'messaging_filter_parents': 'Parents',
           'messaging_filter_administration': 'Administration',
@@ -1653,6 +1655,7 @@ class AppTranslations extends Translations {
           'messaging_snackbar_title': 'رسالة جديدة من @sender',
           'messaging_snackbar_action': 'فتح',
           'messaging_snackbar_body_fallback': 'لقد تلقيت رسالة جديدة.',
+          'messaging_unknown_sender': 'مرسل غير معروف',
           'messaging_filter_teachers': 'المعلمين',
           'messaging_filter_parents': 'أولياء الأمور',
           'messaging_filter_administration': 'الإدارة',
