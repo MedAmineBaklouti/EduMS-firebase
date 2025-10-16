@@ -76,6 +76,8 @@ class MessagingService extends GetxService {
   static const String _childrenCollection = 'children';
   static const int _firestoreBatchLimit = 10;
   static const String _deviceIdPrefsKey = 'messaging_device_id';
+  static const String _unknownSenderTranslationKey = 'messaging_unknown_sender';
+  String get _unknownSenderFallback => _unknownSenderTranslationKey.tr;
 
   String get _projectId => AppConfig.projectId.trim();
   String get _serviceAccountEmail => AppConfig.clientEmail.trim();
@@ -1544,17 +1546,21 @@ class MessagingService extends GetxService {
         return;
       }
 
-      final senderName = message.senderName.trim().isEmpty
-          ? 'New message'
-          : message.senderName.trim();
-      final notificationBody = await _buildPushNotificationBody(message);
+      final resolvedSenderName = _resolveSenderName(message, participants);
+      final senderName = resolvedSenderName.isNotEmpty
+          ? resolvedSenderName
+          : _unknownSenderFallback;
+      final notificationBody = await _buildPushNotificationBody(
+        message,
+        senderNameOverride: resolvedSenderName,
+      );
 
       final dataPayload = <String, dynamic>{
         'conversationId': message.conversationId,
         'conversation_id': message.conversationId,
         'messageId': message.id,
         'senderId': message.senderId,
-        'senderName': message.senderName,
+        'senderName': senderName,
         'content': message.content,
         'sentAt': message.sentAt.toIso8601String(),
         'click_action': 'FLUTTER_NOTIFICATION_CLICK',
@@ -1589,11 +1595,40 @@ class MessagingService extends GetxService {
     }
   }
 
-  Future<String> _buildPushNotificationBody(MessageModel message) async {
-    final senderName = message.senderName.trim();
+  String _resolveSenderName(
+    MessageModel message,
+    List<ConversationParticipant> participants,
+  ) {
+    final directName = message.senderName.trim();
+    if (directName.isNotEmpty) {
+      return directName;
+    }
+
+    for (final participant in participants) {
+      final matchesSenderId = participant.userId == message.senderId ||
+          participant.id == message.senderId;
+      if (!matchesSenderId) {
+        continue;
+      }
+
+      final participantName = participant.name.trim();
+      if (participantName.isNotEmpty) {
+        return participantName;
+      }
+    }
+
+    return '';
+  }
+
+  Future<String> _buildPushNotificationBody(
+    MessageModel message, {
+    String? senderNameOverride,
+  }) async {
+    final senderName =
+        (senderNameOverride ?? message.senderName).trim();
     final messageContent = message.content.trim();
     final fallback = messageContent.isEmpty
-        ? (senderName.isEmpty ? 'New message' : senderName)
+        ? (senderName.isEmpty ? _unknownSenderFallback : senderName)
         : (senderName.isEmpty
             ? messageContent
             : '$senderName: $messageContent');
@@ -1730,7 +1765,11 @@ class MessagingService extends GetxService {
       return;
     }
 
-    final title = notification?.title ?? data['title'] ?? 'New message';
+    final senderName =
+        (data['senderName'] ?? data['sender_name'] ?? '').toString().trim();
+    final title = notification?.title ??
+        data['title'] ??
+        (senderName.isNotEmpty ? senderName : _unknownSenderFallback);
     final body = notification?.body ??
         data['body'] ??
         data['content'] ??
