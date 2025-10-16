@@ -11,9 +11,12 @@ class SettingsController extends GetxController {
 
   ThemeMode get themeMode => _settingsService.themeMode.value;
   Locale get language => _settingsService.locale.value;
+  PdfSaveTiming get pdfSaveTiming => _settingsService.pdfSaveTiming.value;
 
   List<ThemeMode> get themeOptions => SettingsService.supportedThemeModes;
   List<Locale> get languageOptions => SettingsService.supportedLocales;
+  List<PdfSaveTiming> get pdfSaveTimingOptions =>
+      SettingsService.supportedPdfSaveTimings;
 
   void updateThemeMode(ThemeMode? mode) {
     if (mode == null) return;
@@ -24,6 +27,11 @@ class SettingsController extends GetxController {
     if (locale == null) return;
     _settingsService.setLocale(locale);
     Get.updateLocale(locale);
+  }
+
+  void updatePdfSaveTiming(PdfSaveTiming? timing) {
+    if (timing == null) return;
+    _settingsService.setPdfSaveTiming(timing);
   }
 
   void openAccount() {
@@ -55,6 +63,16 @@ class SettingsController extends GetxController {
       case 'en':
       default:
         return 'settings_language_en'.tr;
+    }
+  }
+
+  String describePdfSaveTiming(PdfSaveTiming timing) {
+    switch (timing) {
+      case PdfSaveTiming.prompt:
+        return 'settings_pdf_save_option_prompt'.tr;
+      case PdfSaveTiming.immediately:
+      default:
+        return 'settings_pdf_save_option_immediately'.tr;
     }
   }
 }

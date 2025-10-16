@@ -8,6 +8,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../common/services/database_service.dart';
 import '../../../common/services/pdf_downloader/pdf_downloader.dart';
+import '../../../common/services/settings_service.dart';
 import '../models/attendance_record_model.dart';
 import '../../../common/models/child_model.dart';
 import '../../../common/models/school_class_model.dart';
@@ -17,6 +18,7 @@ import '../models/child_attendance_summary.dart';
 
 class AdminAttendanceController extends GetxController {
   final DatabaseService _db = Get.find();
+  final SettingsService _settings = Get.find();
 
   StreamSubscription? _classesSubscription;
   StreamSubscription? _teachersSubscription;
@@ -498,6 +500,16 @@ class AdminAttendanceController extends GetxController {
       final fileName =
           'attendance-${sanitizedChild.isEmpty ? 'student' : sanitizedChild}-${sanitizedClass.isEmpty ? 'class' : sanitizedClass}-$dateStamp.pdf';
       final bytes = await doc.save();
+      final shouldSave = await _settings.confirmPdfSave();
+      if (!shouldSave) {
+        Get.closeCurrentSnackbar();
+        Get.snackbar(
+          'common_cancel'.tr,
+          'settings_pdf_save_cancelled'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(

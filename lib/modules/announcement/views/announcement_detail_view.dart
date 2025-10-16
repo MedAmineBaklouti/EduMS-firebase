@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import 'package:edums/common/services/pdf_downloader/pdf_downloader.dart';
+import 'package:edums/common/services/settings_service.dart';
 
 import '../models/announcement_model.dart';
 
@@ -520,6 +521,17 @@ class AnnouncementDetailView extends StatelessWidget {
       final sanitized = _sanitizeFileName(announcement.title);
       final fileName =
           sanitized.isEmpty ? 'announcement.pdf' : '$sanitized.pdf';
+      final settings = Get.find<SettingsService>();
+      final shouldSave = await settings.confirmPdfSave();
+      if (!shouldSave) {
+        Get.closeCurrentSnackbar();
+        Get.snackbar(
+          'common_cancel'.tr,
+          'settings_pdf_save_cancelled'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(
