@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../models/homework_model.dart';
 import '../../common/models/school_class_model.dart';

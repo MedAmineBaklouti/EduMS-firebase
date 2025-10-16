@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 
-import '../services/database_service.dart';
-import '../../modules/announcement/models/announcement_model.dart';
-import '../../modules/announcement/views/announcement_detail_view.dart';
+import 'package:edums/core/services/database_service.dart';
+import 'package:edums/modules/announcement/models/announcement_model.dart';
+import 'package:edums/modules/announcement/views/announcement_detail_view.dart';
 
 class DashboardAnnouncements extends StatefulWidget {
   const DashboardAnnouncements({

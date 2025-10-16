@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app/routes/app_pages.dart';
-import '../../../core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = Get.find();

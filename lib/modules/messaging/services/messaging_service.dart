@@ -13,7 +13,7 @@ import 'package:get/get.dart' hide Response;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/config/app_config.dart';
-import '../../../core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 import '../models/messaging_contact.dart';

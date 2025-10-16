@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 
-import '../../../core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../common/models/child_model.dart';
 import '../../common/models/parent_model.dart';

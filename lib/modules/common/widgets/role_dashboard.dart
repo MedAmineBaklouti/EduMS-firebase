@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../services/auth_service.dart';
-import '../services/database_service.dart';
-import '../../app/routes/app_pages.dart';
-import '../../modules/edu_chat/routes.dart';
-import '../../modules/messaging/models/conversation_model.dart';
-import '../../modules/common/models/parent_model.dart';
-import '../../modules/common/models/teacher_model.dart';
-import '../../modules/messaging/services/messaging_service.dart';
-import '../../core/widgets/dashboard_card.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
+import 'package:edums/core/services/database_service.dart';
+import 'package:edums/app/routes/app_pages.dart';
+import 'package:edums/modules/messaging/models/conversation_model.dart';
+import 'package:edums/modules/common/models/parent_model.dart';
+import 'package:edums/modules/common/models/teacher_model.dart';
+import 'package:edums/modules/messaging/services/messaging_service.dart';
+import 'dashboard_card.dart';
 import 'dashboard_announcements.dart';
 
 class RoleDashboard extends StatefulWidget {
@@ -475,7 +474,7 @@ class _DashboardDrawer extends StatelessWidget {
                       labelKey: 'drawer_ask_something',
                       onTap: () {
                         Navigator.of(context).pop();
-                        Get.toNamed(EduChatRoutes.chat);
+                        Get.toNamed(AppPages.EDU_CHAT);
                       },
                     ),
                     _DashboardDrawerItem(
