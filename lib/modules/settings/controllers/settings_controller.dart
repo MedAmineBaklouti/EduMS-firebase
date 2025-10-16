@@ -1,3 +1,4 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -12,6 +13,7 @@ class SettingsController extends GetxController {
   ThemeMode get themeMode => _settingsService.themeMode.value;
   Locale get language => _settingsService.locale.value;
   PdfSaveTiming get pdfSaveTiming => _settingsService.pdfSaveTiming.value;
+  String? get pdfSaveDirectory => _settingsService.pdfSaveDirectory.value;
 
   List<ThemeMode> get themeOptions => SettingsService.supportedThemeModes;
   List<Locale> get languageOptions => SettingsService.supportedLocales;
@@ -32,6 +34,22 @@ class SettingsController extends GetxController {
   void updatePdfSaveTiming(PdfSaveTiming? timing) {
     if (timing == null) return;
     _settingsService.setPdfSaveTiming(timing);
+  }
+
+  Future<void> choosePdfSaveDirectory() async {
+    final selectedPath = await getDirectoryPath(
+      initialDirectory: _settingsService.pdfSaveDirectory.value,
+    );
+
+    if (selectedPath == null || selectedPath.trim().isEmpty) {
+      return;
+    }
+
+    _settingsService.setPdfSaveDirectory(selectedPath);
+  }
+
+  void resetPdfSaveDirectory() {
+    _settingsService.setPdfSaveDirectory(null);
   }
 
   void openAccount() {
@@ -74,5 +92,13 @@ class SettingsController extends GetxController {
       default:
         return 'settings_pdf_save_option_immediately'.tr;
     }
+  }
+
+  String describePdfSaveDirectory(String? path) {
+    if (path == null || path.trim().isEmpty) {
+      return 'settings_pdf_save_location_default'.tr;
+    }
+
+    return path;
   }
 }
