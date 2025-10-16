@@ -19,6 +19,7 @@ import '../models/message_model.dart';
 import '../models/messaging_contact.dart';
 import 'fcm_v1_service.dart';
 import 'messaging_notification_channel.dart';
+import 'messaging_notification_constants.dart';
 import 'messaging_push_handler.dart';
 
 class _DeviceTokenSaveResult {
@@ -61,6 +62,7 @@ class MessagingService extends GetxService {
   SharedPreferences? _preferences;
   String? _deviceId;
   bool _deviceTokenRestored = false;
+  String? _activeConversationId;
 
   static const String _messagingRoute = '/messaging';
   static const String _tokenCollection = 'userPushTokens';
@@ -129,6 +131,30 @@ class MessagingService extends GetxService {
   }
 
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
+
+  /// Registers the currently visible conversation so foreground notifications
+  /// can be suppressed and existing system notifications can be dismissed.
+  void updateActiveConversation(String? conversationId) {
+    final normalized = conversationId?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      _activeConversationId = null;
+      return;
+    }
+
+    _activeConversationId = normalized;
+    unawaited(clearNotificationsForConversation(normalized));
+  }
+
+  /// Dismisses any system notifications that were shown for the provided
+  /// [conversationId].
+  Future<void> clearNotificationsForConversation(String conversationId) async {
+    if (conversationId.isEmpty) {
+      return;
+    }
+    final notificationId =
+        messagingNotificationIdForConversation(conversationId);
+    await _localNotifications.cancel(notificationId);
+  }
 
   Future<MessagingService> init() async {
     if (_projectId.isEmpty || _serviceAccountEmail.isEmpty) {
@@ -1351,7 +1377,7 @@ class MessagingService extends GetxService {
 
   Future<void> _setupLocalNotifications() async {
     const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+        AndroidInitializationSettings(messagingNotificationIcon);
     const initializationSettingsDarwin = DarwinInitializationSettings();
     const initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -1438,6 +1464,7 @@ class MessagingService extends GetxService {
       return;
     }
 
+    updateActiveConversation(conversationId);
     Future<void>.microtask(() {
       Get.toNamed(
         _messagingRoute,
@@ -1517,6 +1544,11 @@ class MessagingService extends GetxService {
         return;
       }
 
+      final senderName = message.senderName.trim().isEmpty
+          ? 'New message'
+          : message.senderName.trim();
+      final notificationBody = await _buildPushNotificationBody(message);
+
       final dataPayload = <String, dynamic>{
         'conversationId': message.conversationId,
         'conversation_id': message.conversationId,
@@ -1526,8 +1558,8 @@ class MessagingService extends GetxService {
         'content': message.content,
         'sentAt': message.sentAt.toIso8601String(),
         'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-        'title': message.senderName,
-        'body': message.content,
+        'title': senderName,
+        'body': notificationBody,
       };
 
       for (final token in filteredTokens) {
@@ -1536,8 +1568,8 @@ class MessagingService extends GetxService {
 
         final status = await fcmService.sendMessageWithAccessToken(
           token: token,
-          title: message.senderName,
-          body: message.content,
+          title: senderName,
+          body: notificationBody,
           data: dataPayload,
           accessToken: accessToken,
         );
@@ -1554,6 +1586,59 @@ class MessagingService extends GetxService {
     } catch (error, stackTrace) {
       debugPrint('❌ Error sending FCM v1 notifications: $error');
       debugPrint('$stackTrace');
+    }
+  }
+
+  Future<String> _buildPushNotificationBody(MessageModel message) async {
+    final senderName = message.senderName.trim();
+    final messageContent = message.content.trim();
+    final fallback = messageContent.isEmpty
+        ? (senderName.isEmpty ? 'New message' : senderName)
+        : (senderName.isEmpty
+            ? messageContent
+            : '$senderName: $messageContent');
+
+    if (message.conversationId.isEmpty) {
+      return fallback;
+    }
+
+    try {
+      final snapshot = await _firestore
+          .collection(_conversationsCollection)
+          .doc(message.conversationId)
+          .collection(_messagesCollection)
+          .orderBy('sentAt', descending: true)
+          .limit(5)
+          .get();
+
+      final consecutiveMessages = <String>[];
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final senderId = (data['senderId'] as String?)?.trim() ?? '';
+        if (senderId != message.senderId) {
+          break;
+        }
+        final content = (data['content'] as String?)?.trim() ?? '';
+        if (content.isEmpty) {
+          continue;
+        }
+        consecutiveMessages.add(content);
+      }
+
+      if (consecutiveMessages.isEmpty) {
+        return fallback;
+      }
+
+      final lines = consecutiveMessages.reversed.toList();
+      if (lines.length == 1) {
+        return senderName.isEmpty ? lines.first : '$senderName: ${lines.first}';
+      }
+
+      final multiline = lines.join('\n');
+      return senderName.isEmpty ? multiline : '$senderName:\n$multiline';
+    } catch (error) {
+      debugPrint('Failed to compose push notification body: $error');
+      return fallback;
     }
   }
 
@@ -1623,23 +1708,65 @@ class MessagingService extends GetxService {
   @visibleForTesting
   String? get debugLastKnownToken => _lastKnownToken;
 
+  bool _shouldSuppressNotification(String conversationId) {
+    if (conversationId.isEmpty) {
+      return false;
+    }
+    final normalized = conversationId.trim();
+    final active = _activeConversationId;
+    return active != null && active == normalized;
+  }
+
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
     final data = message.data;
+    final conversationId =
+        (data['conversationId'] ?? data['conversation_id'])?.toString() ?? '';
+
+    if (_shouldSuppressNotification(conversationId)) {
+      debugPrint(
+        'Skipping foreground notification for active conversation $conversationId',
+      );
+      return;
+    }
+
+    final title = notification?.title ?? data['title'] ?? 'New message';
+    final body = notification?.body ??
+        data['body'] ??
+        data['content'] ??
+        data['text'] ??
+        '';
+
+    final notificationId = conversationId.isNotEmpty
+        ? messagingNotificationIdForConversation(conversationId)
+        : (message.messageId?.hashCode ??
+            notification?.hashCode ??
+            DateTime.now().millisecondsSinceEpoch);
+
+    final androidDetails = AndroidNotificationDetails(
+      messagingAndroidChannel.id,
+      messagingAndroidChannel.name,
+      channelDescription: messagingAndroidChannel.description,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: messagingNotificationIcon,
+      tag: conversationId.isNotEmpty
+          ? messagingNotificationTagForConversation(conversationId)
+          : null,
+      styleInformation: BigTextStyleInformation(
+        body,
+        contentTitle: title,
+        htmlFormatBigText: false,
+        htmlFormatContentTitle: false,
+      ),
+    );
 
     await _localNotifications.show(
-      notification?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
-      notification?.title ?? data['title'] ?? 'New message',
-      notification?.body ?? data['content'] ?? data['text'] ?? '',
+      notificationId,
+      title,
+      body,
       NotificationDetails(
-        android: AndroidNotificationDetails(
-          messagingAndroidChannel.id,
-          messagingAndroidChannel.name,
-          channelDescription: messagingAndroidChannel.description,
-          importance: Importance.high,
-          priority: Priority.high,
-          styleInformation: const DefaultStyleInformation(true, true),
-        ),
+        android: androidDetails,
         iOS: messagingDarwinNotificationDetails,
       ),
       payload: jsonEncode(<String, dynamic>{

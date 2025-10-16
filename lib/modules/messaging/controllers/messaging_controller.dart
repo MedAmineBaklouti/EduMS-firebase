@@ -259,40 +259,6 @@ class MessagingController extends GetxController {
       return;
     }
     _lastInAppNotificationKey = key;
-
-    final theme = Get.theme;
-    final senderName = message.senderName.trim().isEmpty
-        ? 'common_not_specified'.tr
-        : message.senderName.trim();
-    final title =
-        'messaging_snackbar_title'.trParams({'sender': senderName});
-    final body = message.content.trim().isEmpty
-        ? 'messaging_snackbar_body_fallback'.tr
-        : message.content.trim();
-
-    Get.closeCurrentSnackbar();
-    Get.snackbar(
-      title,
-      body,
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 4),
-      backgroundColor: theme.colorScheme.surface,
-      colorText: theme.colorScheme.onSurface,
-      mainButton: TextButton(
-        onPressed: () {
-          Get.closeCurrentSnackbar();
-          _openConversationFromNotification(message);
-        },
-        child: Text(
-          'messaging_snackbar_action'.tr,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
   }
 
   void _openConversationFromNotification(MessageModel message) {
@@ -484,6 +450,7 @@ class MessagingController extends GetxController {
 
   void showConversationListView() {
     activeView.value = MessagingViewMode.conversationList;
+    _messagingService.updateActiveConversation(null);
   }
 
   Future<void> startConversationWithAdministration() async {
@@ -501,6 +468,7 @@ class MessagingController extends GetxController {
   void selectConversation(ConversationModel conversation) {
     activeConversation.value = conversation;
     activeView.value = MessagingViewMode.conversationThread;
+    _messagingService.updateActiveConversation(conversation.id);
     _loadMessagesForConversation(conversation.id);
   }
 
@@ -553,6 +521,7 @@ class MessagingController extends GetxController {
   void clearActiveConversation() {
     activeView.value = MessagingViewMode.conversationList;
     activeConversation.value = null;
+    _messagingService.updateActiveConversation(null);
     _conversationMessagesSubscription?.cancel();
     _conversationMessagesSubscription = null;
     messages.clear();
