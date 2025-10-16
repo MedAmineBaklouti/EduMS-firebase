@@ -24,7 +24,7 @@ Future<void> messagingBackgroundHandler(RemoteMessage message) async {
 
   if (!_backgroundNotificationsInitialized) {
     const initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('@mipmap/launcher_icon'),
       iOS: DarwinInitializationSettings(),
     );
 
