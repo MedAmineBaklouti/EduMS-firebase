@@ -4,10 +4,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/services/database_service.dart';
-import '../../../data/models/admin_model.dart';
-import '../../../data/models/pickup_model.dart';
-import '../../../data/models/subject_model.dart';
-import '../../../data/models/teacher_model.dart';
+import '../../common/models/admin_model.dart';
+import '../models/pickup_model.dart';
+import '../../common/models/subject_model.dart';
+import '../../common/models/teacher_model.dart';
 import '../../common/widgets/module_card.dart';
 
 class PickupTicketDetailView extends StatelessWidget {

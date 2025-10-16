@@ -5,7 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import 'package:edums/core/services/pdf_downloader/pdf_downloader.dart';
 
-import '../../../data/models/announcement_model.dart';
+import '../models/announcement_model.dart';
 
 class AnnouncementDetailView extends StatelessWidget {
   final AnnouncementModel announcement;

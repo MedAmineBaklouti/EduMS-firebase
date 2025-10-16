@@ -3,11 +3,11 @@ import 'package:get/get.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
-import '../../../data/models/child_model.dart';
-import '../../../data/models/parent_model.dart';
-import '../../../data/models/school_class_model.dart';
-import '../../../data/models/subject_model.dart';
-import '../../../data/models/teacher_model.dart';
+import '../../common/models/child_model.dart';
+import '../../common/models/parent_model.dart';
+import '../../common/models/school_class_model.dart';
+import '../../common/models/subject_model.dart';
+import '../../common/models/teacher_model.dart';
 
 class AdminControlController extends GetxController {
   final DatabaseService _db = Get.find();

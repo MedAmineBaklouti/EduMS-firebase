@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../data/models/pickup_model.dart';
+import '../../models/pickup_model.dart';
 import '../../../common/widgets/module_card.dart';
 
 class PickupQueueCard extends StatelessWidget {

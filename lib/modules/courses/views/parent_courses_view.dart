@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../data/models/course_model.dart';
+import '../models/course_model.dart';
 import '../controllers/parent_courses_controller.dart';
 import 'course_detail_view.dart';
 

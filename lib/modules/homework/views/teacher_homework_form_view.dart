@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/school_class_model.dart';
+import '../../common/models/school_class_model.dart';
 import '../controllers/teacher_homework_controller.dart';
 
 class TeacherHomeworkFormView extends GetView<TeacherHomeworkController> {

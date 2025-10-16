@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/database_service.dart';
-import '../../../data/models/course_model.dart';
-import '../../../data/models/school_class_model.dart';
-import '../../../data/models/subject_model.dart';
-import '../../../data/models/teacher_model.dart';
+import '../models/course_model.dart';
+import '../../common/models/school_class_model.dart';
+import '../../common/models/subject_model.dart';
+import '../../common/models/teacher_model.dart';
 
 class AdminCoursesController extends GetxController {
   final DatabaseService _db = Get.find();

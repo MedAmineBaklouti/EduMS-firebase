@@ -6,9 +6,9 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../core/services/database_service.dart';
 import '../../../core/services/pdf_downloader/pdf_downloader.dart';
-import '../../../data/models/child_model.dart';
-import '../../../data/models/homework_model.dart';
-import '../../../data/models/school_class_model.dart';
+import '../../common/models/child_model.dart';
+import '../models/homework_model.dart';
+import '../../common/models/school_class_model.dart';
 
 class HomeworkDetailView extends StatefulWidget {
   const HomeworkDetailView({

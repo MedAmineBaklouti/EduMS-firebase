@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
-import '../../../data/models/pickup_model.dart';
+import '../models/pickup_model.dart';
 
 class ParentPickupNotificationService extends GetxService {
   final DatabaseService _db = Get.find();

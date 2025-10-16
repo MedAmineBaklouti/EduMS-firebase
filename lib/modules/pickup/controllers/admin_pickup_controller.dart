@@ -5,9 +5,9 @@ import 'package:get/get.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
-import '../../../data/models/admin_model.dart';
-import '../../../data/models/pickup_model.dart';
-import '../../../data/models/school_class_model.dart';
+import '../../common/models/admin_model.dart';
+import '../models/pickup_model.dart';
+import '../../common/models/school_class_model.dart';
 
 class AdminPickupController extends GetxController {
   final DatabaseService _db = Get.find();
