@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../controllers/announcement_controller.dart';
-import '../../../data/models/announcement_model.dart';
+import '../models/announcement_model.dart';
 import 'announcement_detail_view.dart';
 
 class AnnouncementListView extends StatelessWidget {

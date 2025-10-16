@@ -9,11 +9,11 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/pdf_downloader/pdf_downloader.dart';
-import '../../../data/models/attendance_record_model.dart';
-import '../../../data/models/child_model.dart';
-import '../../../data/models/school_class_model.dart';
-import '../../../data/models/subject_model.dart';
-import '../../../data/models/teacher_model.dart';
+import '../models/attendance_record_model.dart';
+import '../../common/models/child_model.dart';
+import '../../common/models/school_class_model.dart';
+import '../../common/models/subject_model.dart';
+import '../../common/models/teacher_model.dart';
 import '../models/child_attendance_summary.dart';
 
 class ParentAttendanceController extends GetxController {

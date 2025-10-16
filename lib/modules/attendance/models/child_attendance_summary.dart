@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-import '../../../data/models/attendance_record_model.dart';
+import 'attendance_record_model.dart';
 
 class ChildSubjectAttendance {
   const ChildSubjectAttendance({

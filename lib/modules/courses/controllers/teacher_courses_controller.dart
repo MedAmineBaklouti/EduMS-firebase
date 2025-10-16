@@ -7,10 +7,10 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
-import '../../../data/models/course_model.dart';
-import '../../../data/models/school_class_model.dart';
-import '../../../data/models/subject_model.dart';
-import '../../../data/models/teacher_model.dart';
+import '../models/course_model.dart';
+import '../../common/models/school_class_model.dart';
+import '../../common/models/subject_model.dart';
+import '../../common/models/teacher_model.dart';
 import '../views/course_form_view.dart';
 
 class TeacherCoursesController extends GetxController {

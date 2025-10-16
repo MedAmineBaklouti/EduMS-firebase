@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
-import '../../data/models/child_model.dart';
-import '../../data/models/parent_model.dart';
-import '../../data/models/school_class_model.dart';
-import '../../data/models/subject_model.dart';
-import '../../data/models/announcement_model.dart';
-import '../../data/models/teacher_model.dart';
-import '../../data/models/course_model.dart';
+import '../../modules/common/models/child_model.dart';
+import '../../modules/common/models/parent_model.dart';
+import '../../modules/common/models/school_class_model.dart';
+import '../../modules/common/models/subject_model.dart';
+import '../../modules/announcement/models/announcement_model.dart';
+import '../../modules/common/models/teacher_model.dart';
+import '../../modules/courses/models/course_model.dart';
 
 class DatabaseService extends GetxService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

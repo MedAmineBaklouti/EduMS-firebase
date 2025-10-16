@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/database_service.dart';
-import '../../../data/models/announcement_model.dart';
+import '../models/announcement_model.dart';
 import '../views/announcement_form_view.dart';
 
 class AnnouncementController extends GetxController {

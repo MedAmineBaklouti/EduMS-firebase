@@ -5,7 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 
 import '../services/database_service.dart';
-import '../../data/models/announcement_model.dart';
+import '../../modules/announcement/models/announcement_model.dart';
 import '../../modules/announcement/views/announcement_detail_view.dart';
 
 class DashboardAnnouncements extends StatefulWidget {

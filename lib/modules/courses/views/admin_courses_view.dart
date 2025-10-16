@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/course_model.dart';
+import '../models/course_model.dart';
 import '../controllers/admin_courses_controller.dart';
 import 'course_detail_view.dart';
 

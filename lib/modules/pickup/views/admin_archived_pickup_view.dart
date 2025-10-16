@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/pickup_model.dart';
+import '../models/pickup_model.dart';
 import '../../common/widgets/module_empty_state.dart';
 import '../../common/widgets/module_page_container.dart';
 import '../../attendance/views/widgets/attendance_date_card.dart';

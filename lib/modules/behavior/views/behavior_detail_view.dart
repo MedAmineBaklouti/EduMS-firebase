@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/behavior_model.dart';
+import '../models/behavior_model.dart';
 import '../widgets/behavior_type_chip.dart';
 
 class BehaviorDetailView extends StatelessWidget {

@@ -14,9 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/config/app_config.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../data/models/conversation_model.dart';
-import '../../../data/models/message_model.dart';
-import '../../../data/models/messaging_contact.dart';
+import '../models/conversation_model.dart';
+import '../models/message_model.dart';
+import '../models/messaging_contact.dart';
 import 'messaging_notification_channel.dart';
 import 'messaging_push_handler.dart';
 

@@ -5,8 +5,8 @@ import 'package:get/get.dart';
 
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
-import '../../../data/models/child_model.dart';
-import '../../../data/models/homework_model.dart';
+import '../../common/models/child_model.dart';
+import '../models/homework_model.dart';
 
 class ParentHomeworkController extends GetxController {
   final DatabaseService _db = Get.find();

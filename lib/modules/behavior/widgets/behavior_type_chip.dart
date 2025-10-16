@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../data/models/behavior_model.dart';
+import '../models/behavior_model.dart';
 
 class BehaviorTypeChip extends StatelessWidget {
   const BehaviorTypeChip({super.key, required this.type, this.compact = false});
