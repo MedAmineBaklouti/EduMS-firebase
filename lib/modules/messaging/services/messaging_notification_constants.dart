@@ -6,7 +6,7 @@ const String messagingNotificationChannelDescription =
     'Notifications for new chat messages.';
 
 /// Name of the Android status bar icon that should be used for chat notifications.
-const String messagingNotificationIcon = '@drawable/ic_stat_notification';
+const String messagingNotificationIcon = '@mipmap/launcher_icon';
 
 /// Builds a stable notification identifier for the provided [conversationId].
 ///
