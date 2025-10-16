@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../common/services/database_service.dart';
 import '../../../common/services/pdf_downloader/pdf_downloader.dart';
+import '../../../common/services/settings_service.dart';
 import '../../../common/models/child_model.dart';
 import '../models/homework_model.dart';
 import '../../../common/models/school_class_model.dart';
@@ -38,6 +39,7 @@ class HomeworkDetailView extends StatefulWidget {
 
 class _HomeworkDetailViewState extends State<HomeworkDetailView> {
   final DatabaseService _db = Get.find();
+  final SettingsService _settings = Get.find();
 
   late HomeworkModel _homework;
   List<_ParentChildEntry> _parentEntries = <_ParentChildEntry>[];
@@ -1042,6 +1044,16 @@ class _HomeworkDetailViewState extends State<HomeworkDetailView> {
     try {
       final bytes = await doc.save();
       final fileName = _pdfFileName();
+      final shouldSave = await _settings.confirmPdfSave();
+      if (!shouldSave) {
+        Get.closeCurrentSnackbar();
+        Get.snackbar(
+          'common_cancel'.tr,
+          'settings_pdf_save_cancelled'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(

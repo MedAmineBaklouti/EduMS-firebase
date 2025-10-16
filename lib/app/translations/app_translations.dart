@@ -19,6 +19,16 @@ class AppTranslations extends Translations {
           'settings_language_en': 'English',
           'settings_language_fr': 'French',
           'settings_language_ar': 'Arabic',
+          'settings_pdf_save_title': 'PDF saving',
+          'settings_pdf_save_subtitle': 'Choose when PDFs are saved to your device',
+          'settings_pdf_save_option_immediately': 'Save automatically',
+          'settings_pdf_save_option_prompt': 'Ask every time',
+          'settings_pdf_save_confirm_title': 'Save PDF now?',
+          'settings_pdf_save_confirm_message':
+              'Do you want to save this PDF now? You can change this behavior in Settings.',
+          'settings_pdf_save_confirm_positive': 'Save now',
+          'settings_pdf_save_confirm_negative': 'Not now',
+          'settings_pdf_save_cancelled': 'The PDF download was cancelled.',
           'settings_terms': 'Terms & Conditions',
           'settings_terms_body':
               'By using EduMS you agree to respect user privacy, keep your account secure, and follow school policies when sharing information.',
@@ -654,6 +664,17 @@ class AppTranslations extends Translations {
           'settings_language_en': 'Anglais',
           'settings_language_fr': 'Français',
           'settings_language_ar': 'Arabe',
+          'settings_pdf_save_title': 'Enregistrement des PDF',
+          'settings_pdf_save_subtitle':
+              'Choisissez quand les PDF sont enregistrés sur votre appareil',
+          'settings_pdf_save_option_immediately': 'Enregistrer automatiquement',
+          'settings_pdf_save_option_prompt': 'Demander à chaque fois',
+          'settings_pdf_save_confirm_title': 'Enregistrer le PDF maintenant ?',
+          'settings_pdf_save_confirm_message':
+              'Souhaitez-vous enregistrer ce PDF maintenant ? Vous pouvez modifier ce comportement dans les paramètres.',
+          'settings_pdf_save_confirm_positive': 'Enregistrer maintenant',
+          'settings_pdf_save_confirm_negative': 'Pas maintenant',
+          'settings_pdf_save_cancelled': 'Le téléchargement du PDF a été annulé.',
           'settings_terms': 'Termes & Conditions',
           'settings_terms_body':
               'En utilisant EduMS vous vous engagez à respecter la vie privée, protéger votre compte et suivre les politiques de l’école lors du partage d’informations.',
@@ -1323,6 +1344,16 @@ class AppTranslations extends Translations {
           'settings_language_en': 'الإنجليزية',
           'settings_language_fr': 'الفرنسية',
           'settings_language_ar': 'العربية',
+          'settings_pdf_save_title': 'حفظ ملفات PDF',
+          'settings_pdf_save_subtitle': 'اختر متى يتم حفظ ملفات PDF على جهازك',
+          'settings_pdf_save_option_immediately': 'حفظ تلقائيًا',
+          'settings_pdf_save_option_prompt': 'اسأل في كل مرة',
+          'settings_pdf_save_confirm_title': 'حفظ ملف PDF الآن؟',
+          'settings_pdf_save_confirm_message':
+              'هل تريد حفظ ملف PDF هذا الآن؟ يمكنك تغيير هذا السلوك من الإعدادات.',
+          'settings_pdf_save_confirm_positive': 'حفظ الآن',
+          'settings_pdf_save_confirm_negative': 'ليس الآن',
+          'settings_pdf_save_cancelled': 'تم إلغاء تنزيل ملف PDF.',
           'settings_terms': 'الشروط والأحكام',
           'settings_terms_body':
               'باستخدام EduMS فإنك توافق على احترام خصوصية المستخدمين، والحفاظ على أمان حسابك، واتباع سياسات المدرسة عند مشاركة المعلومات.',

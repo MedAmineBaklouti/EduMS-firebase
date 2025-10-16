@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../common/services/settings_service.dart';
+
 import '../controllers/settings_controller.dart';
 
 class SettingsView extends GetView<SettingsController> {
@@ -40,6 +42,13 @@ class SettingsView extends GetView<SettingsController> {
                   title: 'settings_language'.tr,
                   subtitle: controller.describeLanguage(controller.language),
                   trailing: _LanguageDropdown(controller: controller),
+                ),
+                _SettingsTile(
+                  icon: Icons.picture_as_pdf_outlined,
+                  title: 'settings_pdf_save_title'.tr,
+                  subtitle: controller
+                      .describePdfSaveTiming(controller.pdfSaveTiming),
+                  trailing: _PdfSaveTimingDropdown(controller: controller),
                 ),
               ],
             ),
@@ -259,6 +268,35 @@ class _LanguageDropdown extends StatelessWidget {
               (locale) => DropdownMenuItem(
                 value: locale,
                 child: Text(controller.describeLanguage(locale)),
+              ),
+            )
+            .toList(),
+        borderRadius: BorderRadius.circular(16),
+        style: theme.textTheme.bodyMedium,
+      ),
+    );
+  }
+}
+
+class _PdfSaveTimingDropdown extends StatelessWidget {
+  const _PdfSaveTimingDropdown({required this.controller});
+
+  final SettingsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<PdfSaveTiming>(
+        value: controller.pdfSaveTiming,
+        alignment: Alignment.centerRight,
+        onChanged: controller.updatePdfSaveTiming,
+        items: controller.pdfSaveTimingOptions
+            .map(
+              (timing) => DropdownMenuItem(
+                value: timing,
+                child: Text(controller.describePdfSaveTiming(timing)),
               ),
             )
             .toList(),

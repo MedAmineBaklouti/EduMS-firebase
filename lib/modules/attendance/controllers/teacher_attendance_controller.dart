@@ -10,6 +10,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:edums/modules/auth/service/auth_service.dart';
 import '../../../common/services/database_service.dart';
 import '../../../common/services/pdf_downloader/pdf_downloader.dart';
+import '../../../common/services/settings_service.dart';
 import '../models/attendance_record_model.dart';
 import '../../../common/models/child_model.dart';
 import '../../../common/models/parent_model.dart';
@@ -20,6 +21,7 @@ import '../../../common/models/teacher_model.dart';
 class TeacherAttendanceController extends GetxController {
   final DatabaseService _db = Get.find();
   final AuthService _auth = Get.find();
+  final SettingsService _settings = Get.find();
 
   StreamSubscription? _teacherSubscription;
   StreamSubscription? _classesSubscription;
@@ -374,6 +376,16 @@ class TeacherAttendanceController extends GetxController {
       final fileName =
           'attendance-${sanitizedClass.isEmpty ? 'class' : sanitizedClass}-${DateFormat('yyyyMMdd').format(date)}.pdf';
       final bytes = await doc.save();
+      final shouldSave = await _settings.confirmPdfSave();
+      if (!shouldSave) {
+        Get.closeCurrentSnackbar();
+        Get.snackbar(
+          'common_cancel'.tr,
+          'settings_pdf_save_cancelled'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import 'package:edums/common/services/pdf_downloader/pdf_downloader.dart';
+import 'package:edums/common/services/settings_service.dart';
 
 import '../models/course_model.dart';
 
@@ -385,6 +386,17 @@ class CourseDetailView extends StatelessWidget {
     try {
       final bytes = await doc.save();
       final fileName = _pdfFileName();
+      final settings = Get.find<SettingsService>();
+      final shouldSave = await settings.confirmPdfSave();
+      if (!shouldSave) {
+        Get.closeCurrentSnackbar();
+        Get.snackbar(
+          'common_cancel'.tr,
+          'settings_pdf_save_cancelled'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
       final savedPath = await savePdf(bytes, fileName);
       Get.closeCurrentSnackbar();
       Get.snackbar(
