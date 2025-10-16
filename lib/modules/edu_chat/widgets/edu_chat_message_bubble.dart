@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../models/edu_chat_message.dart';
+import '../models/edu_chat_message.dart';
 
 class EduChatMessageBubble extends StatelessWidget {
   const EduChatMessageBubble({

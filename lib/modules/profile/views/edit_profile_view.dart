@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 
 class EditProfileView extends StatefulWidget {
   const EditProfileView({super.key});

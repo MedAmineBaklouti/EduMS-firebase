@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/network_service.dart';
 import '../../core/services/settings_service.dart';

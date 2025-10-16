@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:edums/core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 import 'package:edums/modules/messaging/services/messaging_service.dart';
 
 class MockFirebaseMessaging extends Mock implements FirebaseMessaging {}

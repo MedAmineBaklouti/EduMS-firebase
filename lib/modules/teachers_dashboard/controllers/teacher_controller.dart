@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-import '../../../../core/services/auth_service.dart';
+import 'package:edums/modules/auth/service/auth_service.dart';
 
 class TeacherController extends GetxController {
   final AuthService _authService = Get.find();

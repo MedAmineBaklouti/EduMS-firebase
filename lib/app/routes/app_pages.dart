@@ -19,7 +19,6 @@ import '../../modules/homework/views/admin_homework_list_view.dart';
 import '../../modules/homework/views/parent_homework_list_view.dart';
 import '../../modules/homework/views/teacher_homework_list_view.dart';
 import '../../modules/edu_chat/bindings/edu_chat_binding.dart';
-import '../../modules/edu_chat/routes.dart';
 import '../../modules/edu_chat/views/edu_chat_view.dart';
 import '../../modules/parents_dashboard/views/parent_dashboard_view.dart';
 import '../../modules/pickup/views/admin_archived_pickup_view.dart';
@@ -65,7 +64,7 @@ abstract class AppPages {
   static const EDIT_PROFILE = '/profile/edit';
   static const CONTACT_US = '/support/contact';
   static const SETTINGS = '/settings';
-  static const EDU_CHAT = EduChatRoutes.chat;
+  static const EDU_CHAT = '/edu-chat';
 
   static final routes = [
     GetPage(name: SPLASH, page: () => SplashView()),
@@ -122,7 +121,7 @@ abstract class AppPages {
       binding: SettingsBinding(),
     ),
     GetPage(
-      name: EduChatRoutes.chat,
+      name: EDU_CHAT,
       page: () => const EduChatView(),
       binding: EduChatBinding(),
     ),
