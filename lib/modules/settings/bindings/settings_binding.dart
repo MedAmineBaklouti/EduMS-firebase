@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-import '../../../core/services/settings_service.dart';
+import '../../../common/services/settings_service.dart';
 import '../controllers/settings_controller.dart';
 
 class SettingsBinding extends Bindings {

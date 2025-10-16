@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import 'package:edums/core/services/pdf_downloader/pdf_downloader.dart';
+import 'package:edums/common/services/pdf_downloader/pdf_downloader.dart';
 
 import '../models/announcement_model.dart';
 

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:edums/modules/auth/service/auth_service.dart';
-import 'package:edums/core/services/database_service.dart';
+import 'package:edums/common/services/database_service.dart';
 import 'package:edums/app/routes/app_pages.dart';
 import 'package:edums/modules/messaging/models/conversation_model.dart';
-import 'package:edums/modules/common/models/parent_model.dart';
-import 'package:edums/modules/common/models/teacher_model.dart';
+import 'package:edums/common/models/parent_model.dart';
+import 'package:edums/common/models/teacher_model.dart';
 import 'package:edums/modules/messaging/services/messaging_service.dart';
 import 'dashboard_card.dart';
 import 'dashboard_announcements.dart';

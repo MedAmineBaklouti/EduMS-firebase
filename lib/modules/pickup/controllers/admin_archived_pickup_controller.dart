@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/services/database_service.dart';
+import '../../../common/services/database_service.dart';
 import '../models/pickup_model.dart';
 import '../../common/models/school_class_model.dart';
 
