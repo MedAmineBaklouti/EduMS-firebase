@@ -190,10 +190,11 @@ class MessagingController extends GetxController {
       final isMine = currentUserId != null && message.senderId == currentUserId;
       final shouldIncrementUnread =
           !isMine && activeConversation.value?.id != message.conversationId;
+      final preview = message.preview();
 
       if (existingConversation != null) {
         final updatedConversation = existingConversation.copyWith(
-          lastMessagePreview: message.content,
+          lastMessagePreview: preview,
           updatedAt: message.sentAt,
           unreadCount: shouldIncrementUnread
               ? existingConversation.unreadCount + 1
@@ -204,7 +205,7 @@ class MessagingController extends GetxController {
         final placeholder = ConversationModel(
           id: message.conversationId,
           title: message.senderName,
-          lastMessagePreview: message.content,
+          lastMessagePreview: preview,
           updatedAt: message.sentAt,
           participants: <ConversationParticipant>[],
           unreadCount: shouldIncrementUnread ? 1 : 0,
@@ -469,6 +470,7 @@ class MessagingController extends GetxController {
     activeConversation.value = conversation;
     activeView.value = MessagingViewMode.conversationThread;
     _messagingService.updateActiveConversation(conversation.id);
+    _updateConversationUnreadLocally(conversation.id, 0);
     _loadMessagesForConversation(conversation.id);
   }
 
