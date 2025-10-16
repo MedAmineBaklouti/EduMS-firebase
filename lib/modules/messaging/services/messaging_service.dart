@@ -17,6 +17,7 @@ import 'package:edums/modules/auth/service/auth_service.dart';
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
 import '../models/messaging_contact.dart';
+import 'fcm_v1_service.dart';
 import 'messaging_notification_channel.dart';
 import 'messaging_push_handler.dart';
 
@@ -74,54 +75,64 @@ class MessagingService extends GetxService {
   static const int _firestoreBatchLimit = 10;
   static const String _deviceIdPrefsKey = 'messaging_device_id';
 
+  String get _projectId => AppConfig.projectId.trim();
+  String get _serviceAccountEmail => AppConfig.clientEmail.trim();
+  String get _privateKeyId => AppConfig.privateKeyId.trim();
+  String get _privateKey => AppConfig.privateKey.replaceAll('\\n', '\n');
+
   static Dio? _createPushClient() {
-    final serverKey = AppConfig.fcmServerKey.trim();
-    if (serverKey.isEmpty) {
-      debugPrint('FCM server key missing; push notifications will be disabled.');
+    try {
+      debugPrint('🚀 Initializing FCM v1 HTTP client');
+      return Dio(
+        BaseOptions(
+          baseUrl: 'https://fcm.googleapis.com',
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          headers: const <String, dynamic>{
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+    } catch (error) {
+      debugPrint('❌ Failed to create FCM client: $error');
       return null;
     }
+  }
 
-    final authorizationHeader = _resolveFcmAuthorizationHeader(serverKey);
-    if (authorizationHeader == null) {
+  FCMv1Service? _createFcmService() {
+    final projectId = _projectId;
+    final clientEmail = _serviceAccountEmail;
+    final privateKey = _privateKey;
+    final privateKeyId = _privateKeyId;
+
+    if (projectId.isEmpty ||
+        clientEmail.isEmpty ||
+        privateKey.isEmpty ||
+        privateKeyId.isEmpty) {
       debugPrint(
-        'FCM server key is not in a recognised format; push notifications will be disabled.',
+        '❌ FCM v1 configuration missing. Please verify PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY_ID and PRIVATE_KEY.',
       );
       return null;
     }
 
-    return Dio(
-      BaseOptions(
-        baseUrl: 'https://fcm.googleapis.com',
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        headers: <String, dynamic>{
-          'Content-Type': 'application/json',
-          'Authorization': authorizationHeader,
-        },
-      ),
+    return FCMv1Service(
+      projectId: projectId,
+      clientEmail: clientEmail,
+      privateKey: privateKey,
+      privateKeyId: privateKeyId,
+      httpClient: _pushClient,
     );
-  }
-
-  static String? _resolveFcmAuthorizationHeader(String rawKey) {
-    final trimmed = rawKey.trim();
-    if (trimmed.isEmpty) {
-      return null;
-    }
-
-    final lower = trimmed.toLowerCase();
-    if (lower.startsWith('key=')) {
-      return trimmed;
-    }
-    if (lower.startsWith('bearer ')) {
-      return trimmed;
-    }
-
-    return 'key=$trimmed';
   }
 
   Stream<MessageModel> get messageStream => _messageStreamController.stream;
 
   Future<MessagingService> init() async {
+    if (_projectId.isEmpty || _serviceAccountEmail.isEmpty) {
+      debugPrint('❌ FCM v1 credentials not configured. Check your environment variables.');
+    } else {
+      debugPrint('✅ FCM v1 configured for project $_projectId');
+    }
+
     await _ensureDeviceId();
     await _setupLocalNotifications();
     await _initializePushNotifications();
@@ -1434,14 +1445,19 @@ class MessagingService extends GetxService {
     });
   }
 
-  /// Send a data-only payload so platform handlers always execute and exclude
-  /// the sender's current device token to avoid self-notifications.
+  /// Send a data payload using the FCM HTTP v1 API and exclude the sender's
+  /// current device token to avoid self-notifications.
   Future<void> _sendPushNotification(
     MessageModel message,
     List<ConversationParticipant> participants,
   ) async {
-    if (_pushClient == null || participants.isEmpty) {
-      debugPrint('PUSH: no client/participants');
+    if (participants.isEmpty) {
+      debugPrint('❌ No participants to notify');
+      return;
+    }
+
+    final fcmService = _createFcmService();
+    if (fcmService == null) {
       return;
     }
 
@@ -1456,20 +1472,22 @@ class MessagingService extends GetxService {
         recipientIds.add(primaryId);
       }
 
-      if (alternateId.isNotEmpty && alternateId != message.senderId) {
+      if (alternateId.isNotEmpty &&
+          alternateId != message.senderId &&
+          alternateId != primaryId) {
         recipientIds.add(alternateId);
       }
     }
 
     if (recipientIds.isEmpty) {
-      debugPrint('PUSH: no recipientIds (after filtering sender)');
+      debugPrint('❌ No recipient IDs after filtering out the sender');
       return;
     }
 
     try {
-      debugPrint('PUSH: recipientIds resolved=$recipientIds');
+      debugPrint('🎯 Resolving push tokens for recipients: $recipientIds');
       final tokens = await _fetchTokensForUsers(recipientIds.toList());
-      debugPrint('PUSH: token count before filter=${tokens.length}');
+      debugPrint('📦 Token count before filtering: ${tokens.length}');
 
       final currentToken = _lastKnownToken?.trim();
       final filteredTokens = tokens
@@ -1480,57 +1498,94 @@ class MessagingService extends GetxService {
           .toList();
 
       debugPrint(
-        'PUSH: token count after filter=${filteredTokens.length} (current excluded=${currentToken != null})',
+        '📤 Token count after filtering self device: ${filteredTokens.length} '
+        '(current excluded=${currentToken != null})',
       );
 
       if (filteredTokens.isEmpty) {
-        debugPrint('PUSH: no tokens to send (none or only sender token)');
+        debugPrint('⚠️ No tokens available to send push notifications');
         return;
       }
 
-      final payload = <String, dynamic>{
-        'priority': 'high',
-        'registration_ids': filteredTokens,
-        'data': <String, dynamic>{
-          'conversationId': message.conversationId,
-          'conversation_id': message.conversationId,
-          'messageId': message.id,
-          'senderId': message.senderId,
-          'senderName': message.senderName,
-          'content': message.content,
-          'sentAt': message.sentAt.toIso8601String(),
-          'title': message.senderName,
-          'body': message.content,
-          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-        },
-        'content_available': true,
-        'mutable_content': true,
+      final accessToken = await fcmService.getAccessToken();
+      if (accessToken == null) {
+        debugPrint('❌ Failed to obtain FCM v1 access token');
+        return;
+      }
+
+      final dataPayload = <String, dynamic>{
+        'conversationId': message.conversationId,
+        'conversation_id': message.conversationId,
+        'messageId': message.id,
+        'senderId': message.senderId,
+        'senderName': message.senderName,
+        'content': message.content,
+        'sentAt': message.sentAt.toIso8601String(),
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        'title': message.senderName,
+        'body': message.content,
       };
 
-      debugPrint('PUSH: sending to ${filteredTokens.length} device(s)');
-      final response = await _pushClient!.post<dynamic>(
-        '/fcm/send',
-        data: payload,
-      );
-      debugPrint('PUSH: FCM response (${response.statusCode}): ${response.data}');
+      for (final token in filteredTokens) {
+        final preview = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+        debugPrint('🚀 Sending FCM v1 notification to $preview');
 
-      final responseData = response.data;
-      if (responseData is Map && responseData['results'] is List) {
-        final results = (responseData['results'] as List).cast<Map?>();
-        for (var index = 0; index < results.length && index < filteredTokens.length; index++) {
-          final result = results[index];
-          final error = (result?['error'] as String?)?.trim();
-          if (error != null && error.isNotEmpty) {
-            final token = filteredTokens[index];
-            final prefix = token.length > 8 ? '${token.substring(0, 8)}…' : token;
-            debugPrint('PUSH: token error "$error" for $prefix');
-          }
+        final status = await fcmService.sendMessageWithAccessToken(
+          token: token,
+          title: message.senderName,
+          body: message.content,
+          data: dataPayload,
+          accessToken: accessToken,
+        );
+
+        if (status == FCMv1SendStatus.success) {
+          debugPrint('✅ Push delivered to $preview');
+        } else if (status == FCMv1SendStatus.invalidToken) {
+          debugPrint('🗑️ Removing invalid FCM token $preview');
+          await _removeInvalidToken(token);
+        } else {
+          debugPrint('❌ Failed to deliver push notification to $preview');
         }
       }
-    } on DioException catch (error) {
-      debugPrint('Failed to send FCM push: ${error.message ?? error.error}');
+    } catch (error, stackTrace) {
+      debugPrint('❌ Error sending FCM v1 notifications: $error');
+      debugPrint('$stackTrace');
+    }
+  }
+
+  Future<void> _removeInvalidToken(String token) async {
+    try {
+      final snapshot = await _firestore
+          .collection(_tokenCollection)
+          .where('tokens', arrayContains: token)
+          .get();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final updates = <String, dynamic>{
+          'tokens': FieldValue.arrayRemove(<String>[token]),
+        };
+
+        if (data != null) {
+          final deviceTokens = data['deviceTokens'];
+          if (deviceTokens is Map<String, dynamic>) {
+            deviceTokens.forEach((deviceId, storedToken) {
+              if (storedToken == token) {
+                updates['deviceTokens.$deviceId'] = FieldValue.delete();
+                updates['devicePlatforms.$deviceId'] = FieldValue.delete();
+                updates['deviceUpdatedAt.$deviceId'] = FieldValue.delete();
+                updates['deviceCreatedAt.$deviceId'] = FieldValue.delete();
+              }
+            });
+          }
+        }
+
+        await doc.reference.update(updates);
+        final preview = token.length > 8 ? '${token.substring(0, 8)}…' : token;
+        debugPrint('🗑️ Removed invalid FCM token $preview from user ${doc.id}');
+      }
     } catch (error) {
-      debugPrint('Failed to send FCM push: $error');
+      debugPrint('❌ Failed to remove invalid token: $error');
     }
   }
 
