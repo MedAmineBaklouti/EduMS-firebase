@@ -11,6 +11,7 @@ class SettingsService extends GetxService {
   static const _themeModeKey = 'settings.themeMode';
   static const _languageKey = 'settings.language';
   static const _pdfSaveTimingKey = 'settings.pdfSaveTiming';
+  static const _pdfSaveDirectoryKey = 'settings.pdfSaveDirectory';
 
   static const fallbackLocale = Locale('en');
   static const supportedLocales = <Locale>[
@@ -30,11 +31,13 @@ class SettingsService extends GetxService {
   final Rx<ThemeMode> themeMode = ThemeMode.system.obs;
   final Rx<Locale> locale = fallbackLocale.obs;
   final Rx<PdfSaveTiming> pdfSaveTiming = PdfSaveTiming.immediately.obs;
+  final RxnString pdfSaveDirectory = RxnString();
 
   Future<SettingsService> init() async {
     _loadThemeMode();
     _loadLanguage();
     _loadPdfSaveTiming();
+    _loadPdfSaveDirectory();
     return this;
   }
 
@@ -62,6 +65,21 @@ class SettingsService extends GetxService {
     }
     pdfSaveTiming.value = timing;
     _preferences.setString(_pdfSaveTimingKey, timing.name);
+  }
+
+  void setPdfSaveDirectory(String? path) {
+    final sanitized = path?.trim();
+    if (pdfSaveDirectory.value == sanitized) {
+      return;
+    }
+    if (sanitized == null || sanitized.isEmpty) {
+      pdfSaveDirectory.value = null;
+      _preferences.remove(_pdfSaveDirectoryKey);
+      return;
+    }
+
+    pdfSaveDirectory.value = sanitized;
+    _preferences.setString(_pdfSaveDirectoryKey, sanitized);
   }
 
   Future<bool> confirmPdfSave() async {
@@ -128,5 +146,15 @@ class SettingsService extends GetxService {
       (timing) => timing.name == stored,
       orElse: () => PdfSaveTiming.immediately,
     );
+  }
+
+  void _loadPdfSaveDirectory() {
+    final stored = _preferences.getString(_pdfSaveDirectoryKey);
+    if (stored == null || stored.trim().isEmpty) {
+      pdfSaveDirectory.value = null;
+      return;
+    }
+
+    pdfSaveDirectory.value = stored.trim();
   }
 }

@@ -23,6 +23,9 @@ class AppTranslations extends Translations {
           'settings_pdf_save_subtitle': 'Choose when PDFs are saved to your device',
           'settings_pdf_save_option_immediately': 'Save automatically',
           'settings_pdf_save_option_prompt': 'Ask every time',
+          'settings_pdf_save_location_title': 'PDF save location',
+          'settings_pdf_save_location_default': 'Downloads folder (default)',
+          'settings_pdf_save_location_reset': 'Reset to default location',
           'settings_pdf_save_confirm_title': 'Save PDF now?',
           'settings_pdf_save_confirm_message':
               'Do you want to save this PDF now? You can change this behavior in Settings.',
@@ -669,6 +672,12 @@ class AppTranslations extends Translations {
               'Choisissez quand les PDF sont enregistrés sur votre appareil',
           'settings_pdf_save_option_immediately': 'Enregistrer automatiquement',
           'settings_pdf_save_option_prompt': 'Demander à chaque fois',
+          'settings_pdf_save_location_title':
+              'Emplacement d\'enregistrement PDF',
+          'settings_pdf_save_location_default':
+              'Dossier Téléchargements (par défaut)',
+          'settings_pdf_save_location_reset':
+              'Réinitialiser l\'emplacement par défaut',
           'settings_pdf_save_confirm_title': 'Enregistrer le PDF maintenant ?',
           'settings_pdf_save_confirm_message':
               'Souhaitez-vous enregistrer ce PDF maintenant ? Vous pouvez modifier ce comportement dans les paramètres.',
@@ -1348,6 +1357,9 @@ class AppTranslations extends Translations {
           'settings_pdf_save_subtitle': 'اختر متى يتم حفظ ملفات PDF على جهازك',
           'settings_pdf_save_option_immediately': 'حفظ تلقائيًا',
           'settings_pdf_save_option_prompt': 'اسأل في كل مرة',
+          'settings_pdf_save_location_title': 'موقع حفظ ملفات PDF',
+          'settings_pdf_save_location_default': 'مجلد التنزيلات (افتراضي)',
+          'settings_pdf_save_location_reset': 'إعادة التعيين إلى الموقع الافتراضي',
           'settings_pdf_save_confirm_title': 'حفظ ملف PDF الآن؟',
           'settings_pdf_save_confirm_message':
               'هل تريد حفظ ملف PDF هذا الآن؟ يمكنك تغيير هذا السلوك من الإعدادات.',

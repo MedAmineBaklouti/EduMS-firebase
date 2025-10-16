@@ -2,9 +2,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
-import 'package:path/path.dart' as p;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:get/get.dart';
+import 'package:path/path.dart' as p;
+
+import '../settings_service.dart';
 
 Future<String?> savePdf(Uint8List bytes, String fileName) async {
   final sanitizedName = fileName.trim().isEmpty ? 'document.pdf' : fileName;
@@ -28,6 +31,15 @@ Future<String?> _resolveSavePath(String sanitizedName) async {
   final resolvedName = sanitizedName.toLowerCase().endsWith('.pdf')
       ? sanitizedName
       : '$sanitizedName.pdf';
+
+  final settings = Get.isRegistered<SettingsService>()
+      ? Get.find<SettingsService>()
+      : null;
+  final customDirectory = settings?.pdfSaveDirectory.value;
+  if (customDirectory != null && customDirectory.trim().isNotEmpty) {
+    final directory = Directory(customDirectory.trim());
+    return p.join(directory.path, resolvedName);
+  }
 
   if (!Platform.isAndroid) {
     try {

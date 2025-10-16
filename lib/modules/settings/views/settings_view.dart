@@ -50,6 +50,28 @@ class SettingsView extends GetView<SettingsController> {
                       .describePdfSaveTiming(controller.pdfSaveTiming),
                   trailing: _PdfSaveTimingDropdown(controller: controller),
                 ),
+                _SettingsTile(
+                  icon: Icons.folder_outlined,
+                  title: 'settings_pdf_save_location_title'.tr,
+                  subtitle: controller.describePdfSaveDirectory(
+                    controller.pdfSaveDirectory,
+                  ),
+                  onTap: () async => controller.choosePdfSaveDirectory(),
+                  trailing: controller.pdfSaveDirectory != null
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip:
+                                  'settings_pdf_save_location_reset'.tr,
+                              icon: const Icon(Icons.refresh),
+                              onPressed: controller.resetPdfSaveDirectory,
+                            ),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        )
+                      : null,
+                ),
               ],
             ),
             const SizedBox(height: 24),
