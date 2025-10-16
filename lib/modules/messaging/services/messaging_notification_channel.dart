@@ -1,9 +1,11 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'messaging_notification_constants.dart';
+
 const AndroidNotificationChannel messagingAndroidChannel = AndroidNotificationChannel(
-  'messaging_channel',
-  'Messaging notifications',
-  description: 'Notifications for new chat messages.',
+  messagingNotificationChannelId,
+  messagingNotificationChannelName,
+  description: messagingNotificationChannelDescription,
   importance: Importance.high,
 );
 
