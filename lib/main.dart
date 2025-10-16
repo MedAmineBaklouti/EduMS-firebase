@@ -19,15 +19,6 @@ Future<void> main() async {
   // Load .env file
   await dotenv.load(fileName: ".env");
 
-  // Verify API key is loaded
-  final apiKey = dotenv.env['GEMINI_API_KEY'];
-  print('🔑 API Key loaded: ${apiKey != null && apiKey.isNotEmpty}');
-  if (apiKey == null || apiKey.isEmpty) {
-    print('❌ WARNING: GEMINI_API_KEY is not configured in .env file!');
-  } else {
-    print('✅ API Key is configured');
-  }
-
   // Initialize Firebase
   await Firebase.initializeApp();
 
