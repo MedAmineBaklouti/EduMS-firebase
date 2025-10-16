@@ -288,11 +288,7 @@ class _RoleDashboardState extends State<RoleDashboard> {
     IconButton buildBaseButton() {
       return IconButton(
         iconSize: 28,
-        icon: Image.asset(
-          'assets/icon/icon.png',
-          width: 28,
-          height: 28,
-        ),
+        icon: const Icon(Icons.notifications_outlined, size: 28),
         onPressed: widget.onMessagesTap,
         tooltip: 'common_messages'.tr,
       );
