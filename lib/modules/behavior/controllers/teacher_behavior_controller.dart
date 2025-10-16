@@ -7,9 +7,9 @@ import 'package:get/get.dart';
 import 'package:edums/modules/auth/service/auth_service.dart';
 import '../../../common/services/database_service.dart';
 import '../models/behavior_model.dart';
-import '../../common/models/child_model.dart';
-import '../../common/models/school_class_model.dart';
-import '../../common/models/teacher_model.dart';
+import '../../../common/models/child_model.dart';
+import '../../../common/models/school_class_model.dart';
+import '../../../common/models/teacher_model.dart';
 
 class TeacherBehaviorController extends GetxController {
   final DatabaseService _db = Get.find();

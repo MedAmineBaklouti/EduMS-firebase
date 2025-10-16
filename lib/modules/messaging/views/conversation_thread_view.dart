@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
-import '../../common/widgets/module_empty_state.dart';
+import '../../../common/widgets/module_empty_state.dart';
 import '../controllers/messaging_controller.dart';
 import 'widgets/scrollable_placeholder.dart';
 

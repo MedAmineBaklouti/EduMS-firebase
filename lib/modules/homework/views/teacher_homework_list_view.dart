@@ -3,10 +3,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../models/homework_model.dart';
-import '../../common/widgets/module_card.dart';
-import '../../common/widgets/module_empty_state.dart';
-import '../../common/widgets/module_page_container.dart';
-import '../../common/widgets/swipe_action_background.dart';
+import '../../../common/widgets/module_card.dart';
+import '../../../common/widgets/module_empty_state.dart';
+import '../../../common/widgets/module_page_container.dart';
+import '../../../common/widgets/swipe_action_background.dart';
 import '../controllers/teacher_homework_controller.dart';
 import 'homework_detail_view.dart';
 import 'teacher_homework_form_view.dart';

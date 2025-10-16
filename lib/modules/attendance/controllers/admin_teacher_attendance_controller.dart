@@ -10,9 +10,9 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../../common/services/database_service.dart';
 import '../../../common/services/pdf_downloader/pdf_downloader.dart';
 import '../models/attendance_record_model.dart';
-import '../../common/models/school_class_model.dart';
-import '../../common/models/subject_model.dart';
-import '../../common/models/teacher_model.dart';
+import '../../../common/models/school_class_model.dart';
+import '../../../common/models/subject_model.dart';
+import '../../../common/models/teacher_model.dart';
 
 class AdminTeacherAttendanceController extends GetxController {
   final DatabaseService _db = Get.find();

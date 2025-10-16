@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/pickup_model.dart';
-import '../../../common/widgets/module_card.dart';
+import '../../../../common/widgets/module_card.dart';
 
 class PickupQueueCard extends StatelessWidget {
   const PickupQueueCard({
