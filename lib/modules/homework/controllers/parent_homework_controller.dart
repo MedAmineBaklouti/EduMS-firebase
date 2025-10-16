@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 
 import 'package:edums/modules/auth/service/auth_service.dart';
 import '../../../common/services/database_service.dart';
-import '../../common/models/child_model.dart';
+import '../../../common/models/child_model.dart';
 import '../models/homework_model.dart';
 
 class ParentHomeworkController extends GetxController {

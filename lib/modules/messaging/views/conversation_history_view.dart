@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../common/widgets/module_empty_state.dart';
-import '../../common/widgets/swipe_action_background.dart';
+import '../../../common/widgets/module_empty_state.dart';
+import '../../../common/widgets/swipe_action_background.dart';
 import '../controllers/messaging_controller.dart';
 import 'widgets/scrollable_placeholder.dart';
 

@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../models/course_model.dart';
 import '../controllers/teacher_courses_controller.dart';
 import 'course_detail_view.dart';
-import '../../common/widgets/swipe_action_background.dart';
+import '../../../common/widgets/swipe_action_background.dart';
 
 class TeacherCoursesView extends StatelessWidget {
   final TeacherCoursesController controller =

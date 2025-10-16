@@ -3,12 +3,12 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../models/behavior_model.dart';
-import '../../common/widgets/module_card.dart';
-import '../../common/widgets/module_empty_state.dart';
-import '../../common/widgets/module_page_container.dart';
+import '../../../common/widgets/module_card.dart';
+import '../../../common/widgets/module_empty_state.dart';
+import '../../../common/widgets/module_page_container.dart';
 import '../controllers/teacher_behavior_controller.dart';
 import '../widgets/behavior_type_chip.dart';
-import '../../common/widgets/swipe_action_background.dart';
+import '../../../common/widgets/swipe_action_background.dart';
 import 'behavior_detail_view.dart';
 import 'teacher_behavior_form_view.dart';
 

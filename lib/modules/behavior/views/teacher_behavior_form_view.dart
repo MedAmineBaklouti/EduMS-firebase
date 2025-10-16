@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../models/behavior_model.dart';
-import '../../common/models/child_model.dart';
-import '../../common/models/school_class_model.dart';
+import '../../../common/models/child_model.dart';
+import '../../../common/models/school_class_model.dart';
 import '../controllers/teacher_behavior_controller.dart';
 
 class TeacherBehaviorFormView extends GetView<TeacherBehaviorController> {

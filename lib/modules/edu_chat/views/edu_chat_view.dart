@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controllers/edu_chat_controller.dart';
-import '../../common/widgets/swipe_action_background.dart';
+import '../../../common/widgets/swipe_action_background.dart';
 import '../widgets/edu_chat_message_bubble.dart';
 
 class EduChatView extends GetView<EduChatController> {

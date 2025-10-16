@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controllers/admin_control_controller.dart';
-import '../../common/models/child_model.dart';
-import '../../common/models/parent_model.dart';
-import '../../common/models/school_class_model.dart';
-import '../../common/models/subject_model.dart';
-import '../../common/models/teacher_model.dart';
+import '../../../common/models/child_model.dart';
+import '../../../common/models/parent_model.dart';
+import '../../../common/models/school_class_model.dart';
+import '../../../common/models/subject_model.dart';
+import '../../../common/models/teacher_model.dart';
 
 class AdminControlView extends StatelessWidget {
   final AdminControlController c = Get.put(AdminControlController());
