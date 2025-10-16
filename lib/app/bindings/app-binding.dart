@@ -2,9 +2,9 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:edums/modules/auth/service/auth_service.dart';
-import '../../core/services/database_service.dart';
-import '../../core/services/network_service.dart';
-import '../../core/services/settings_service.dart';
+import '../../common/services/database_service.dart';
+import '../../common/services/network_service.dart';
+import '../../common/services/settings_service.dart';
 import '../../modules/admin_dashboard/controllers/admin_controller.dart';
 import '../../modules/admin_dashboard/controllers/admin_control_controller.dart';
 import '../../modules/attendance/controllers/admin_attendance_controller.dart';

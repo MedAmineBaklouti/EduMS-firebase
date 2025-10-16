@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_pages.dart';
 import 'package:edums/modules/auth/service/auth_service.dart';
-import '../../../core/services/database_service.dart';
+import '../../../common/services/database_service.dart';
 import '../models/course_model.dart';
 import '../../common/models/school_class_model.dart';
 import '../../common/models/subject_model.dart';

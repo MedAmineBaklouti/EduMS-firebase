@@ -5,7 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app/routes/app_pages.dart';
 import 'app/themes/theme.dart';
 import 'app/translations/app_translations.dart';
-import 'core/services/settings_service.dart';
+import 'common/services/settings_service.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);

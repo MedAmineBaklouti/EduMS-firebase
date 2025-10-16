@@ -1,8 +1,8 @@
 // modules/admin/views/admin_dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:edums/modules/common/widgets/dashboard_card.dart';
-import 'package:edums/modules/common/widgets/role_dashboard.dart';
+import 'package:edums/common/widgets/dashboard_card.dart';
+import 'package:edums/common/widgets/role_dashboard.dart';
 import '../controllers/admin_controller.dart';
 import '../../../app/routes/app_pages.dart';
 

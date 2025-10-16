@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 
-import 'package:edums/core/services/database_service.dart';
+import 'package:edums/common/services/database_service.dart';
 import 'package:edums/modules/announcement/models/announcement_model.dart';
 import 'package:edums/modules/announcement/views/announcement_detail_view.dart';
 

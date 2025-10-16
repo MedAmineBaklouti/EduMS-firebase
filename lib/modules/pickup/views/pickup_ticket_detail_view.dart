@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/services/database_service.dart';
+import '../../../common/services/database_service.dart';
 import '../../common/models/admin_model.dart';
 import '../models/pickup_model.dart';
 import '../../common/models/subject_model.dart';
