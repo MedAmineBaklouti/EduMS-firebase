@@ -77,6 +77,7 @@ class MessagingService extends GetxService {
 
   String get _projectId => AppConfig.projectId.trim();
   String get _serviceAccountEmail => AppConfig.clientEmail.trim();
+  String get _clientId => AppConfig.clientId.trim();
   String get _privateKeyId => AppConfig.privateKeyId.trim();
   String get _privateKey => AppConfig.privateKey.replaceAll('\\n', '\n');
 
@@ -102,15 +103,17 @@ class MessagingService extends GetxService {
   FCMv1Service? _createFcmService() {
     final projectId = _projectId;
     final clientEmail = _serviceAccountEmail;
+    final clientId = _clientId;
     final privateKey = _privateKey;
     final privateKeyId = _privateKeyId;
 
     if (projectId.isEmpty ||
         clientEmail.isEmpty ||
+        clientId.isEmpty ||
         privateKey.isEmpty ||
         privateKeyId.isEmpty) {
       debugPrint(
-        '❌ FCM v1 configuration missing. Please verify PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY_ID and PRIVATE_KEY.',
+        '❌ FCM v1 configuration missing. Please verify PROJECT_ID, CLIENT_EMAIL, CLIENT_ID, PRIVATE_KEY_ID and PRIVATE_KEY.',
       );
       return null;
     }
@@ -118,6 +121,7 @@ class MessagingService extends GetxService {
     return FCMv1Service(
       projectId: projectId,
       clientEmail: clientEmail,
+      clientId: clientId,
       privateKey: privateKey,
       privateKeyId: privateKeyId,
       httpClient: _pushClient,

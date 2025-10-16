@@ -15,6 +15,7 @@ class FCMv1Service {
   FCMv1Service({
     required String projectId,
     required String clientEmail,
+    required String clientId,
     required String privateKey,
     required String privateKeyId,
     Dio? httpClient,
@@ -25,6 +26,7 @@ class FCMv1Service {
           'private_key_id': privateKeyId,
           'private_key': privateKey,
           'client_email': clientEmail,
+          'client_id': clientId,
           'token_uri': 'https://oauth2.googleapis.com/token',
         }),
         _httpClient = httpClient ??
