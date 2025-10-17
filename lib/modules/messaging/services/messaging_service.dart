@@ -401,6 +401,34 @@ class MessagingService extends GetxService {
     }
   }
 
+  Future<String> resolveDisplayName({
+    required String userId,
+    String? fallback,
+  }) async {
+    final trimmedId = userId.trim();
+    final normalizedFallback = _prettifyDisplayValue(fallback);
+    if (trimmedId.isEmpty) {
+      return normalizedFallback;
+    }
+
+    final cached = _userDisplayNameCache[trimmedId];
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    final resolved = await _lookupProfileName(trimmedId);
+    if (resolved != null && resolved.isNotEmpty) {
+      return resolved;
+    }
+
+    if (normalizedFallback.isNotEmpty) {
+      _userDisplayNameCache[trimmedId] = normalizedFallback;
+      return normalizedFallback;
+    }
+
+    return '';
+  }
+
   Future<ConversationModel> ensureConversationWithContact(
     MessagingContact contact,
   ) async {
