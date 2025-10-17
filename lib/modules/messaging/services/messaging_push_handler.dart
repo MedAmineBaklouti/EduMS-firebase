@@ -44,12 +44,7 @@ Future<void> messagingBackgroundHandler(RemoteMessage message) async {
   final conversationId =
       (data['conversationId'] ?? data['conversation_id'])?.toString() ?? '';
 
-  final senderName =
-      (data['senderName'] ?? data['sender_name'])?.toString().trim() ?? '';
-
-  final title = notification?.title ??
-      data['title'] ??
-      (senderName.isNotEmpty ? senderName : 'Unknown sender');
+  const title = 'EduMS';
   final body = notification?.body ??
       data['body'] ??
       data['content'] ??

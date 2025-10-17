@@ -44,9 +44,7 @@ class MessageModel {
           (data['conversationId'] ?? data['conversation_id'] ?? 'general')
               as String,
       senderId: (data['senderId'] ?? data['sender_id'] ?? '') as String,
-      senderName: (data['senderName'] ?? data['sender_name'] ??
-              message.notification?.title ??
-              'User')
+      senderName: (data['senderName'] ?? data['sender_name'] ?? 'User')
           as String,
       content: (data['content'] ?? data['text'] ?? message.notification?.body ??
               '')
