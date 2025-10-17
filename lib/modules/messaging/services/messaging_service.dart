@@ -51,6 +51,8 @@ class MessagingService extends GetxService {
   final StreamController<MessageModel> _messageStreamController =
       StreamController<MessageModel>.broadcast();
 
+  final Map<String, String> _userDisplayNameCache = <String, String>{};
+
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<User?>? _authSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
@@ -1546,7 +1548,8 @@ class MessagingService extends GetxService {
         return;
       }
 
-      final resolvedSenderName = _resolveSenderName(message, participants);
+      final resolvedSenderName =
+          await _resolveSenderName(message, participants);
       final senderName = resolvedSenderName.isNotEmpty
           ? resolvedSenderName
           : _unknownSenderFallback;
@@ -1600,10 +1603,48 @@ class MessagingService extends GetxService {
     }
   }
 
-  String _resolveSenderName(
+  Future<String> _resolveSenderName(
     MessageModel message,
     List<ConversationParticipant> participants,
-  ) {
+  ) async {
+    final senderId = message.senderId.trim();
+    if (senderId.isNotEmpty) {
+      for (final participant in participants) {
+        final participantUserId = participant.userId.trim();
+        final participantId = participant.id.trim();
+        final matchesSenderId =
+            participantUserId == senderId || participantId == senderId;
+        if (!matchesSenderId) {
+          continue;
+        }
+
+        final participantName = _prettifyDisplayValue(participant.name);
+        if (participantName.isNotEmpty) {
+          return participantName;
+        }
+      }
+
+      final profileName = await _lookupProfileName(senderId);
+      if (profileName != null && profileName.isNotEmpty) {
+        return profileName;
+      }
+
+      final rawSenderName = message.senderName.trim();
+      if (rawSenderName.isNotEmpty && !rawSenderName.contains('@')) {
+        final directName = _prettifyDisplayValue(rawSenderName);
+        if (directName.isNotEmpty) {
+          return directName;
+        }
+      }
+
+      final sanitized = _prettifyDisplayValue(message.senderName);
+      if (sanitized.isNotEmpty) {
+        return sanitized;
+      }
+
+      return '';
+    }
+
     for (final participant in participants) {
       final matchesSenderId = participant.userId == message.senderId ||
           participant.id == message.senderId;
@@ -1625,7 +1666,113 @@ class MessagingService extends GetxService {
       }
     }
 
+    final sanitized = _prettifyDisplayValue(message.senderName);
+    if (sanitized.isNotEmpty) {
+      return sanitized;
+    }
+
     return '';
+  }
+
+  Future<String?> _lookupProfileName(String userId) async {
+    final trimmedId = userId.trim();
+    if (trimmedId.isEmpty) {
+      return null;
+    }
+
+    final cached = _userDisplayNameCache[trimmedId];
+    if (cached != null) {
+      return cached;
+    }
+
+    const profileCollections = <String>[
+      _parentsCollection,
+      _teachersCollection,
+      _adminsCollection,
+    ];
+    const candidateKeys = <String>[
+      'userId',
+      'uid',
+      'authId',
+      'user_id',
+      'firebaseUid',
+      'email',
+    ];
+
+    for (final collection in profileCollections) {
+      try {
+        final doc = await _firestore.collection(collection).doc(trimmedId).get();
+        final resolved = _extractProfileName(doc.data(), doc.id);
+        if (resolved != null) {
+          _userDisplayNameCache[trimmedId] = resolved;
+          return resolved;
+        }
+      } catch (_) {
+        // Ignore lookup errors and continue to the next source.
+      }
+
+      for (final key in candidateKeys) {
+        try {
+          final query = await _firestore
+              .collection(collection)
+              .where(key, isEqualTo: trimmedId)
+              .limit(1)
+              .get();
+          if (query.docs.isEmpty) {
+            continue;
+          }
+          final data = query.docs.first.data();
+          final resolved = _extractProfileName(data, query.docs.first.id);
+          if (resolved != null) {
+            _userDisplayNameCache[trimmedId] = resolved;
+            return resolved;
+          }
+        } catch (_) {
+          // Ignore lookup errors and try the next key/collection.
+        }
+      }
+    }
+
+    _userDisplayNameCache[trimmedId] = '';
+    return null;
+  }
+
+  String? _extractProfileName(
+    Map<String, dynamic>? data,
+    String fallbackId,
+  ) {
+    if (data == null) {
+      return null;
+    }
+
+    final resolvedUserId = _resolveUserId(data, fallbackId).trim();
+    final fields = <String?>[
+      data['name'] as String?,
+      data['displayName'] as String?,
+      data['fullName'] as String?,
+      data['firstName'] as String?,
+      data['lastName'] as String?,
+    ];
+
+    for (final field in fields) {
+      final candidate = _prettifyDisplayValue(field);
+      if (candidate.isNotEmpty) {
+        if (resolvedUserId.isNotEmpty) {
+          _userDisplayNameCache[resolvedUserId] = candidate;
+        }
+        return candidate;
+      }
+    }
+
+    final emailCandidate = _prettifyDisplayValue(data['email'] as String?);
+    if (emailCandidate.isNotEmpty) {
+      if (resolvedUserId.isNotEmpty) {
+        _userDisplayNameCache[resolvedUserId] = emailCandidate;
+      }
+      return emailCandidate;
+    }
+
+    return null;
   }
 
   Future<String> _buildPushNotificationBody(
