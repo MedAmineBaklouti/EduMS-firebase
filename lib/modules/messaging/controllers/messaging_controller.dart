@@ -374,10 +374,15 @@ class MessagingController extends GetxController {
     try {
       isSending.value = true;
       messageError.value = null;
+      final fallbackName = user.displayName ?? user.email ?? 'User';
+      final senderName = await _messagingService.resolveDisplayName(
+        user.uid,
+        fallback: fallbackName,
+      );
       final message = await _messagingService.sendMessage(
         conversationId: conversationId,
         senderId: user.uid,
-        senderName: user.displayName ?? user.email ?? 'User',
+        senderName: senderName.isNotEmpty ? senderName : fallbackName,
         content: content,
         participants: activeConversation.value?.participants,
       );

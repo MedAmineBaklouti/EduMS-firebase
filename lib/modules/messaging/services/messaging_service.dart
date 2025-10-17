@@ -1775,6 +1775,30 @@ class MessagingService extends GetxService {
     return null;
   }
 
+  Future<String> resolveDisplayName(
+    String userId, {
+    String? fallback,
+  }) async {
+    final trimmedId = userId.trim();
+    final fallbackValue = _prettifyDisplayValue(fallback);
+
+    if (trimmedId.isEmpty) {
+      return fallbackValue.isNotEmpty ? fallbackValue : (fallback?.trim() ?? '');
+    }
+
+    final cached = _userDisplayNameCache[trimmedId];
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+
+    final profileName = await _lookupProfileName(trimmedId);
+    if (profileName != null && profileName.isNotEmpty) {
+      return profileName;
+    }
+
+    return fallbackValue.isNotEmpty ? fallbackValue : (fallback?.trim() ?? '');
+  }
+
   Future<String> _buildPushNotificationBody(
     MessageModel message, {
     String? senderNameOverride,
