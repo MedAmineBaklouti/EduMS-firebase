@@ -1011,7 +1011,7 @@ class MessagingController extends GetxController {
         final filtered = cutoff == null
             ? mapped
             : mapped
-                .where((message) => message.sentAt.isAfter(cutoff.toUtc()))
+                .where((message) => message.sentAt.isAfter(cutoff!.toUtc()))
                 .toList();
         messageError.value = null;
         messages.assignAll(filtered);
