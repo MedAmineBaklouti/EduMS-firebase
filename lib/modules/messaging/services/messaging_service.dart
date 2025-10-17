@@ -1604,11 +1604,6 @@ class MessagingService extends GetxService {
     MessageModel message,
     List<ConversationParticipant> participants,
   ) {
-    final directName = _prettifyDisplayValue(message.senderName);
-    if (directName.isNotEmpty) {
-      return directName;
-    }
-
     for (final participant in participants) {
       final matchesSenderId = participant.userId == message.senderId ||
           participant.id == message.senderId;
@@ -1619,6 +1614,14 @@ class MessagingService extends GetxService {
       final participantName = _prettifyDisplayValue(participant.name);
       if (participantName.isNotEmpty) {
         return participantName;
+      }
+    }
+
+    final rawSenderName = message.senderName.trim();
+    if (rawSenderName.isNotEmpty && !rawSenderName.contains('@')) {
+      final directName = _prettifyDisplayValue(rawSenderName);
+      if (directName.isNotEmpty) {
+        return directName;
       }
     }
 
@@ -1684,41 +1687,10 @@ class MessagingService extends GetxService {
   }
 
   Future<String> _resolveNotificationTitle(
-    String conversationId,
-    List<ConversationParticipant> participants,
+    String _conversationId,
+    List<ConversationParticipant> _participants,
   ) async {
-    const fallbackTitle = 'EduMS';
-
-    if (conversationId.isNotEmpty) {
-      try {
-        final snapshot = await _firestore
-            .collection(_conversationsCollection)
-            .doc(conversationId)
-            .get();
-        final data = snapshot.data();
-        if (data != null) {
-          final rawTitle = (data['title'] ?? data['name']) as String?;
-          final cleanedTitle = _prettifyDisplayValue(rawTitle);
-          if (cleanedTitle.isNotEmpty &&
-              cleanedTitle.toLowerCase() != 'conversation') {
-            return cleanedTitle;
-          }
-        }
-      } catch (error) {
-        debugPrint('Failed to resolve notification title: $error');
-      }
-    }
-
-    final derivedTitle = _prettifyDisplayValue(
-      _deriveTitleFromParticipants(participants),
-    );
-
-    if (derivedTitle.isNotEmpty &&
-        derivedTitle.toLowerCase() != 'conversation') {
-      return derivedTitle;
-    }
-
-    return fallbackTitle;
+    return 'EduMS';
   }
 
   Future<void> _removeInvalidToken(String token) async {
@@ -1809,11 +1781,7 @@ class MessagingService extends GetxService {
       return;
     }
 
-    final senderName =
-        (data['senderName'] ?? data['sender_name'] ?? '').toString().trim();
-    final title = notification?.title ??
-        data['title'] ??
-        (senderName.isNotEmpty ? senderName : _unknownSenderFallback);
+    const title = 'EduMS';
     final body = notification?.body ??
         data['body'] ??
         data['content'] ??
