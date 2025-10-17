@@ -1746,6 +1746,20 @@ class MessagingService extends GetxService {
     }
 
     final resolvedUserId = _resolveUserId(data, fallbackId).trim();
+
+    final combinedFirstName = _prettifyDisplayValue(data['firstName'] as String?);
+    final combinedLastName = _prettifyDisplayValue(data['lastName'] as String?);
+    final combinedName = <String>[combinedFirstName, combinedLastName]
+        .where((part) => part.isNotEmpty)
+        .join(' ')
+        .trim();
+    if (combinedName.isNotEmpty) {
+      if (resolvedUserId.isNotEmpty) {
+        _userDisplayNameCache[resolvedUserId] = combinedName;
+      }
+      return combinedName;
+    }
+
     final fields = <String?>[
       data['name'] as String?,
       data['displayName'] as String?,
