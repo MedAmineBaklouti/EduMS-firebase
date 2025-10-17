@@ -1609,6 +1609,7 @@ class MessagingService extends GetxService {
   ) async {
     final senderId = message.senderId.trim();
     if (senderId.isNotEmpty) {
+      String? participantFallback;
       for (final participant in participants) {
         final participantUserId = participant.userId.trim();
         final participantId = participant.id.trim();
@@ -1618,15 +1619,24 @@ class MessagingService extends GetxService {
           continue;
         }
 
+        final profileName = await _lookupProfileName(participantUserId);
+        if (profileName != null && profileName.isNotEmpty) {
+          return profileName;
+        }
+
         final participantName = _prettifyDisplayValue(participant.name);
-        if (participantName.isNotEmpty) {
-          return participantName;
+        if (participantName.isNotEmpty && participantFallback == null) {
+          participantFallback = participantName;
         }
       }
 
       final profileName = await _lookupProfileName(senderId);
       if (profileName != null && profileName.isNotEmpty) {
         return profileName;
+      }
+
+      if (participantFallback != null) {
+        return participantFallback;
       }
 
       final rawSenderName = message.senderName.trim();
