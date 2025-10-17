@@ -319,16 +319,21 @@ class MessagingService extends GetxService {
     final messageRef = conversationRef.collection(_messagesCollection).doc();
 
     try {
+      final resolvedParticipants =
+          await _resolveParticipants(conversationId, participants);
+      final normalizedSenderName = await _resolveSenderDisplayName(
+        senderId: senderId,
+        providedName: senderName,
+        participants: resolvedParticipants,
+      );
+
       await messageRef.set(<String, dynamic>{
         'conversationId': conversationId,
         'senderId': senderId,
-        'senderName': senderName,
+        'senderName': normalizedSenderName,
         'content': content,
         'sentAt': Timestamp.fromDate(now),
       });
-
-      final resolvedParticipants =
-          await _resolveParticipants(conversationId, participants);
 
       final participantIds = <String>{senderId};
       for (final participant in resolvedParticipants) {
@@ -380,7 +385,7 @@ class MessagingService extends GetxService {
         id: messageRef.id,
         conversationId: conversationId,
         senderId: senderId,
-        senderName: senderName,
+        senderName: normalizedSenderName,
         content: content,
         sentAt: now,
         readBy: <String>{senderId},
@@ -1672,6 +1677,42 @@ class MessagingService extends GetxService {
     }
 
     return '';
+  }
+
+  Future<String> _resolveSenderDisplayName({
+    required String senderId,
+    required String providedName,
+    required List<ConversationParticipant> participants,
+  }) async {
+    final trimmedSenderId = senderId.trim();
+
+    if (trimmedSenderId.isNotEmpty) {
+      for (final participant in participants) {
+        final participantIds = <String>{
+          participant.userId.trim(),
+          participant.id.trim(),
+        }..removeWhere((value) => value.isEmpty);
+
+        if (participantIds.contains(trimmedSenderId)) {
+          final participantName = _prettifyDisplayValue(participant.name);
+          if (participantName.isNotEmpty) {
+            return participantName;
+          }
+        }
+      }
+
+      final profileName = await _lookupProfileName(trimmedSenderId);
+      if (profileName != null && profileName.isNotEmpty) {
+        return profileName;
+      }
+    }
+
+    final sanitizedProvided = _prettifyDisplayValue(providedName);
+    if (sanitizedProvided.isNotEmpty) {
+      return sanitizedProvided;
+    }
+
+    return _unknownSenderFallback;
   }
 
   Future<String?> _lookupProfileName(String userId) async {
