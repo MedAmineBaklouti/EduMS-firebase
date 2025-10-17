@@ -12,10 +12,6 @@ class AuthService extends GetxService {
   late final SharedPreferences prefs;
 
   Future<AuthService> init() async {
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      await _auth.setSettings(forceRecaptchaFlow: true);
-    }
-
     prefs = await SharedPreferences.getInstance();
     _auth.authStateChanges().listen((User? user) {
       this.user.value = user;
@@ -114,6 +110,7 @@ class AuthService extends GetxService {
   }) async {
     await _auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
+      timeout: const Duration(seconds: 60),
       verificationCompleted: verificationCompleted,
       verificationFailed: verificationFailed,
       codeSent: codeSent,
