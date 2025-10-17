@@ -325,6 +325,7 @@ class MessagingService extends GetxService {
         'senderName': senderName,
         'content': content,
         'sentAt': Timestamp.fromDate(now),
+        'readBy': <String>[senderId],
       });
 
       final resolvedParticipants =
@@ -630,9 +631,10 @@ class MessagingService extends GetxService {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
         final id = doc.id;
         final resolvedUserId = _resolveUserId(data, id);
-        final name = (data['name'] as String?)?.trim();
-        final email = (data['email'] as String?)?.trim();
-        final displayName = _formatDisplayName(name, email, 'Teacher');
+        final displayName = _resolveContactDisplayName(
+          data,
+          fallback: 'Teacher',
+        );
         final teacherClassIds = List<String>.from(
           teacherClassMap[resolvedUserId] ?? teacherClassMap[id] ?? <String>{},
         );
@@ -695,9 +697,10 @@ class MessagingService extends GetxService {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
         final id = doc.id;
         final resolvedUserId = _resolveUserId(data, id);
-        final name = (data['name'] as String?)?.trim();
-        final email = (data['email'] as String?)?.trim();
-        final displayName = _formatDisplayName(name, email, 'Parent');
+        final displayName = _resolveContactDisplayName(
+          data,
+          fallback: 'Parent',
+        );
         final parentClassIds = List<String>.from(
           parentClassMap[resolvedUserId] ?? parentClassMap[id] ?? <String>{},
         );
@@ -743,10 +746,10 @@ class MessagingService extends GetxService {
         final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
         final id = doc.id;
         final resolvedUserId = _resolveUserId(data, id);
-        final name = (data['name'] as String?)?.trim();
-        final email = (data['email'] as String?)?.trim();
-        final displayName =
-            _formatDisplayName(name, email, 'Administrator');
+        final displayName = _resolveContactDisplayName(
+          data,
+          fallback: 'Administrator',
+        );
         addContact(MessagingContact(
           id: id,
           userId: resolvedUserId,
@@ -872,6 +875,74 @@ class MessagingService extends GetxService {
     return fallback;
   }
 
+  String _resolveContactDisplayName(
+    Map<String, dynamic>? data, {
+    String fallback = 'User',
+  }) {
+    final resolved = _extractNameFromData(data);
+    if (resolved != null && resolved.isNotEmpty) {
+      return resolved;
+    }
+
+    final rawName = data?['name'] as String?;
+    final email = data?['email'] as String?;
+    return _formatDisplayName(rawName, email, fallback);
+  }
+
+  String? _extractNameFromData(Map<String, dynamic>? data) {
+    if (data == null) {
+      return null;
+    }
+
+    final candidateKeys = <String>[
+      'name',
+      'displayName',
+      'display_name',
+      'fullName',
+      'full_name',
+      'parentName',
+      'parent_name',
+      'guardianName',
+      'guardian_name',
+      'teacherName',
+      'teacher_name',
+      'adminName',
+      'admin_name',
+      'fatherName',
+      'father_name',
+      'motherName',
+      'mother_name',
+    ];
+
+    for (final key in candidateKeys) {
+      final candidate = _prettifyDisplayValue(data[key] as String?);
+      if (candidate.isNotEmpty) {
+        return candidate;
+      }
+    }
+
+    final first = _prettifyDisplayValue(data['firstName'] as String?);
+    final middle = _prettifyDisplayValue(data['middleName'] as String?);
+    final last = _prettifyDisplayValue(data['lastName'] as String?);
+
+    final parts = <String>[];
+    if (first.isNotEmpty) {
+      parts.add(first);
+    }
+    if (middle.isNotEmpty) {
+      parts.add(middle);
+    }
+    if (last.isNotEmpty) {
+      parts.add(last);
+    }
+
+    if (parts.isNotEmpty) {
+      return parts.join(' ');
+    }
+
+    return null;
+  }
+
   String _prettifyDisplayValue(String? value) {
     final raw = value?.trim() ?? '';
     if (raw.isEmpty) {
@@ -938,9 +1009,8 @@ class MessagingService extends GetxService {
     batch.set(
       conversationRef,
       <String, dynamic>{
-        'unreadBy': <String, dynamic>{
-          userId: 0,
-        },
+        'unreadBy.$userId': 0,
+        'unreadCount': 0,
       },
       SetOptions(merge: true),
     );
@@ -959,6 +1029,7 @@ class MessagingService extends GetxService {
     }
 
     await batch.commit();
+    await clearNotificationsForConversation(conversationId);
   }
 
   String _deriveTitleFromParticipants(
@@ -1746,22 +1817,12 @@ class MessagingService extends GetxService {
     }
 
     final resolvedUserId = _resolveUserId(data, fallbackId).trim();
-    final fields = <String?>[
-      data['name'] as String?,
-      data['displayName'] as String?,
-      data['fullName'] as String?,
-      data['firstName'] as String?,
-      data['lastName'] as String?,
-    ];
-
-    for (final field in fields) {
-      final candidate = _prettifyDisplayValue(field);
-      if (candidate.isNotEmpty) {
-        if (resolvedUserId.isNotEmpty) {
-          _userDisplayNameCache[resolvedUserId] = candidate;
-        }
-        return candidate;
+    final directCandidate = _extractNameFromData(data);
+    if (directCandidate != null && directCandidate.isNotEmpty) {
+      if (resolvedUserId.isNotEmpty) {
+        _userDisplayNameCache[resolvedUserId] = directCandidate;
       }
+      return directCandidate;
     }
 
     final emailCandidate = _prettifyDisplayValue(data['email'] as String?);
