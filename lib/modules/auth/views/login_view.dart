@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../../app/routes/app_pages.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginView extends StatelessWidget {
@@ -149,6 +151,18 @@ class LoginView extends StatelessWidget {
                                           'Login',
                                           style: TextStyle(fontSize: 16),
                                         ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _authController.isLoading.value
+                                      ? null
+                                      : () => Get.toNamed(
+                                            AppPages.FORGOT_PASSWORD,
+                                          ),
+                                  child: const Text('Forgot password?'),
                                 ),
                               ),
                             ],

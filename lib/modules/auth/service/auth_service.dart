@@ -91,6 +91,33 @@ class AuthService extends GetxService {
     await prefs.setBool('isLoggedIn', false);
   }
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Failed to send password reset email.';
+    }
+  }
+
+  Future<String> verifyPasswordResetCode(String code) async {
+    try {
+      return await _auth.verifyPasswordResetCode(code);
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Invalid or expired verification code.';
+    }
+  }
+
+  Future<void> confirmPasswordReset({
+    required String code,
+    required String newPassword,
+  }) async {
+    try {
+      await _auth.confirmPasswordReset(code: code, newPassword: newPassword);
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Failed to reset password.';
+    }
+  }
+
   Future<void> updateCredentials({
     String? newEmail,
     String? newPassword,

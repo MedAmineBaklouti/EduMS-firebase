@@ -8,6 +8,8 @@ import '../../modules/attendance/views/admin_attendance_view.dart';
 import '../../modules/attendance/views/admin_teacher_attendance_view.dart';
 import '../../modules/attendance/views/parent_attendance_view.dart';
 import '../../modules/attendance/views/teacher_attendance_view.dart';
+import '../../modules/auth/bindings/password_reset_binding.dart';
+import '../../modules/auth/views/forgot_password_view.dart';
 import '../../modules/auth/views/login_view.dart';
 import '../../modules/behavior/views/admin_behavior_list_view.dart';
 import '../../modules/behavior/views/parent_behavior_list_view.dart';
@@ -40,6 +42,7 @@ abstract class AppPages {
   static const ADMIN_CONTROL = '/admin/control';
   static const TEACHER_HOME = '/teacher';
   static const PARENT_HOME  = '/parent';
+  static const FORGOT_PASSWORD = '/password/forgot';
   static const ADMIN_COURSES = '/admin/courses';
   static const TEACHER_COURSES = '/teacher/courses';
   static const PARENT_COURSES = '/parent/courses';
@@ -69,6 +72,11 @@ abstract class AppPages {
   static final routes = [
     GetPage(name: SPLASH, page: () => SplashView()),
     GetPage(name: LOGIN, page: () => LoginView()),
+    GetPage(
+      name: FORGOT_PASSWORD,
+      page: () => const ForgotPasswordView(),
+      binding: PasswordResetBinding(),
+    ),
     GetPage(name: ADMIN_HOME, page: () => AdminDashboard()),
     GetPage(name: ADMIN_CONTROL, page: () => AdminControlView()),
     GetPage(name: TEACHER_HOME, page: () => TeacherDashboard()),
