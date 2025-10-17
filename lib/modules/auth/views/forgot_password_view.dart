@@ -173,7 +173,7 @@ class _CodeStep extends GetView<PasswordResetController> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Enter the verification code from the password reset email sent to ' \
+          'Enter the verification code from the password reset email sent to '
           '${controller.verifiedEmail.value}.',
           style: theme.textTheme.bodyMedium,
         ),
