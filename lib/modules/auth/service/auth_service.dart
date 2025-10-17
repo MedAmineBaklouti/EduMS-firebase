@@ -99,6 +99,42 @@ class AuthService extends GetxService {
     }
   }
 
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required PhoneVerificationCompleted verificationCompleted,
+    required PhoneVerificationFailed verificationFailed,
+    required PhoneCodeSent codeSent,
+    required PhoneCodeAutoRetrievalTimeout codeAutoRetrievalTimeout,
+    int? forceResendingToken,
+  }) async {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: verificationCompleted,
+      verificationFailed: verificationFailed,
+      codeSent: codeSent,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+      forceResendingToken: forceResendingToken,
+    );
+  }
+
+  Future<UserCredential> signInWithPhoneCredential(
+      PhoneAuthCredential credential) async {
+    try {
+      return await _auth.signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Failed to verify the phone credential.';
+    }
+  }
+
+  Future<UserCredential> signInWithSmsCode(
+      String verificationId, String smsCode) async {
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode,
+    );
+    return signInWithPhoneCredential(credential);
+  }
+
   Future<String> verifyPasswordResetCode(String code) async {
     try {
       return await _auth.verifyPasswordResetCode(code);
@@ -115,6 +151,21 @@ class AuthService extends GetxService {
       await _auth.confirmPasswordReset(code: code, newPassword: newPassword);
     } on FirebaseAuthException catch (e) {
       throw e.message ?? 'Failed to reset password.';
+    }
+  }
+
+  Future<void> updatePasswordForCurrentUser(String newPassword) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw 'No authenticated user found.';
+    }
+
+    try {
+      await user.updatePassword(newPassword);
+      await user.reload();
+      this.user.value = _auth.currentUser;
+    } on FirebaseAuthException catch (e) {
+      throw e.message ?? 'Failed to update password.';
     }
   }
 
