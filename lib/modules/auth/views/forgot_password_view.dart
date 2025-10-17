@@ -66,14 +66,35 @@ class ForgotPasswordView extends GetView<PasswordResetController> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                _StepIndicator(step: controller.step.value),
+                                _MethodToggle(
+                                  theme: theme,
+                                  selected: controller.method.value,
+                                  onChanged: controller.selectMethod,
+                                ),
                                 const SizedBox(height: 24),
-                                if (controller.step.value == 0)
-                                  _EmailStep(theme: theme)
-                                else if (controller.step.value == 1)
-                                  _CodeStep(theme: theme)
-                                else
-                                  _NewPasswordStep(theme: theme),
+                                if (controller.method.value ==
+                                    PasswordResetMethod.emailLink)
+                                  _EmailLinkStep(theme: theme)
+                                else ...[
+                                  _StepIndicator(
+                                    step: controller.step.value,
+                                    steps: const [
+                                      'Phone',
+                                      'OTP',
+                                      'New Password'
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  if (controller.step.value == 0)
+                                    _PhoneNumberStep(theme: theme)
+                                  else if (controller.step.value == 1)
+                                    _OtpStep(theme: theme)
+                                  else
+                                    _NewPasswordStep(
+                                      theme: theme,
+                                      isPhoneFlow: true,
+                                    ),
+                                ],
                                 const SizedBox(height: 16),
                                 TextButton(
                                   onPressed: controller.isLoading.value
@@ -98,8 +119,95 @@ class ForgotPasswordView extends GetView<PasswordResetController> {
   }
 }
 
-class _EmailStep extends GetView<PasswordResetController> {
-  const _EmailStep({required this.theme});
+class _MethodToggle extends StatelessWidget {
+  const _MethodToggle({
+    required this.theme,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final ThemeData theme;
+  final PasswordResetMethod selected;
+  final void Function(PasswordResetMethod) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: ChoiceChip(
+            label: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.email_outlined, size: 18),
+                  SizedBox(width: 8),
+                  Text('Email link'),
+                ],
+              ),
+            ),
+            selected: selected == PasswordResetMethod.emailLink,
+            onSelected: (_) => onChanged(PasswordResetMethod.emailLink),
+            selectedColor: theme.colorScheme.primary.withOpacity(0.2),
+            labelStyle: theme.textTheme.bodyMedium?.copyWith(
+              color: selected == PasswordResetMethod.emailLink
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: selected == PasswordResetMethod.emailLink
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline,
+              ),
+            ),
+            backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ChoiceChip(
+            label: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.sms_outlined, size: 18),
+                  SizedBox(width: 8),
+                  Text('Phone OTP'),
+                ],
+              ),
+            ),
+            selected: selected == PasswordResetMethod.phoneOtp,
+            onSelected: (_) => onChanged(PasswordResetMethod.phoneOtp),
+            selectedColor: theme.colorScheme.primary.withOpacity(0.2),
+            labelStyle: theme.textTheme.bodyMedium?.copyWith(
+              color: selected == PasswordResetMethod.phoneOtp
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: selected == PasswordResetMethod.phoneOtp
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.outline,
+              ),
+            ),
+            backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmailLinkStep extends GetView<PasswordResetController> {
+  const _EmailLinkStep({required this.theme});
 
   final ThemeData theme;
 
@@ -112,7 +220,7 @@ class _EmailStep extends GetView<PasswordResetController> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Enter your account email and we will send you a verification code.',
+          'Enter your email and we\'ll send you a password reset link.',
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
@@ -152,15 +260,15 @@ class _EmailStep extends GetView<PasswordResetController> {
                   height: 24,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Send Code'),
+              : const Text('Send reset email'),
         ),
       ],
     );
   }
 }
 
-class _CodeStep extends GetView<PasswordResetController> {
-  const _CodeStep({required this.theme});
+class _PhoneNumberStep extends GetView<PasswordResetController> {
+  const _PhoneNumberStep({required this.theme});
 
   final ThemeData theme;
 
@@ -173,18 +281,17 @@ class _CodeStep extends GetView<PasswordResetController> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Enter the verification code from the password reset email sent to '
-          '${controller.verifiedEmail.value}.',
+          'Enter the phone number linked to your account and we\'ll send an OTP.',
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
         TextField(
-          controller: controller.codeController,
-          focusNode: controller.codeFocus,
+          controller: controller.phoneController,
+          focusNode: controller.phoneFocus,
           decoration: InputDecoration(
-            labelText: 'Verification code',
+            labelText: 'Phone number',
             prefixIcon: Icon(
-              Icons.verified_user,
+              Icons.phone_outlined,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             border: OutlineInputBorder(
@@ -194,12 +301,14 @@ class _CodeStep extends GetView<PasswordResetController> {
             fillColor:
                 theme.colorScheme.surfaceVariant.withOpacity(0.4),
           ),
+          keyboardType: TextInputType.phone,
           textInputAction: TextInputAction.done,
-          onSubmitted: (_) => controller.verifyCode(),
+          onSubmitted: (_) => controller.sendPhoneCode(),
         ),
         const SizedBox(height: 24),
         FilledButton(
-          onPressed: controller.isLoading.value ? null : controller.verifyCode,
+          onPressed:
+              controller.isLoading.value ? null : controller.sendPhoneCode,
           style: FilledButton.styleFrom(
             minimumSize: const Size(double.infinity, 50),
             shape: RoundedRectangleBorder(
@@ -212,21 +321,15 @@ class _CodeStep extends GetView<PasswordResetController> {
                   height: 24,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Verify Code'),
-        ),
-        TextButton(
-          onPressed: controller.isLoading.value
-              ? null
-              : controller.resendCode,
-          child: const Text('Resend code'),
+              : const Text('Send OTP'),
         ),
       ],
     );
   }
 }
 
-class _NewPasswordStep extends GetView<PasswordResetController> {
-  const _NewPasswordStep({required this.theme});
+class _OtpStep extends GetView<PasswordResetController> {
+  const _OtpStep({required this.theme});
 
   final ThemeData theme;
 
@@ -239,7 +342,81 @@ class _NewPasswordStep extends GetView<PasswordResetController> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Set a new password for ${controller.verifiedEmail.value}.',
+          'Enter the verification code sent to ${controller.phoneController.text.trim()}.',
+          style: theme.textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: controller.otpController,
+          focusNode: controller.otpFocus,
+          decoration: InputDecoration(
+            labelText: 'OTP code',
+            prefixIcon: Icon(
+              Icons.verified_user,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            filled: true,
+            fillColor:
+                theme.colorScheme.surfaceVariant.withOpacity(0.4),
+          ),
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => controller.verifyOtp(),
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed:
+              controller.isLoading.value ? null : controller.verifyOtp,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(double.infinity, 50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: controller.isLoading.value
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Verify OTP'),
+        ),
+        TextButton(
+          onPressed:
+              controller.isLoading.value ? null : controller.resendOtp,
+          child: const Text('Resend code'),
+        ),
+      ],
+    );
+  }
+}
+
+class _NewPasswordStep extends GetView<PasswordResetController> {
+  const _NewPasswordStep({required this.theme, this.isPhoneFlow = false});
+
+  final ThemeData theme;
+  final bool isPhoneFlow;
+
+  @override
+  PasswordResetController get controller => Get.find();
+
+  @override
+  Widget build(BuildContext context) {
+    final email = controller.verifiedEmail.value;
+    final description = isPhoneFlow
+        ? (email.isNotEmpty
+            ? 'Set a new password for $email.'
+            : 'Set a new password for your account.')
+        : 'Set a new password for ${controller.verifiedEmail.value}.';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          description,
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
@@ -328,14 +505,14 @@ class _NewPasswordStep extends GetView<PasswordResetController> {
 }
 
 class _StepIndicator extends StatelessWidget {
-  const _StepIndicator({required this.step});
+  const _StepIndicator({required this.step, required this.steps});
 
   final int step;
+  final List<String> steps;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final steps = const ['Email', 'Code', 'New Password'];
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
