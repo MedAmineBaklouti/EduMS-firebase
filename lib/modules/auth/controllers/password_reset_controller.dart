@@ -147,11 +147,14 @@ class PasswordResetController extends GetxController {
           }
         },
         verificationFailed: (FirebaseAuthException error) {
+          final message = error.code == 'billing-not-enabled'
+              ? 'Phone verification is temporarily unavailable. Please contact support while we finish configuring our verification service.'
+              : error.message ?? 'Failed to send the verification code.';
           isLoading(false);
           step.value = 0;
           Get.snackbar(
             'Verification Failed',
-            error.message ?? 'Failed to send the verification code.',
+            message,
             snackPosition: SnackPosition.BOTTOM,
             duration: const Duration(seconds: 5),
           );
