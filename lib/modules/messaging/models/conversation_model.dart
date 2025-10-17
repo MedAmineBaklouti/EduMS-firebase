@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 
 class ConversationModel {
+  static const Object _unset = Object();
+
   ConversationModel({
     required this.id,
     required this.title,
@@ -8,6 +10,7 @@ class ConversationModel {
     required this.updatedAt,
     required this.participants,
     this.unreadCount = 0,
+    this.deletedAt,
   });
 
   final String id;
@@ -16,6 +19,7 @@ class ConversationModel {
   final DateTime updatedAt;
   final List<ConversationParticipant> participants;
   final int unreadCount;
+  final DateTime? deletedAt;
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
     final participantsJson = json['participants'];
@@ -35,6 +39,7 @@ class ConversationModel {
               .toList()
           : <ConversationParticipant>[],
       unreadCount: (json['unreadCount'] ?? json['unread_count'] ?? 0) as int,
+      deletedAt: _parseOptionalDateTime(json['deletedAt'] ?? json['deleted_at']),
     );
   }
 
@@ -45,6 +50,7 @@ class ConversationModel {
     DateTime? updatedAt,
     List<ConversationParticipant>? participants,
     int? unreadCount,
+    Object? deletedAt = _unset,
   }) {
     return ConversationModel(
       id: id ?? this.id,
@@ -53,6 +59,8 @@ class ConversationModel {
       updatedAt: updatedAt ?? this.updatedAt,
       participants: participants ?? this.participants,
       unreadCount: unreadCount ?? this.unreadCount,
+      deletedAt:
+          identical(deletedAt, _unset) ? this.deletedAt : deletedAt as DateTime?,
     );
   }
 
@@ -75,6 +83,22 @@ class ConversationModel {
       return DateTime.tryParse(value)?.toUtc() ?? DateTime.now().toUtc();
     }
     return DateTime.now().toUtc();
+  }
+
+  static DateTime? _parseOptionalDateTime(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is DateTime) {
+      return value.toUtc();
+    }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+    }
+    if (value is String) {
+      return DateTime.tryParse(value)?.toUtc();
+    }
+    return null;
   }
 }
 

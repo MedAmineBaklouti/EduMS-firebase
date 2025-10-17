@@ -22,6 +22,16 @@ import 'messaging_notification_channel.dart';
 import 'messaging_notification_constants.dart';
 import 'messaging_push_handler.dart';
 
+class ConversationMessagesResult {
+  ConversationMessagesResult({
+    required this.messages,
+    this.deletedAt,
+  });
+
+  final List<MessageModel> messages;
+  final DateTime? deletedAt;
+}
+
 class _DeviceTokenSaveResult {
   _DeviceTokenSaveResult({this.previousDeviceToken});
 
@@ -182,7 +192,28 @@ class MessagingService extends GetxService {
     return this;
   }
 
-  Future<List<MessageModel>> fetchMessages(String conversationId) async {
+  Future<ConversationMessagesResult> fetchMessages(
+    String conversationId, {
+    DateTime? deletedAt,
+  }) async {
+    DateTime? cutoff = deletedAt;
+    final userId = _authService.currentUser?.uid;
+    if (cutoff == null && userId != null) {
+      try {
+        final conversationDoc = await _firestore
+            .collection(_conversationsCollection)
+            .doc(conversationId)
+            .get();
+        final data = conversationDoc.data();
+        if (data != null) {
+          cutoff = _resolveDeletionTimestamp(data, userId);
+        }
+      } on FirebaseException catch (error) {
+        debugPrint('Failed to resolve deletion timestamp: ${error.message ?? error.code}');
+      } catch (error) {
+        debugPrint('Failed to resolve deletion timestamp: $error');
+      }
+    }
     try {
       final snapshot = await _firestore
           .collection(_conversationsCollection)
@@ -206,7 +237,16 @@ class MessagingService extends GetxService {
       }).toList();
 
       messages.sort((a, b) => a.sentAt.compareTo(b.sentAt));
-      return messages;
+      final normalizedCutoff = cutoff?.toUtc();
+      final filtered = normalizedCutoff == null
+          ? messages
+          : messages
+              .where((message) => message.sentAt.isAfter(normalizedCutoff))
+              .toList();
+      return ConversationMessagesResult(
+        messages: filtered,
+        deletedAt: normalizedCutoff,
+      );
     } on FirebaseException catch (error) {
       final message = error.message ?? error.code;
       throw Exception('Failed to load messages: $message');
@@ -222,15 +262,31 @@ class MessagingService extends GetxService {
     }
 
     final deletedFor = data['deletedFor'];
-    if (deletedFor is Map<String, dynamic>) {
-      final flag = deletedFor[userId];
-      if (flag == null) {
+    if (deletedFor == null) {
+      return false;
+    }
+
+    final deletionTimestamp = _resolveDeletionTimestamp(data, userId);
+    if (deletionTimestamp != null) {
+      final lastUpdated =
+          _parseFirestoreTimestamp(data['updatedAt']) ??
+              _parseFirestoreTimestamp(data['lastMessageAt']) ??
+              _parseFirestoreTimestamp(data['lastMessageSentAt']);
+      if (lastUpdated != null && lastUpdated.isAfter(deletionTimestamp)) {
         return false;
       }
+      return true;
+    }
+
+    if (deletedFor is Map<String, dynamic>) {
+      final flag = deletedFor[userId];
       if (flag is bool) {
         return flag;
       }
-      return true;
+      if (flag != null) {
+        return true;
+      }
+      return false;
     }
 
     if (deletedFor is Iterable) {
@@ -238,6 +294,53 @@ class MessagingService extends GetxService {
     }
 
     return false;
+  }
+
+  DateTime? _parseFirestoreTimestamp(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is Timestamp) {
+      return value.toDate().toUtc();
+    }
+    if (value is DateTime) {
+      return value.toUtc();
+    }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+    }
+    if (value is String) {
+      return DateTime.tryParse(value)?.toUtc();
+    }
+    return null;
+  }
+
+  DateTime? _resolveDeletionTimestamp(Map<String, dynamic> data, String userId) {
+    if (userId.isEmpty) {
+      return null;
+    }
+
+    final deletedFor = data['deletedFor'];
+    if (deletedFor is Map<String, dynamic>) {
+      final value = deletedFor[userId];
+      final timestamp = _parseFirestoreTimestamp(value);
+      if (timestamp != null) {
+        return timestamp;
+      }
+      if (value is bool && value) {
+        return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      }
+      return null;
+    }
+
+    if (deletedFor is Iterable) {
+      final ids = deletedFor.whereType<String>().toSet();
+      if (ids.contains(userId)) {
+        return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      }
+    }
+
+    return null;
   }
 
   Future<List<ConversationModel>> fetchConversations() async {
@@ -385,17 +488,9 @@ class MessagingService extends GetxService {
         },
       };
 
-      final deletionCleanupUpdates = <String, dynamic>{};
-      for (final participantId in participantIds) {
-        final trimmedId = participantId.trim();
-        if (trimmedId.isEmpty) {
-          continue;
-        }
-        deletionCleanupUpdates['deletedFor.$trimmedId'] = FieldValue.delete();
-      }
-
-      if (deletionCleanupUpdates.isNotEmpty) {
-        updateData.addAll(deletionCleanupUpdates);
+      final trimmedSenderId = senderId.trim();
+      if (trimmedSenderId.isNotEmpty) {
+        updateData['deletedFor.$trimmedSenderId'] = FieldValue.delete();
       }
 
       if (resolvedParticipants.isNotEmpty) {
@@ -905,6 +1000,9 @@ class MessagingService extends GetxService {
             : _deriveTitleFromParticipants(participants);
 
     final unreadCount = _resolveUnreadCount(data);
+    final currentUserId = _authService.currentUser?.uid ?? '';
+    final deletedAt =
+        currentUserId.isEmpty ? null : _resolveDeletionTimestamp(data, currentUserId);
 
     return ConversationModel(
       id: id,
@@ -913,6 +1011,7 @@ class MessagingService extends GetxService {
       updatedAt: updatedAt,
       participants: participants,
       unreadCount: unreadCount,
+      deletedAt: deletedAt,
     );
   }
 
