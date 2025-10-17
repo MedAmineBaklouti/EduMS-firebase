@@ -1550,6 +1550,11 @@ class MessagingService extends GetxService {
       final senderName = resolvedSenderName.isNotEmpty
           ? resolvedSenderName
           : _unknownSenderFallback;
+      final notificationTitle = await _resolveNotificationTitle(
+        message.conversationId,
+        participants,
+      );
+
       final notificationBody = await _buildPushNotificationBody(
         message,
         senderNameOverride: resolvedSenderName,
@@ -1564,7 +1569,7 @@ class MessagingService extends GetxService {
         'content': message.content,
         'sentAt': message.sentAt.toIso8601String(),
         'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-        'title': senderName,
+        'title': notificationTitle,
         'body': notificationBody,
       };
 
@@ -1574,7 +1579,7 @@ class MessagingService extends GetxService {
 
         final status = await fcmService.sendMessageWithAccessToken(
           token: token,
-          title: senderName,
+          title: notificationTitle,
           body: notificationBody,
           data: dataPayload,
           accessToken: accessToken,
@@ -1599,7 +1604,7 @@ class MessagingService extends GetxService {
     MessageModel message,
     List<ConversationParticipant> participants,
   ) {
-    final directName = message.senderName.trim();
+    final directName = _prettifyDisplayValue(message.senderName);
     if (directName.isNotEmpty) {
       return directName;
     }
@@ -1611,7 +1616,7 @@ class MessagingService extends GetxService {
         continue;
       }
 
-      final participantName = participant.name.trim();
+      final participantName = _prettifyDisplayValue(participant.name);
       if (participantName.isNotEmpty) {
         return participantName;
       }
@@ -1624,8 +1629,9 @@ class MessagingService extends GetxService {
     MessageModel message, {
     String? senderNameOverride,
   }) async {
-    final senderName =
-        (senderNameOverride ?? message.senderName).trim();
+    final senderName = _prettifyDisplayValue(
+      senderNameOverride ?? message.senderName,
+    );
     final messageContent = message.content.trim();
     final fallback = messageContent.isEmpty
         ? (senderName.isEmpty ? _unknownSenderFallback : senderName)
@@ -1675,6 +1681,44 @@ class MessagingService extends GetxService {
       debugPrint('Failed to compose push notification body: $error');
       return fallback;
     }
+  }
+
+  Future<String> _resolveNotificationTitle(
+    String conversationId,
+    List<ConversationParticipant> participants,
+  ) async {
+    const fallbackTitle = 'EduMS';
+
+    if (conversationId.isNotEmpty) {
+      try {
+        final snapshot = await _firestore
+            .collection(_conversationsCollection)
+            .doc(conversationId)
+            .get();
+        final data = snapshot.data();
+        if (data != null) {
+          final rawTitle = (data['title'] ?? data['name']) as String?;
+          final cleanedTitle = _prettifyDisplayValue(rawTitle);
+          if (cleanedTitle.isNotEmpty &&
+              cleanedTitle.toLowerCase() != 'conversation') {
+            return cleanedTitle;
+          }
+        }
+      } catch (error) {
+        debugPrint('Failed to resolve notification title: $error');
+      }
+    }
+
+    final derivedTitle = _prettifyDisplayValue(
+      _deriveTitleFromParticipants(participants),
+    );
+
+    if (derivedTitle.isNotEmpty &&
+        derivedTitle.toLowerCase() != 'conversation') {
+      return derivedTitle;
+    }
+
+    return fallbackTitle;
   }
 
   Future<void> _removeInvalidToken(String token) async {
