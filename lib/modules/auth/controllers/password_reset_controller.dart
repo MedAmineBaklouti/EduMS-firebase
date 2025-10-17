@@ -107,11 +107,12 @@ class PasswordResetController extends GetxController {
   }
 
   Future<void> sendPhoneCode() async {
-    final phone = phoneController.text.trim();
-    if (phone.isEmpty) {
+    final formattedPhone = _formatTunisianPhoneNumber(phoneController.text);
+
+    if (formattedPhone == null) {
       Get.snackbar(
         'Missing Phone Number',
-        'Please enter the phone number associated with your account.',
+        'Enter an 8-digit Tunisian phone number so we can send the verification code.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -121,7 +122,7 @@ class PasswordResetController extends GetxController {
       isLoading(true);
       Get.closeAllSnackbars();
       await _authService.verifyPhoneNumber(
-        phoneNumber: phone,
+        phoneNumber: formattedPhone,
         verificationCompleted: (PhoneAuthCredential credential) async {
           try {
             await _authService.signInWithPhoneCredential(credential);
@@ -147,9 +148,7 @@ class PasswordResetController extends GetxController {
           }
         },
         verificationFailed: (FirebaseAuthException error) {
-          final message = error.code == 'billing-not-enabled'
-              ? 'Phone verification is temporarily unavailable. Please contact support while we finish configuring our verification service.'
-              : error.message ?? 'Failed to send the verification code.';
+          final message = _mapVerificationError(error);
           isLoading(false);
           step.value = 0;
           Get.snackbar(
@@ -166,7 +165,7 @@ class PasswordResetController extends GetxController {
           isLoading(false);
           Get.snackbar(
             'OTP Sent',
-            'We sent a verification code to $phone.',
+            'We sent a verification code to $formattedPhone.',
             snackPosition: SnackPosition.BOTTOM,
             duration: const Duration(seconds: 4),
           );
@@ -185,6 +184,42 @@ class PasswordResetController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 5),
       );
+    }
+  }
+
+  String? _formatTunisianPhoneNumber(String input) {
+    final digitsOnly = input.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (digitsOnly.isEmpty) {
+      return null;
+    }
+
+    // Accept users entering 8 digits and automatically prefix with +216.
+    if (digitsOnly.length == 8) {
+      return '+216$digitsOnly';
+    }
+
+    // Accept numbers already starting with the Tunisian country code.
+    if (digitsOnly.length == 11 && digitsOnly.startsWith('216')) {
+      return '+$digitsOnly';
+    }
+
+    // Accept international format with 00216 prefix.
+    if (digitsOnly.length == 13 && digitsOnly.startsWith('00216')) {
+      return '+${digitsOnly.substring(2)}';
+    }
+
+    return null;
+  }
+
+  String _mapVerificationError(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'billing-not-enabled':
+        return 'Phone verification is temporarily unavailable. Please contact support while we finish configuring our verification service.';
+      case 'quota-exceeded':
+        return 'We reached the daily SMS quota provided by Firebase. Please try again later.';
+      default:
+        return error.message ?? 'Failed to send the verification code.';
     }
   }
 
