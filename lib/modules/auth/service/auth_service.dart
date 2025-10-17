@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,6 +12,10 @@ class AuthService extends GetxService {
   late final SharedPreferences prefs;
 
   Future<AuthService> init() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await _auth.setSettings(forceRecaptchaFlow: true);
+    }
+
     prefs = await SharedPreferences.getInstance();
     _auth.authStateChanges().listen((User? user) {
       this.user.value = user;
