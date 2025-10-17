@@ -51,6 +51,8 @@ class MessagingController extends GetxController {
       _conversationMessagesSubscription;
   String? _pendingConversationId;
   String? _lastInAppNotificationKey;
+  final Map<String, DateTime?> _conversationDeletionCutoffs =
+      <String, DateTime?>{};
 
   @override
   void onInit() {
@@ -129,6 +131,14 @@ class MessagingController extends GetxController {
       final items = await _messagingService.fetchConversations();
       final filteredItems = _filterConversationsForDisplay(items);
       conversations.assignAll(filteredItems);
+      for (final conversation in filteredItems) {
+        if (conversation.deletedAt != null) {
+          _conversationDeletionCutoffs[conversation.id] =
+              conversation.deletedAt;
+        } else {
+          _conversationDeletionCutoffs.remove(conversation.id);
+        }
+      }
       final activeId = activeConversation.value?.id;
       if (activeId != null) {
         final updatedActive =
@@ -208,6 +218,7 @@ class MessagingController extends GetxController {
           updatedAt: message.sentAt,
           participants: <ConversationParticipant>[],
           unreadCount: shouldIncrementUnread ? 1 : 0,
+          deletedAt: _conversationDeletionCutoffs[message.conversationId],
         );
         conversations.insert(0, placeholder);
         _applyConversationFilter();
@@ -303,6 +314,14 @@ class MessagingController extends GetxController {
         conversationsError.value = null;
         final filteredItems = _filterConversationsForDisplay(items);
         conversations.assignAll(filteredItems);
+        for (final conversation in filteredItems) {
+          if (conversation.deletedAt != null) {
+            _conversationDeletionCutoffs[conversation.id] =
+                conversation.deletedAt;
+          } else {
+            _conversationDeletionCutoffs.remove(conversation.id);
+          }
+        }
         final activeId = activeConversation.value?.id;
         if (activeId != null) {
           final updatedActive =
@@ -340,7 +359,30 @@ class MessagingController extends GetxController {
     try {
       isMessagesLoading.value = true;
       messageError.value = null;
-      final items = await _messagingService.fetchMessages(conversationId);
+      final cutoff = activeConversation.value?.id == conversationId
+          ? activeConversation.value?.deletedAt
+          : null;
+      final result = await _messagingService.fetchMessages(
+        conversationId,
+        deletedAt: cutoff,
+      );
+      final resolvedCutoff = result.deletedAt;
+      if (resolvedCutoff != null) {
+        _conversationDeletionCutoffs[conversationId] = resolvedCutoff;
+        final active = activeConversation.value;
+        if (active != null && active.id == conversationId) {
+          activeConversation.value =
+              active.copyWith(deletedAt: resolvedCutoff);
+        }
+      } else {
+        _conversationDeletionCutoffs.remove(conversationId);
+        final active = activeConversation.value;
+        if (active != null && active.id == conversationId &&
+            active.deletedAt != null) {
+          activeConversation.value = active.copyWith(deletedAt: null);
+        }
+      }
+      final items = result.messages;
       items.sort((a, b) => a.sentAt.compareTo(b.sentAt));
       messages.assignAll(items);
       _listenToConversationMessages(conversationId);
@@ -477,6 +519,8 @@ class MessagingController extends GetxController {
     final wasActive = activeConversation.value?.id == conversationId;
     final index = conversations.indexWhere((item) => item.id == conversationId);
     ConversationModel? removedConversation;
+    final deletionTime = DateTime.now().toUtc();
+    _conversationDeletionCutoffs[conversationId] = deletionTime;
     if (index >= 0) {
       removedConversation = conversations.removeAt(index);
     }
@@ -494,6 +538,7 @@ class MessagingController extends GetxController {
       );
       return true;
     } catch (error) {
+      _conversationDeletionCutoffs.remove(conversationId);
       if (removedConversation != null) {
         final targetIndex =
             index >= 0 && index <= conversations.length ? index : conversations.length;
@@ -564,6 +609,11 @@ class MessagingController extends GetxController {
       messageError.value = null;
       final conversation =
           await _messagingService.ensureConversationWithContact(contact);
+      if (conversation.deletedAt != null) {
+        _conversationDeletionCutoffs[conversation.id] = conversation.deletedAt;
+      } else {
+        _conversationDeletionCutoffs.remove(conversation.id);
+      }
 
       final existingIndex =
           conversations.indexWhere((item) => item.id == conversation.id);
@@ -952,8 +1002,19 @@ class MessagingController extends GetxController {
           return MessageModel.fromJson(payload);
         }).toList();
         mapped.sort((a, b) => a.sentAt.compareTo(b.sentAt));
+        final active = activeConversation.value;
+        DateTime? cutoff;
+        if (active != null && active.id == conversationId) {
+          cutoff = active.deletedAt;
+        }
+        cutoff ??= _conversationDeletionCutoffs[conversationId];
+        final filtered = cutoff == null
+            ? mapped
+            : mapped
+                .where((message) => message.sentAt.isAfter(cutoff.toUtc()))
+                .toList();
         messageError.value = null;
-        messages.assignAll(mapped);
+        messages.assignAll(filtered);
         unawaited(_markConversationAsRead(conversationId));
       },
       onError: (error) {
