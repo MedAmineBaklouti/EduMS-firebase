@@ -215,6 +215,31 @@ class MessagingService extends GetxService {
     }
   }
 
+  bool _isConversationDeletedForCurrentUser(Map<String, dynamic> data) {
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      return false;
+    }
+
+    final deletedFor = data['deletedFor'];
+    if (deletedFor is Map<String, dynamic>) {
+      final flag = deletedFor[userId];
+      if (flag == null) {
+        return false;
+      }
+      if (flag is bool) {
+        return flag;
+      }
+      return true;
+    }
+
+    if (deletedFor is Iterable) {
+      return deletedFor.whereType<String>().contains(userId);
+    }
+
+    return false;
+  }
+
   Future<List<ConversationModel>> fetchConversations() async {
     final userId = _authService.currentUser?.uid;
     if (userId == null) {
@@ -228,7 +253,14 @@ class MessagingService extends GetxService {
           .get();
 
       final conversations = snapshot.docs
-          .map((doc) => _conversationFromData(doc.id, doc.data()))
+          .map((doc) {
+            final data = doc.data();
+            if (_isConversationDeletedForCurrentUser(data)) {
+              return null;
+            }
+            return _conversationFromData(doc.id, data);
+          })
+          .whereType<ConversationModel>()
           .toList();
       conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       return conversations;
@@ -252,7 +284,14 @@ class MessagingService extends GetxService {
         .snapshots()
         .map((snapshot) {
       final conversations = snapshot.docs
-          .map((doc) => _conversationFromData(doc.id, doc.data()))
+          .map((doc) {
+            final data = doc.data();
+            if (_isConversationDeletedForCurrentUser(data)) {
+              return null;
+            }
+            return _conversationFromData(doc.id, data);
+          })
+          .whereType<ConversationModel>()
           .toList();
       conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       return conversations;
@@ -266,7 +305,7 @@ class MessagingService extends GetxService {
           .doc(conversationId)
           .get();
       final data = doc.data();
-      if (data == null) {
+      if (data == null || _isConversationDeletedForCurrentUser(data)) {
         return null;
       }
       return _conversationFromData(doc.id, data);
@@ -279,26 +318,23 @@ class MessagingService extends GetxService {
   }
 
   Future<void> deleteConversation(String conversationId) async {
+    final userId = _authService.currentUser?.uid;
+    if (userId == null) {
+      throw Exception('You must be signed in to delete a conversation.');
+    }
+
     final conversationRef =
         _firestore.collection(_conversationsCollection).doc(conversationId);
-    final messagesRef = conversationRef.collection(_messagesCollection);
 
     try {
-      const batchSize = 500;
-      while (true) {
-        final snapshot = await messagesRef.limit(batchSize).get();
-        if (snapshot.docs.isEmpty) {
-          break;
-        }
-        final batch = _firestore.batch();
-        for (final doc in snapshot.docs) {
-          batch.delete(doc.reference);
-        }
-        await batch.commit();
-      }
-
-      await conversationRef.delete();
+      await conversationRef.update(<String, dynamic>{
+        'deletedFor.$userId': Timestamp.fromDate(DateTime.now().toUtc()),
+        'unreadBy.$userId': FieldValue.delete(),
+      });
     } on FirebaseException catch (error) {
+      if (error.code == 'not-found') {
+        return;
+      }
       final message = error.message ?? error.code;
       throw Exception('Failed to delete conversation: $message');
     } catch (error) {
@@ -348,6 +384,19 @@ class MessagingService extends GetxService {
           senderId: 0,
         },
       };
+
+      final deletionCleanupUpdates = <String, dynamic>{};
+      for (final participantId in participantIds) {
+        final trimmedId = participantId.trim();
+        if (trimmedId.isEmpty) {
+          continue;
+        }
+        deletionCleanupUpdates['deletedFor.$trimmedId'] = FieldValue.delete();
+      }
+
+      if (deletionCleanupUpdates.isNotEmpty) {
+        updateData.addAll(deletionCleanupUpdates);
+      }
 
       if (resolvedParticipants.isNotEmpty) {
         updateData['participants'] = resolvedParticipants
@@ -416,14 +465,40 @@ class MessagingService extends GetxService {
           .get();
 
       for (final doc in existingSnapshot.docs) {
-        final data = doc.data();
-        final participantIds = (data['participantIds'] as Iterable?)
+        final originalData = doc.data();
+        final participantIds = (originalData['participantIds'] as Iterable?)
                 ?.whereType<String>()
                 .toSet() ??
             <String>{};
         if (participantIds.contains(contact.id) ||
             (contact.userId.isNotEmpty &&
                 participantIds.contains(contact.userId))) {
+          final data = Map<String, dynamic>.from(originalData);
+          if (_isConversationDeletedForCurrentUser(data)) {
+            await doc.reference
+                .update({'deletedFor.${user.uid}': FieldValue.delete()});
+
+            final deletedFor = data['deletedFor'];
+            if (deletedFor is Map<String, dynamic>) {
+              final updated = Map<String, dynamic>.from(deletedFor)
+                ..remove(user.uid);
+              if (updated.isEmpty) {
+                data.remove('deletedFor');
+              } else {
+                data['deletedFor'] = updated;
+              }
+            } else if (deletedFor is Iterable) {
+              final updated =
+                  deletedFor.whereType<String>().toSet()..remove(user.uid);
+              if (updated.isEmpty) {
+                data.remove('deletedFor');
+              } else {
+                data['deletedFor'] = updated.toList();
+              }
+            } else {
+              data.remove('deletedFor');
+            }
+          }
           return _conversationFromData(doc.id, data);
         }
       }
