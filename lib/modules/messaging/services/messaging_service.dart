@@ -1560,6 +1560,7 @@ class MessagingService extends GetxService {
 
       final notificationBody = await _buildPushNotificationBody(
         message,
+        recipientIds: recipientIds,
         senderNameOverride: resolvedSenderName,
       );
 
@@ -1801,19 +1802,24 @@ class MessagingService extends GetxService {
 
   Future<String> _buildPushNotificationBody(
     MessageModel message, {
+    required Set<String> recipientIds,
     String? senderNameOverride,
   }) async {
     final senderName = _prettifyDisplayValue(
       senderNameOverride ?? message.senderName,
     );
     final messageContent = message.content.trim();
+    final normalizedRecipientIds = recipientIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
     final fallback = messageContent.isEmpty
         ? (senderName.isEmpty ? _unknownSenderFallback : senderName)
         : (senderName.isEmpty
             ? messageContent
             : '$senderName: $messageContent');
 
-    if (message.conversationId.isEmpty) {
+    if (message.conversationId.isEmpty || normalizedRecipientIds.isEmpty) {
       return fallback;
     }
 
@@ -1831,6 +1837,23 @@ class MessagingService extends GetxService {
         final data = doc.data();
         final senderId = (data['senderId'] as String?)?.trim() ?? '';
         if (senderId != message.senderId) {
+          break;
+        }
+        final rawReadBy = data['readBy'] ?? data['read_by'];
+        final readBy = <String>{};
+        if (rawReadBy is Iterable) {
+          for (final entry in rawReadBy) {
+            if (entry is String) {
+              final trimmed = entry.trim();
+              if (trimmed.isNotEmpty) {
+                readBy.add(trimmed);
+              }
+            }
+          }
+        }
+        final hasUnreadRecipient = normalizedRecipientIds
+            .any((recipientId) => !readBy.contains(recipientId));
+        if (!hasUnreadRecipient) {
           break;
         }
         final content = (data['content'] as String?)?.trim() ?? '';
