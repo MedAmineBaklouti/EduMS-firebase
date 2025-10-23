@@ -29,6 +29,10 @@ class AdminTeacherAttendanceView
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  disabledForegroundColor: Colors.white.withOpacity(0.38),
+                ),
                 onPressed: isSaving ? null : () => controller.saveAttendance(),
                 child: isSaving
                     ? const SizedBox(
