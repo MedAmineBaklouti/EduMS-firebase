@@ -29,6 +29,9 @@ class AdminTeacherAttendanceView
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.onPrimary,
+                ),
                 onPressed: isSaving ? null : () => controller.saveAttendance(),
                 child: isSaving
                     ? const SizedBox(
@@ -588,79 +591,47 @@ class _AttendanceToggle extends StatelessWidget {
     final isPresent = status == AttendanceStatus.present;
     final isAbsent = status == AttendanceStatus.absent;
     final isPending = status == AttendanceStatus.pending;
-    final inactiveThumbColor = isPending
-        ? theme.colorScheme.onSurfaceVariant
-        : theme.colorScheme.error;
-    final inactiveTrackColor = isPending
-        ? theme.colorScheme.surfaceVariant
-        : theme.colorScheme.error.withOpacity(0.2);
-    String statusLabel;
-    IconData statusIcon;
-    Color statusColor;
+    Color labelColor;
+    String labelText;
     if (isPresent) {
-      statusLabel = 'Present';
-      statusIcon = Icons.check_circle;
-      statusColor = Colors.green.shade600;
+      labelColor = Colors.green.shade600;
+      labelText = 'Present';
     } else if (isAbsent) {
-      statusLabel = 'Absent';
-      statusIcon = Icons.cancel_outlined;
-      statusColor = theme.colorScheme.error;
+      labelColor = theme.colorScheme.error;
+      labelText = 'Absent';
     } else {
-      statusLabel = 'Awaiting submission';
-      statusIcon = Icons.hourglass_empty;
-      statusColor = theme.colorScheme.primary;
+      labelColor = theme.colorScheme.primary;
+      labelText = 'Awaiting submission';
     }
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Absent',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Switch(
-              value: isPresent,
-              onChanged: (value) => onChanged(
-                value
-                    ? AttendanceStatus.present
-                    : AttendanceStatus.absent,
-              ),
-              activeColor: Colors.green.shade600,
-              activeTrackColor: Colors.green.shade200,
-              inactiveThumbColor: inactiveThumbColor,
-              inactiveTrackColor: inactiveTrackColor,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Present',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+        Switch.adaptive(
+          value: isPresent,
+          onChanged: (value) => onChanged(
+            value ? AttendanceStatus.present : AttendanceStatus.absent,
+          ),
+          activeColor: Colors.green.shade600,
+          activeTrackColor: Colors.green.shade200,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(statusIcon, size: 18, color: statusColor),
-            const SizedBox(width: 6),
-            Text(
-              statusLabel,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        const SizedBox(height: 4),
+        Text(
+          labelText,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: labelColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
+        if (!isPending)
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: () => onChanged(AttendanceStatus.pending),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Mark pending'),
+          ),
       ],
     );
   }
