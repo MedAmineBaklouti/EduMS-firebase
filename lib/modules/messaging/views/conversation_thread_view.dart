@@ -153,6 +153,19 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
     );
   }
 
+  String? _resolveSenderLabel(String? rawName) {
+    final trimmed = rawName?.trim() ?? '';
+    if (trimmed.isEmpty || _looksLikeEmail(trimmed)) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  bool _looksLikeEmail(String value) {
+    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    return emailPattern.hasMatch(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
@@ -214,6 +227,9 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
                   final isReadByOthers =
                       isMine && controller.isMessageReadByOthers(message);
 
+                  final senderLabel = _resolveSenderLabel(message.senderName);
+                  final shouldShowSender = !isMine && senderLabel != null;
+
                   final backgroundGradient = isMine
                       ? LinearGradient(
                           colors: [
@@ -267,15 +283,15 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
                                 : CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (!isMine)
+                              if (shouldShowSender)
                                 Text(
-                                  message.senderName,
+                                  senderLabel!,
                                   style: theme.textTheme.labelMedium?.copyWith(
                                     color: theme.colorScheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              if (!isMine && isUnread) ...[
+                              if (shouldShowSender && isUnread) ...[
                                 const SizedBox(height: 6),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -299,7 +315,7 @@ class _ConversationThreadViewState extends State<ConversationThreadView>
                                   ],
                                 ),
                               ]
-                              else if (!isMine)
+                              else if (shouldShowSender)
                                 const SizedBox(height: 6),
                               Text(
                                 message.content,
