@@ -590,15 +590,26 @@ class _MessagesList extends StatelessWidget {
       }
 
       final items = controller.messages;
+      final isAwaitingResponse = controller.isAwaitingResponse.value;
+
       if (items.isEmpty) {
+        if (isAwaitingResponse) {
+          return const _AssistantTypingIndicator();
+        }
         return emptyBuilder(context);
       }
 
       return ListView.builder(
         controller: controller.scrollController,
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-        itemCount: items.length,
+        itemCount: items.length + (isAwaitingResponse ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= items.length) {
+            return const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: _AssistantTypingIndicator(),
+            );
+          }
           final message = items[index];
           final isUser = message.role == 'user';
           return Padding(
@@ -643,6 +654,55 @@ class _ErrorState extends StatelessWidget {
               child: Text('edu_chat_try_again'.tr),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AssistantTypingIndicator extends StatelessWidget {
+  const _AssistantTypingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceVariant,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(18),
+            bottomRight: Radius.circular(18),
+            bottomLeft: Radius.circular(4),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'edu_chat_thinking_label'.tr,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

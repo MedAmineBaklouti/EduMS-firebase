@@ -29,6 +29,7 @@ class EduChatController extends GetxController {
   final RxList<EduChatThread> threads = <EduChatThread>[].obs;
   final RxBool isLoading = true.obs;
   final RxBool isSending = false.obs;
+  final RxBool isAwaitingResponse = false.obs;
   final RxBool isDraftingNewThread = false.obs;
   final RxnString loadError = RxnString();
   final RxString inputText = ''.obs;
@@ -83,6 +84,7 @@ class EduChatController extends GetxController {
     inputText.value = '';
     isLoading.value = false;
     isDraftingNewThread.value = false;
+    isAwaitingResponse.value = false;
   }
 
   @override
@@ -201,6 +203,7 @@ class EduChatController extends GetxController {
 
     try {
       isSending.value = true;
+      isAwaitingResponse.value = true;
       print('💾 Saving user message to Firestore...');
       await _service.addUserMessage(chatId: targetChatId, content: text);
 
@@ -246,6 +249,7 @@ class EduChatController extends GetxController {
       );
     } finally {
       isSending.value = false;
+      isAwaitingResponse.value = false;
     }
   }
 
@@ -284,6 +288,7 @@ class EduChatController extends GetxController {
     inputText.value = '';
     isLoading.value = false;
     loadError.value = null;
+    isAwaitingResponse.value = false;
   }
 
   Future<bool> deleteThread(EduChatThread thread) async {
@@ -425,6 +430,7 @@ class EduChatController extends GetxController {
     activeThreadId.value = chatId;
     activeView.value = EduChatViewMode.threadConversation;
     isDraftingNewThread.value = false;
+    isAwaitingResponse.value = false;
     await _subscribeToMessages(chatId);
   }
 
@@ -432,6 +438,7 @@ class EduChatController extends GetxController {
     isLoading.value = true;
     loadError.value = null;
     messages.clear();
+    isAwaitingResponse.value = false;
 
     _messagesSubscription?.cancel();
     _messagesSubscription = _service.watchMessages(chatId).listen(
@@ -452,6 +459,17 @@ class EduChatController extends GetxController {
   Future<bool> _ensureActiveThread() async {
     if (_chatId != null) {
       return true;
+    }
+
+    if (isDraftingNewThread.value) {
+      await _createInitialThread();
+      return _chatId != null;
+    }
+
+    final currentDraftId = activeThreadId.value;
+    if (currentDraftId != null) {
+      await _selectThread(currentDraftId, force: true);
+      return _chatId != null;
     }
 
     if (threads.isNotEmpty) {

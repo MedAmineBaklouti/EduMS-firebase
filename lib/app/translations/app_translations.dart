@@ -121,6 +121,7 @@ class AppTranslations extends Translations {
               'I ran into a problem and could not respond this time. Please try again.',
           'edu_chat_rate_limited_message':
               'I am receiving a lot of questions right now. Please wait a moment and try again.',
+          'edu_chat_thinking_label': 'Thinking…',
           'edu_chat_try_again': 'Try again',
           'common_back': 'Back',
           'common_retry': 'Retry',
@@ -780,6 +781,7 @@ class AppTranslations extends Translations {
               'Je rencontre un problème et je ne peux pas répondre pour le moment. Veuillez réessayer.',
           'edu_chat_rate_limited_message':
               'Je reçois beaucoup de questions en ce moment. Patientez un instant puis réessayez.',
+          'edu_chat_thinking_label': 'Réflexion en cours…',
           'edu_chat_try_again': 'Réessayer',
           'common_back': 'Retour',
           'common_retry': 'Réessayer',
@@ -1457,6 +1459,7 @@ class AppTranslations extends Translations {
               'واجهت مشكلة ولم أستطع الرد هذه المرة. يرجى المحاولة مجددًا.',
           'edu_chat_rate_limited_message':
               'أتلقى الكثير من الأسئلة الآن. يرجى الانتظار قليلًا ثم إعادة المحاولة.',
+          'edu_chat_thinking_label': 'جارٍ التفكير…',
           'edu_chat_try_again': 'أعد المحاولة',
           'common_back': 'رجوع',
           'common_retry': 'إعادة المحاولة',
