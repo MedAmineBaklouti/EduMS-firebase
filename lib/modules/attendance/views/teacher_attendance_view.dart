@@ -54,6 +54,9 @@ class TeacherAttendanceView extends GetView<TeacherAttendanceController> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.onPrimary,
+                  ),
                   onPressed: isSaving
                       ? null
                       : () async {
