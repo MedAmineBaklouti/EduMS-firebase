@@ -358,11 +358,10 @@ class CourseDetailView extends StatelessWidget {
             ),
           ),
           pw.SizedBox(height: 8),
-          pw.Text(
-            course.description.isNotEmpty
-                ? course.description
-                : 'courses_description_missing'.tr,
-            style: const pw.TextStyle(fontSize: 13),
+          ..._buildPdfTextBlocks(
+            value: course.description,
+            fallback: 'courses_description_missing'.tr,
+            style: const pw.TextStyle(fontSize: 13, height: 1.5),
           ),
           pw.SizedBox(height: 20),
           pw.Text(
@@ -373,10 +372,9 @@ class CourseDetailView extends StatelessWidget {
             ),
           ),
           pw.SizedBox(height: 8),
-          pw.Text(
-            course.content.isNotEmpty
-                ? course.content
-                : 'courses_content_missing'.tr,
+          ..._buildPdfTextBlocks(
+            value: course.content,
+            fallback: 'courses_content_missing'.tr,
             style: const pw.TextStyle(fontSize: 13, height: 1.5),
           ),
         ],
@@ -509,6 +507,84 @@ class CourseDetailView extends StatelessWidget {
       return 0;
     }
     return sanitized.split(RegExp(r'\s+')).length;
+  }
+
+  List<pw.Widget> _buildPdfTextBlocks({
+    required String value,
+    required String fallback,
+    required pw.TextStyle style,
+    double spacing = 6,
+  }) {
+    final trimmed = value.trim();
+    final paragraphs = trimmed.isEmpty
+        ? <String>[fallback]
+        : trimmed
+            .split(RegExp(r'\n{2,}'))
+            .map((paragraph) => paragraph.trim())
+            .where((paragraph) => paragraph.isNotEmpty)
+            .toList();
+    final effectiveParagraphs =
+        paragraphs.isEmpty ? <String>[fallback] : paragraphs;
+
+    final widgets = <pw.Widget>[];
+    for (var i = 0; i < effectiveParagraphs.length; i++) {
+      final paragraph = effectiveParagraphs[i];
+      final chunks = _chunkTextForPdf(paragraph);
+      for (var j = 0; j < chunks.length; j++) {
+        widgets.add(pw.Text(chunks[j], style: style));
+        final isLastChunk =
+            i == effectiveParagraphs.length - 1 && j == chunks.length - 1;
+        if (!isLastChunk) {
+          widgets.add(pw.SizedBox(height: spacing));
+        }
+      }
+    }
+
+    return widgets;
+  }
+
+  List<String> _chunkTextForPdf(String text, {int maxLength = 900}) {
+    final sanitized = text.trim();
+    if (sanitized.isEmpty) {
+      return const [];
+    }
+
+    if (sanitized.length <= maxLength) {
+      return [sanitized];
+    }
+
+    final words = sanitized.split(RegExp(r'\s+'));
+    final chunks = <String>[];
+    var buffer = StringBuffer();
+    var bufferLength = 0;
+
+    void flushBuffer() {
+      if (bufferLength == 0) {
+        return;
+      }
+      chunks.add(buffer.toString());
+      buffer = StringBuffer();
+      bufferLength = 0;
+    }
+
+    for (final word in words) {
+      if (word.isEmpty) {
+        continue;
+      }
+      final requiredLength = bufferLength == 0 ? word.length : word.length + 1;
+      if (bufferLength > 0 && bufferLength + requiredLength > maxLength) {
+        flushBuffer();
+      }
+      if (bufferLength > 0) {
+        buffer.write(' ');
+        bufferLength += 1;
+      }
+      buffer.write(word);
+      bufferLength += word.length;
+    }
+
+    flushBuffer();
+    return chunks.isEmpty ? [sanitized] : chunks;
   }
 
   String _pdfFileName() {
